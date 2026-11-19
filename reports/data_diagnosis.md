@@ -5,15 +5,18 @@
 > (stage 7) — a problem's rank is the size of its effect on the answer, and that
 > cannot be known before there is an answer to move.
 >
-> **Status: stages 1–4 complete.** F1–F5 are from the candidate list itself,
+> **Status: stages 1–7 complete.** F1–F5 are from the candidate list itself,
 > before any API call. F6 is from the acquisition. F7–F8 are from the flattened
-> tables, F9 from the join. Findings that need distributions rather than counts — implausible
+> tables, F9 from the join, F10–F12 from the profile, F13 from the cleaning
+> sensitivity runs, F14–F16 from the KPI tables. Findings that need distributions rather than counts — implausible
 > money, unreliable ratings, real extremes versus errors — follow after stage 5.
 >
-> **Risk order as it stands: F7, then F3, F6 and F9, then F1, F2, F4.** F7 is
-> ranked first because it is the only one that limits what the analysis can
-> conclude rather than how many films it runs on. F9 is ranked with F3 and F6
-> because all three are cases where the obvious handling is wrong in a way that
+> **Risk order as it stands: F12, F14, F7, F10, F11, then F15, F16, then F3,
+> F6, F9, then F1, F2, F4, F8, F13.** F14 is ranked second because the obvious
+> statistic reverses the recommendation. The top four are not data faults at all - they are limits on
+> what this list can answer, and they outrank every fault found in it. F12 is
+> first because it makes one of the team's two central claims untestable. F3,
+> F6, F9 and F11 share a shape: the obvious handling is wrong in a way that
 > leaves no trace in the output.
 >
 > Data as of **2026-11-19** (the `fetched_at` stamp on every envelope in
@@ -442,6 +445,290 @@ only 112 films exist, and it would have been the memo's headline sentence.
 
 ---
 
+## F10 - Pre- and post-2000 money are not the same unit, risk: **high**
+
+**Detected:** stage 5, by computing the two windows side by side instead of pooling
+them. Nothing is wrong with any value.
+
+| Era | Films | Median budget | Median revenue | Median ROI |
+|---|---|---|---|---|
+| pre-2000 | 41 | $30,000,000 | $321,365,567 | **9.54** |
+| 2000 onward | 71 | $150,000,000 | $738,599,701 | **4.92** |
+
+Read naively, that table says pre-2000 films are **twice as profitable**. It does not
+say that. Budget and revenue are **nominal** - the dollars of the year each film was
+made - and the two columns inflate at different rates: median budget is 5.0x higher
+post-2000 while median revenue is only 2.3x higher. A 1977 budget and a 2019 budget
+are not the same unit, so their ratio to revenue is not comparable either.
+
+There is a second, less obvious half. **An old film's revenue keeps accruing.** *Star
+Wars* was re-released in 1978, 1981 and 1997, and TMDb reports lifetime revenue. So
+the numerator includes decades of income earned in later, larger dollars while the
+denominator is frozen at 1977 production cost. The older the film, the more its ROI is
+flattered.
+
+**What this does to the recommendation.** It is the strongest available answer to
+**Yaw's claim (CL5)** that pre-2000 numbers cannot be trusted: he is right, and for a
+reason more specific than "old data is bad" - the figures are accurate but not
+*commensurable*. Any sentence of the form "older films return more" is measuring
+inflation and re-release history, not licensing value.
+
+**Decision (DR-12): compare within a window, never across one.** The brief already
+asks for both windows; this is why that structure matters rather than being a
+formality. No inflation adjustment is applied - it would need an external CPI series
+the brief does not provide, and would still not fix the re-release problem.
+
+**Cost if wrong:** if the effect is smaller than argued, the analysis loses nothing,
+since both windows are reported either way. If it were ignored, the memo could tell
+Kwame that the cheapest films to license are also the most profitable, which is partly
+an artefact of measuring 1970s costs against 2020s receipts.
+
+---
+
+## F11 - Every extreme is pre-2000, so clipping outliers is not neutral, risk: **high** (methodological)
+
+**Detected:** stage 5. Eight films have an ROI above 20x. **All eight are pre-2000:**
+
+| Film | Year | ROI |
+|---|---|---|
+| Star Wars | 1977 | 70.5x |
+| Jaws | 1975 | 67.2x |
+| The Godfather | 1972 | 40.8x |
+| The Good, the Bad and the Ugly | 1966 | 32.4x |
+| The Empire Strikes Back | 1980 | 29.9x |
+| Pulp Fiction | 1994 | 26.7x |
+| Raiders of the Lost Ark | 1981 | above 20x |
+| Back to the Future | 1985 | above 20x |
+
+Years 1966 to 1994. Not one film from 2000 onward appears.
+
+**Why this is a finding and not a list.** The routine move at this point is to
+winsorise or drop the outliers to stop them dragging the averages. Here that move
+would delete **8 of 41 pre-2000 films (20%) and 0 of 71 modern films (0%)**. An
+"outlier treatment" applied to one era and not the other is not a cleaning step - it
+is a thumb on the scale of the exact comparison Yaw is worried about, and it would
+make pre-2000 films look systematically worse while appearing to be neutral hygiene.
+
+**It is also the wrong films to delete.** A 70x return on a cheap 1977 film *is* the
+back-catalog licensing case. Removing it to tidy a distribution removes the finding and
+leaves a smoother table.
+
+**Decision (DR-15): flag, classify, never clip.** All eight are recorded in
+`data/processed/flags.csv` with the verdict `real_extreme` and a reason, they stay in
+every metric, and stage 7 reports medians (resistant to them) alongside the counts.
+They are forced into the stage-9 spot-check, because a figure this influential should
+be verified against the live source rather than trusted.
+
+**Cost if wrong:** if any of the eight is actually a bad figure, it inflates the
+pre-2000 picture - which is why they are spot-checked by name instead of being assumed
+correct. The reverse error, clipping them, is both larger and invisible.
+
+---
+
+## F12 - The list contains no film that lost money, risk: **high** (selection bias)
+
+**Detected:** stage 5.
+
+| | |
+|---|---|
+| Lowest ROI on the list | **1.13x** (*The Shawshank Redemption*, 1994) |
+| Films with ROI below 1.0 (a theatrical loss) | **0** of 112 |
+| Films with ROI below 1.5 | 2 |
+| Films with ROI below 2.0 | 6 |
+
+**Not one of the 112 candidate titles lost money at the box office.** Whoever
+assembled this list across three sources selected successes - entirely reasonable for
+an acquisition shortlist, and ruinous for one of the questions being asked of it.
+
+**What it does to CL1.** The claim is that *"franchise bundles are the safer buy - a
+higher floor and less spread."* A floor is a statement about what happens when things
+go badly. On this list **nothing goes badly**, so the floor cannot be measured:
+comparing the worst franchise film against the worst standalone film compares 1.86x
+against 1.13x, both of which made money. The honest finding is that **CL1's central
+argument is untestable on this data**, and no amount of analysis fixes it - only a
+candidate list that includes failures would.
+
+**What can still be said.** The *spread* of returns is measurable, and so is the
+relative position of the two groups. "Franchise films on this list cluster more
+tightly" is supportable. "Franchise films protect you from a flop" is not supportable
+from this list at all.
+
+**Knock-on effect on the hit rate.** With `hit_roi_threshold = 2.5`, **92% of the list
+counts as a hit** - the metric barely discriminates, which is a direct symptom of the
+same bias. Rather than fitting the threshold to make the numbers look interesting
+(reasoning backwards from the answer), 2.5 is kept on its industry break-even
+justification and stage 7 reports all three definitions - `roi >= 2.5` (92%),
+`above_median` (50% by construction), `top_quartile` (ROI at or above 8.85) - with the
+disagreement between them shown rather than hidden. See DR-14.
+
+**Cost if wrong:** nil to correctness. The cost of not stating it is a board hearing
+"franchises are the safer buy, and the data supports it" when the data contains no
+instance of either option being unsafe.
+
+---
+
+## F13 - The direction of the answer is robust; its size is not, risk: **medium**
+
+**Detected:** stage 6, by recomputing the comparison under every cleaning choice
+rather than arguing that the choices were reasonable.
+
+| Parameter | Value | Franchise n | Franchise median ROI | Standalone n | Standalone median ROI | Franchise ahead? | Gap |
+|---|---|---|---|---|---|---|---|
+| `treat_zero_money_as_missing` | true *(default)* | 87 | 5.526 | 25 | 5.000 | yes | 0.53 |
+| `treat_zero_money_as_missing` | false | 87 | 5.526 | 25 | 5.000 | yes | 0.53 |
+| `franchise.min_members_on_list` | 2 *(default)* | 87 | 5.526 | 25 | 5.000 | yes | 0.53 |
+| `franchise.min_members_on_list` | **1** | 96 | 5.624 | **16** | **3.845** | yes | **1.78** |
+| `min_budget_for_roi` | 1,000,000 *(default)* | 87 | 5.526 | 25 | 5.000 | yes | 0.53 |
+| `min_budget_for_roi` | 10,000,000 | 85 | 5.451 | 20 | 4.762 | yes | 0.69 |
+
+**Franchise films come out ahead in all six runs.** The direction of the answer does
+not depend on any cleaning choice made in this project, which is the single most
+useful thing a sensitivity table can say.
+
+**But the size of the lead swings by 3.4x**, from 0.53 to 1.78, and one choice drives
+almost all of it: where the **9 lone collection members** go (DR-09). Moving them from
+standalone to franchise takes the standalone group from 25 films to 16 and drops its
+median ROI from 5.00 to 3.85 - because those 9 are franchise films, and they perform
+like franchise films. Counting them as standalone raises the standalone median and
+narrows the gap.
+
+**What this means for the memo.** "Franchise bundles outperform standalones on this
+list" is supportable under every assumption tested. "They outperform by about 10%" is
+an artefact of one definition; under an equally defensible one it is about 45%. So the
+memo states the direction with confidence, gives the range rather than a point
+estimate, and names the choice the range depends on. A single number here would be the
+most misleading thing in the document.
+
+`treat_zero_money_as_missing` changes **nothing at all**, because there are no zeros
+to treat (F8). That is reported as dormant rather than quietly left in place: a
+setting that appears to be doing cleaning work while having no effect is a trap for
+whoever reads this next quarter.
+
+**Cost if wrong:** low. Every row of this table is reproducible from
+`data/processed/sensitivity.csv` by flipping the named setting, so a sceptical reader
+does not have to take the range on trust.
+
+---
+
+## F14 - The mean and the median disagree about who wins, risk: **high** (methodological)
+
+**Detected:** stage 7, by reporting both and looking.
+
+| Group | Films | **Mean** ROI | **Median** ROI | Lower quartile | Max | IQR |
+|---|---|---|---|---|---|---|
+| franchise | 87 | **7.94** | **5.53** | 3.91 | 70.5 | 4.39 |
+| standalone | 25 | **10.48** | **5.00** | 2.64 | 67.2 | 11.71 |
+
+**On the mean, standalones win. On the median, franchises win.** The choice of
+statistic reverses the recommendation.
+
+**Why.** The eight extreme-ROI films (F11) are not spread evenly: **3 of the 25
+standalone films are extremes (12%) against 5 of 87 franchise films (5.7%)** - more
+than twice the concentration, in the group one third the size. *Jaws* at 67x, *The
+Good, the Bad and the Ugly* at 32x and *Pulp Fiction* at 27x drag the standalone mean
+above the franchise mean while the typical standalone film sits *below* the typical
+franchise film. The standalone IQR of 11.71 against 4.39 is the same fact seen from
+another angle.
+
+**What this does to the recommendation.** It is the reason the memo reports medians.
+A mean-based analysis of this list - the obvious first thing anyone would compute -
+would tell Kwame to buy standalone hits, on the strength of three films from the
+1960s, 70s and 90s whose returns no current acquisition can replicate. The median
+answers the question he actually asked, which is what a *typical* film in each group
+returns.
+
+**Cost if wrong:** this is a reporting choice, not an estimate, so there is nothing to
+be wrong about - both statistics are in `kpi_all_years.csv` and a reader can see the
+disagreement. The cost of not stating it is that the single most consequential number
+in the analysis looks like a neutral default.
+
+---
+
+## F15 - The franchise spread advantage does not survive into Yaw's window, risk: **medium**
+
+**Detected:** stage 7's flip check, which tests every measure rather than just the
+median.
+
+| Measure | Better is | All years | 2000 onward | Flips? |
+|---|---|---|---|---|
+| median ROI | higher | franchise | franchise | no |
+| floor (lower quartile) | higher | franchise | franchise | no |
+| hit rate | higher | franchise | franchise | no |
+| **spread (IQR)** | **lower** | **franchise** | **standalone** | **yes** |
+
+Across all years, franchise films are markedly tighter: IQR 4.39 against 11.71. In the
+modern window the two groups are **2.47 against 2.297** - and standalone is nominally
+the tighter one.
+
+**Read carefully, because the arithmetic overstates this.** The margin is **0.17 ROI
+points** on a standalone group of **12 films**. That is well inside what one film
+entering or leaving would move. The defensible statement is that **the franchise
+spread advantage disappears after 2000**, not that standalones become the safer buy.
+
+**Why it still matters.** CL1 is specifically a claim about safety - floor and spread.
+The floor half holds in both windows. The spread half, which is the stronger version
+of the claim, is an all-years effect that does not reproduce in the window Yaw cares
+about. And the all-years figure is itself inflated by F11: the standalone IQR of 11.71
+is wide *because* three of its 25 films are pre-2000 extremes.
+
+**Effect on the recommendation:** the direction is unchanged - franchises lead on
+three of four measures in both windows - but the "less spread" argument should not be
+made for modern titles. Flagged by the pipeline at every run, loudly, as the brief
+asks.
+
+**Cost if wrong:** low either way. Both windows are reported; the flip is stated with
+its margin and its n, so a reader can discount it themselves.
+
+---
+
+## F16 - Two-thirds of the "weak middle entries" effect is the era confound, risk: **medium**
+
+**Detected:** stage 7, by running the position analysis inside one era instead of over
+the pooled list.
+
+Pooled across all years, the pattern is striking and monotonic:
+
+| Position | Films | Median ROI | Median revenue | Median rating |
+|---|---|---|---|---|
+| first | 22 | **7.76** | $454m | 7.87 |
+| middle | 41 | **5.41** | $661m | 7.34 |
+| last | 22 | **4.44** | $770m | 7.08 |
+
+A 43% decline in ROI from opener to final entry - which looks like strong support for
+the team's "we overpay for weak middle entries".
+
+**But position correlates with era.** First entries have a median release year of
+**2000** and are 50% pre-2000; last entries have a median year of **2008.5** and are
+only 14% pre-2000. So the opener bonus is partly just F10: older films with nominal
+budgets and lifetime revenue. Inside the modern window:
+
+| Position | Films | Median ROI |
+|---|---|---|
+| first | 11 | **5.30** |
+| middle | 27 | **5.05** |
+| last | 19 | **4.55** |
+
+The decline survives but shrinks from 43% to **14%** - roughly **two-thirds of the
+apparent effect was the era**.
+
+**And the culprit is not the middle.** Within one era, middle entries (5.05) sit
+*above* last entries (4.55) and almost level with openers. The team's claim is
+directionally right that later entries return less, and **wrong about which entries
+are the weak ones**. Meanwhile revenue *rises* with position - a later entry earns
+more and costs disproportionately more, which is why anyone looking at revenue alone
+would conclude the opposite.
+
+**Effect on the recommendation:** a bundle's later entries are worth less per dollar,
+by about 14% from first to last within an era, not the 43% the pooled figure suggests.
+That is a negotiating point, not a reason to avoid bundles.
+
+**Cost if wrong:** the modern-window figures rest on 11, 27 and 19 films, so the 14%
+is itself approximate; the pre-2000 breakdown has only 3 "last" entries and is not
+reported as a finding for that reason. What is robust is the *direction* and the fact
+that the pooled number is inflated.
+
+---
+
 ## The claim register: what has been tested so far
 
 The claims in `docs/00_project_plan.md` Part 4 are what the team believes. Findings
@@ -452,11 +739,11 @@ Every row says which stage settles it, so nothing sits in "pending" by accident.
 |---|---|---|---|
 | **CL6** | "The list has 127 titles" *(implicit)* | **Answered — false as meant, true as a row count** | The file holds exactly 127 data rows, so nobody miscounted. But 127 ≠ 127 *usable films*: 6 rows duplicate an earlier id, 1 is the same film under an IMDb id, 5 ids no longer exist on TMDb, 3 are placeholders or blank. The analysis runs on **112**. Anyone quoting "127 titles" to the board would be quoting a row count as a film count. (F1–F6) |
 | **CL7** | "TMDb data is accurate enough to decide on" *(implicit)* | Partly answered, so far favourably | Completeness is established: 112 of 117 ids resolve, all 112 carry credits, and **no** film has a zero budget, zero revenue, missing runtime or missing release date (F8) — the disguised-null fault this was most likely to fail on is simply absent. Still open: whether present values are *plausible* (stage 5) and whether they match the live source (stage 9). |
-| **CL1** | "Franchise bundles are the safer buy" | Pending — stage 7, **and already constrained** | The groups are now sized: 87 franchise films against 16 standalone, 59 against 8 post-2000 (F7). Whatever stage 7 finds, this claim can be answered directionally and not precisely. Note too that F3 would have put a third copy of one franchise film into every KPI — the direction that would have *flattered* this claim. |
-| **CL2** | "We overpay for weak middle entries" | Pending — stage 7 | Precondition now met: 23 collections carry ≥2 films on the list, sized 2 to 8 (Harry Potter 8, Star Wars 6, Pirates 5, Mission: Impossible 5). Position-within-series is computable from `release_date`, which is present for all 112 films. |
-| **CL3** | "Cherry-picking standalone hits beats bundles" | Pending — stage 7 | Weakly answerable at best: "the top standalones" would be chosen from a pool of 16, and `shortlist.n_standalones = 5` means picking the top 5 of 16. That is cherry-picking from a thin list, and the claim's own logic makes the thinness matter. |
-| **CL4** | "Talent is a reliable lever" | Pending — stage 7, **pool now known** | 66 directors across 122 director credits, of whom **13 have ≥3 films** on the list (Spielberg 8, Nolan 7, Jackson 6, then ten more) — so the claim is testable, on 13 names and not on one or two. Every film has a billed lead and at least one director. Note F9: two of those 13 exist only because co-directed films are credited to both directors. |
-| **CL5** | "Pre-2000 numbers can't be trusted" *(Yaw)* | Pending — stage 7, both windows | Both windows are viable: 41 films pre-2000, 71 from 2000 on, spanning 1966–2019. But Yaw's window is where F7 bites hardest — 8 standalone films — so the honest answer may be that his concern cannot be *settled* either way on this list. Two obstacles are already known: the 5 dead ids have no year, so F6's loss cannot be tested for era bias. |
+| **CL1** | "Franchise bundles are the safer buy" | **Answered: supported on the median and the floor, not on spread after 2000** | Franchise films lead on median ROI (5.53 v 5.00), lower quartile (3.91 v 2.64) and hit rate (95% v 80%) across all years, and on all three again in the modern window - in all six cleaning variants (F13). Two caveats: the *mean* reverses it (F14), and the spread advantage does not survive into the modern window (F15). The "no film ever fails" half remains untestable (F12). |
+| **CL2** | "We overpay for weak middle entries" | **Answered: half right, and wrong about which half** | Later entries do return less: within one era, first 5.30, middle 5.05, last 4.55. But **middle entries are not the weak ones** - last entries are, and middles sit almost level with openers. And the pooled figure (7.76 / 5.41 / 4.44) overstates the effect roughly threefold, because openers are disproportionately pre-2000 films with inflated ROI (F16). 22 collections, 85 films. |
+| **CL3** | "Cherry-picking standalone hits beats bundles" | **Answered on the numbers, with a large caveat** | The top standalones beat the top bundles per film: *Jaws* 67x, *The Good, the Bad and the Ugly* 32x, *Pulp Fiction* 27x against Star Wars' bundle ROI of 10.8. But **all three are pre-2000**, so the comparison is exactly the one F10 says is unsafe, and 2 of the 5 shortlisted "standalones" are lone collection members rather than true standalones (DR-20). Per *typical* film the claim fails: median standalone 5.00 against median franchise 5.53. |
+| **CL4** | "Talent is a reliable lever" | **Answered: supported, for directors, with 13 names** | 13 directors have ≥3 films; 7 of them sit above the overall median ROI, led by Spielberg (8 films, median 13.25, hit rate 100%), Zemeckis (4, 10.32) and Cameron (3, 9.91). 19 lead actors clear the same bar. The lever is real but modest in reach: 13 of 66 directors, and every figure is reported with its film count because a 3-film record and an 8-film record are not the same evidence. Note F9: two of the 13 (the Wachowskis) exist only because co-directed films count for both. |
+| **CL5** | "Pre-2000 numbers can't be trusted" *(Yaw)* | **Substantially answered - and he is right** | Not because the figures are wrong, but because they are not commensurable: nominal money inflates 5x on budgets against 2.3x on revenue, and old films keep accruing re-release revenue against a frozen budget (F10). Pre-2000 ROI is therefore flattered by construction. Compounding it: every extreme on the list is pre-2000, so routine outlier clipping would delete 20% of his window and none of the modern one (F11). Remaining limits: 8 standalone films post-2000 (F7), and the 5 dead ids have no year so F6's loss cannot be tested for era bias. |
 | **CL8** | "The trilogy failed / the passed bundle was a miss" | Out of scope by design | Note only. The method should be able to score any bundle; proving Kwame's history is not this project's job. |
 
 ---

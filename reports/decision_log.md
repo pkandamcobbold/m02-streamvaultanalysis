@@ -8,10 +8,10 @@
 > will fill it. A decision record with an invented impact figure is worse than
 > one that admits the measurement is still to come.
 >
-> **Status: stages 1–4 complete.** DR-00 to DR-11 below. DR-07 and DR-08 came
+> **Status: stages 1–7 complete.** DR-00 to DR-21 below. DR-07 and DR-08 came
 > out of an audit of stages 1–2 rather than from building them, and are kept
 > because both were judgement calls with real alternatives. Cleaning and KPI
-> decisions (DR-12 onward) arrive with stages 6 and 7.
+> Remaining decisions (DR-22 onward) arrive with the spot-check and the memo.
 
 ---
 
@@ -352,6 +352,295 @@
    recommendation naming a co-director must say the films were shared, which
    `n_directors` makes possible. A per-film statistic is unaffected either
    way — only the per-person view changes.
+
+---
+
+### DR-12: money is compared within a window, never across one - Risk rank: **high**
+
+1. **Observation** - budget and revenue are nominal. Median budget is 5.0x
+   higher post-2000, median revenue only 2.3x higher, so median ROI appears to
+   halve across the boundary (9.54 pre-2000 against 4.92 after). And an old
+   film's revenue is lifetime revenue: *Star Wars* was re-released in 1978,
+   1981 and 1997, so its numerator accumulates later, larger dollars against a
+   1977 denominator (F10).
+2. **Options** - (a) pool all years and report one set of figures; (b) adjust
+   to constant dollars with an external CPI series; (c) report each window
+   separately and never compare a level across the boundary; (d) use only
+   rank-based measures, which are scale-free.
+3. **Decision** - (c), with (d) alongside it in stage 7 (medians and quartile
+   positions rather than dollar levels). (b) was rejected: it needs data the
+   brief does not provide, it would add a dependency to a pipeline that must
+   run from a clean clone, and **it would not fix the problem** - deflating a
+   lifetime revenue figure by the release-year CPI is still wrong, because the
+   revenue was not all earned in the release year.
+4. **Impact** - this is why the two windows exist. Pooled, the 41 pre-2000
+   films would raise the apparent return of the whole catalog and, because 20 of
+   those 41 are franchise entries from Star Wars, Indiana Jones and The
+   Godfather, would specifically flatter the franchise side. Reported
+   separately, each window is internally comparable. No cross-window ratio
+   appears anywhere in the memo.
+5. **Cost if wrong** - if inflation and re-release effects are weaker than
+   argued, nothing is lost: both windows are reported regardless, and the
+   reader can compare them while being told why that comparison is unsafe. The
+   opposite error produces a confident sentence ("the cheapest films to license
+   return the most") that is substantially an artefact of measuring 1970s costs
+   against 2020s receipts. At 500 titles the effect grows, because a longer
+   back catalog spans more eras.
+
+---
+
+### DR-13: TMDb popularity is never used as a performance measure - Risk rank: medium
+
+1. **Observation** - `popularity` ranges from 0.46 to 85.70 on this list, and
+   the top three are *Avengers: Endgame* (2019), *Interstellar* (2014) and
+   *The Dark Knight* (2008). It is a rolling engagement score recomputed daily
+   from recent page views, votes and watchlist adds.
+2. **Options** - (a) use it as a demand proxy, which is tempting since
+   licensing value is about future viewing; (b) use it only as a tie-breaker;
+   (c) exclude it from every metric and keep it in the tables as fetched.
+3. **Decision** - (c), with `profile.use_popularity_as_performance = false` in
+   settings so the choice is visible rather than implied by its absence.
+4. **Impact** - two reasons, and the second is the one that matters. It is
+   **recency-biased**: a 2019 blockbuster outscores a 1966 classic by two
+   orders of magnitude, so using it would rank exactly against the back catalog
+   this project exists to evaluate. And it is **not reproducible**: the cached
+   value is a snapshot, so re-running the analysis next month from the same
+   cache would give a different answer from a fresh fetch, and neither would be
+   wrong. Every other field used here (budget, revenue, runtime, votes) is
+   fixed once a film is released.
+5. **Cost if wrong** - current audience interest is genuinely relevant to a
+   licensing decision and this discards it. Accepted, and stated in the memo as
+   a limitation: the analysis measures historical performance, not present
+   demand. A demand signal would need a source whose values do not move under
+   the analysis, and that is a different project.
+
+---
+
+### DR-14: the hit threshold stays at break-even, and all three definitions are reported - Risk rank: medium
+
+1. **Observation** - `hit_roi_threshold` was set to 2.5 at the planning stage
+   as a box-office break-even rule of thumb and marked TO SET AFTER PROFILING.
+   The profile shows **92% of the list clears it**, because the list contains
+   no film that lost money (F12). The hit rate therefore barely discriminates
+   between any two groups.
+
+   | ROI threshold | Share of the list that counts as a hit |
+   |---|---|
+   | 2.0 | 95% |
+   | **2.5** | **92%** |
+   | 4.0 | 71% |
+   | 5.0 | 59% |
+   | 8.0 | 31% |
+
+2. **Options** - (a) keep 2.5 and report the hit rate as-is; (b) raise the
+   threshold until the metric separates the groups; (c) keep 2.5 for its
+   external justification and report `above_median` and `top_quartile`
+   alongside it, showing where the three disagree.
+3. **Decision** - (c). (b) is the trap: choosing a threshold because it makes
+   the numbers interesting is fitting the measure to the desired answer, and
+   any figure chosen that way cannot survive the question "why 5.0?".
+   2.5 keeps an answer to that question - it is roughly where a theatrical
+   release breaks even after the exhibitor split and P&A - and
+   `report_all_hit_definitions = true` makes the fragility visible instead of
+   hiding it behind one number.
+4. **Impact** - the hit rate is demoted from a headline metric to one of three,
+   and the memo leads with medians and spread instead. `min_budget_for_roi`
+   stays at 1,000,000 and is **inactive this quarter**: the smallest budget on
+   the list is 1,200,000, so no film is excluded for ROI instability. It is kept
+   as a guard for a future list containing a genuinely small film.
+5. **Cost if wrong** - if 2.5 is too low for this catalog, the hit rate is
+   uninformative - which is exactly what is being reported, so the reader is
+   not misled. If it were tuned instead, the recommendation would rest on a
+   threshold chosen after seeing its effect, and a sceptical board member
+   asking "what happens at 4.0?" would get a different answer from the one
+   presented.
+
+---
+
+### DR-15: extremes are flagged and classified, never clipped - Risk rank: **high**
+
+1. **Observation** - eight films have an ROI above 20x, topping out at 70.5x
+   (*Star Wars*). **All eight are pre-2000**, from 1966 to 1994 (F11).
+2. **Options** - (a) winsorise at a percentile; (b) drop them as implausible;
+   (c) keep every value and flag it with a verdict and a reason.
+3. **Decision** - (c). Each flag carries one of four verdicts - `error`,
+   `real_extreme`, `unreliable`, `check` - and a sentence saying why. All eight
+   are `real_extreme`.
+4. **Impact** - (a) or (b) would delete **8 of 41 pre-2000 films (20%) and 0 of
+   71 modern films**. An outlier treatment that only ever fires on one era is
+   not hygiene; it is a thumb on the scale of the comparison Yaw is already
+   sceptical about, and it would make his window look worse while looking like
+   routine cleaning. It would also delete the most informative rows on the
+   list: a 70x return on a cheap 1977 film is the back-catalog case, not noise.
+   Instead, stage 7 reports medians, which are resistant to extremes without
+   removing them, with counts beside every figure.
+5. **Cost if wrong** - if one of the eight is a bad figure, it inflates the
+   pre-2000 picture. That is why all eight are forced into the stage-9
+   spot-check by name rather than trusted: `spotcheck.always_include_flagged`
+   exists for this. The reverse error is larger and leaves no trace - a clipped
+   value looks exactly like a value that was never there.
+
+---
+
+### DR-16: cleaning adds flags, and exclusion is per metric - Risk rank: **high** (it governs every number)
+
+1. **Observation** - some films will fail some checks. The question is what
+   "cleaning" then means. A film with no usable budget cannot enter an ROI
+   figure, but it is still a real film with a real rating, a real director and
+   a real franchise status.
+2. **Options** - (a) drop failing rows and analyse what is left; (b) impute the
+   missing values; (c) keep every row and add columns saying what each film is
+   eligible for.
+3. **Decision** - (c). `in_money_metrics`, `money_quality` and
+   `rating_reliable` are columns, not filters, and `assert_clean` hard-asserts
+   that cleaning did not change the row count. ROI exists exactly where
+   `in_money_metrics` is true and is NA everywhere else, so nothing downstream
+   can average a ratio that was never valid.
+4. **Impact** - no film is excluded from anything this quarter, so the measured
+   impact is zero. The impact it *prevents* is the one that matters: under (a),
+   each metric would quietly carry a different denominator and the memo's "112
+   films" would stop being true halfway down the page. Under (b), an imputed
+   budget would flow into ROI and be indistinguishable from a measured one.
+5. **Cost if wrong** - (c) costs vigilance: every aggregation must respect the
+   flags, and a reader who filters the table themselves could compute a figure
+   over films that were never eligible. Mitigated by making ROI NA rather than
+   zero, which makes the mistake raise or return NA rather than silently
+   averaging. At 500 titles, with a messier list, this is the decision that
+   keeps the accounting honest.
+
+---
+
+### DR-17: a relative measure is recomputed inside every window - Risk rank: medium
+
+1. **Observation** - two of the three hit definitions are relative:
+   `above_median` and `top_quartile` are defined against a pool. The analysis
+   reports two windows (all years, and 2000 onward). Computing the flags once
+   over all 112 films and reusing them for the 71 modern films compares those
+   films against a median set partly by 1970s films - whose ROI is inflated by
+   inflation and re-release revenue (F10).
+2. **Options** - (a) compute once over everything and reuse, which is cheaper
+   and reads as consistent; (b) recompute within each window; (c) drop the
+   relative definitions and keep only the absolute threshold.
+3. **Decision** - (b). `add_hit_flags` takes a frame and computes within it,
+   and stage 7 calls it again for each window. (c) was rejected because the
+   absolute threshold on its own is nearly useless here - 92% of the list
+   clears it (F12).
+4. **Impact** - on this data, computing pool-wide instead of per window moves
+   films across the "above median" line in the modern window, and in one
+   direction only: modern films are judged against a bar raised by older ones.
+   A test pins the behaviour with a four-film case where the two methods
+   disagree, because the bug produces no error and nothing in the output would
+   show it.
+5. **Cost if wrong** - the two methods answer different questions, and (b)
+   answers the one the brief asks ("does the answer change in the modern
+   window?"). If a reader wants "above the all-years median" for a modern film,
+   that figure is still available by computing it on the full table - the
+   choice is explicit rather than inherited.
+
+---
+
+### DR-18: medians and quartiles, not means and standard deviations - Risk rank: **high** (it decides the answer)
+
+1. **Observation** - computed both ways, the two statistics disagree about the
+   recommendation. Mean ROI: standalone **10.48**, franchise 7.94. Median ROI:
+   franchise **5.53**, standalone 5.00. The eight extreme-ROI films (F11) are
+   concentrated in the smaller group - 3 of 25 standalone films against 5 of 87
+   franchise films - so the standalone mean is pulled above the franchise mean
+   while the typical standalone film sits below the typical franchise film.
+2. **Options** - (a) report means, the conventional default; (b) report means
+   with the extremes winsorised; (c) report medians and quartiles, with the
+   mean shown beside them so the disagreement is visible.
+3. **Decision** - (c). Spread is the interquartile range rather than the
+   standard deviation, for the same reason: an SD inflated by a 70x return says
+   nothing about the typical gap between a good and a bad film in the group.
+   (b) was rejected under DR-15 - clipping here would delete 20% of the
+   pre-2000 films and none of the modern ones.
+4. **Impact** - **it reverses the recommendation.** Under (a) the memo would
+   advise buying standalone hits, on the strength of *Jaws*, *The Good, the Bad
+   and the Ugly* and *Pulp Fiction* - three films from 1975, 1966 and 1994
+   whose returns no current acquisition can replicate. Under (c) it advises
+   franchise bundles. Both figures are published in `kpi_all_years.csv`.
+5. **Cost if wrong** - the median discards information about upside, and upside
+   is part of an acquisition case: a buyer who wants one spectacular title
+   rather than a reliable slate is served better by the mean. That reader is
+   given `max_roi` and the full shortlist rather than being argued with. What
+   the median protects against is the opposite error, and it is the likelier
+   one: taking a 1970s outlier as evidence about a 2027 licensing deal.
+
+---
+
+### DR-19: the flip check tests every measure, not just the median - Risk rank: medium
+
+1. **Observation** - the brief asks whether the recommendation changes in the
+   post-2000 window. The planned check compared one number per window. But CL1
+   is a claim about *safety*, which is three measures: the floor, the spread
+   and the hit rate. Checking only the median would have reported "no flip"
+   while one of the claim's two halves had in fact reversed.
+2. **Options** - (a) one check on the median; (b) check each measure and report
+   them separately; (c) a single composite score combining them.
+3. **Decision** - (b). Four measures, each with its own direction convention -
+   and `iqr_roi` is explicitly marked `better_is: lower`, because a tighter
+   group is the safer buy and reading it like a median inverts the answer.
+   (c) was rejected: a composite would need weights nobody has a basis to
+   choose, and would hide exactly the disagreement worth reporting.
+4. **Impact** - it found one. Franchise films lead on median, floor and hit
+   rate in both windows, and the **spread advantage flips** (F15): IQR 4.39 v
+   11.71 across all years, 2.47 v 2.297 after 2000. Under (a) this would not
+   have been reported at all.
+5. **Cost if wrong** - four measures mean four chances to see a flip that is
+   really noise, and this one is: a 0.17 margin on 12 films. Mitigated by
+   reporting the margin and the n beside the flip rather than only the verdict,
+   so the finding is stated as "the advantage disappears" and not "standalones
+   are now safer".
+
+---
+
+### DR-20: the shortlist labels what each pick actually is - Risk rank: medium
+
+1. **Observation** - under the default grouping, lone collection members count
+   as standalone (DR-09). The top five "standalone" picks therefore include
+   **Jaws** and **The Lion King**, both of which belong to a TMDb collection
+   whose other films are not on our list.
+2. **Options** - (a) present them as standalones, which the grouping says they
+   are; (b) drop them from the standalone shortlist; (c) keep them and carry
+   `franchise_status` on every row of the shortlist.
+3. **Decision** - (c). They are legitimate picks - a single film Kwame can
+   license on its own is exactly what the standalone side of the brief means -
+   but calling *Jaws* a standalone without qualification is a sentence a board
+   member could reasonably object to.
+4. **Impact** - 2 of 5 selected standalones are lone collection members. The
+   shortlist table carries the status, and the memo names it. The three true
+   standalones among the picks are *The Good, the Bad and the Ugly*, *Pulp
+   Fiction* and *Schindler's List*.
+5. **Cost if wrong** - under (b) the standalone shortlist would be chosen from
+   16 films rather than 25, making an already thin group (F7) thinner and
+   excluding two of its strongest candidates for a reason that has nothing to
+   do with whether they can be bought. Carrying the label costs a column.
+
+---
+
+### DR-21: the position-within-franchise analysis is read inside one era - Risk rank: medium
+
+1. **Observation** - pooled across all years, ROI falls monotonically with
+   position: first 7.76, middle 5.41, last 4.44. But first entries have a
+   median release year of 2000 and are 50% pre-2000, while last entries median
+   2008.5 and are 14% pre-2000. Position is confounded with era, and era
+   inflates ROI (F10).
+2. **Options** - (a) report the pooled figures, which support the team's claim
+   most strongly; (b) report within-era figures only; (c) report both and name
+   the confound.
+3. **Decision** - (c), with the within-era figures as the ones quoted in the
+   recommendation.
+4. **Impact** - the decline shrinks from **43% to 14%** from opener to final
+   entry, so roughly two-thirds of the apparent effect was the era. And the
+   ranking changes: within one era, middle entries (5.05) sit *above* last
+   entries (4.55), so the team's specific claim about *middle* entries is not
+   supported even though the general direction is (F16).
+5. **Cost if wrong** - the within-era groups are 11, 27 and 19 films, so the
+   14% is approximate and is given as such. The pre-2000 breakdown has only
+   three "last" entries and is deliberately not reported as a finding. Had (a)
+   been reported alone, the team would have been told they were right and by
+   three times the real margin - the most flattering and least useful outcome.
 
 ---
 

@@ -1,0 +1,9 @@
+tmdb_id,title,release_year,roi,revenue,budget,vote_average,vote_count,rating_reliable,franchise_status,selected
+578,Jaws,1975,67.236,470653000,7000000,7.7,12044,True,lone_collection_member,True
+429,"The Good, the Bad and the Ugly",1966,32.417,38900000,1200000,8.5,10163,True,standalone,True
+680,Pulp Fiction,1994,26.741,213928762,8000000,8.48,31365,True,standalone,True
+8587,The Lion King,1994,16.966,763455561,45000000,8.25,20430,True,lone_collection_member,True
+424,Schindler's List,1993,14.608,321365567,22000000,8.57,18205,True,standalone,True
+129,Spirited Away,2001,14.47,274925095,19000000,8.537,19245,True,standalone,False
+274,The Silence of the Lambs,1991,14.355,272742922,19000000,8.346,18877,True,lone_collection_member,False
+13,Forrest Gump,1994,12.316,677387716,55000000,8.462,30921,True,standalone,False

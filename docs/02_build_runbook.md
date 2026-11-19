@@ -995,52 +995,87 @@ error here is an error in the headline.
 
 ---
 
-# Phase 6 — Stage 5: profile and diagnose
+# Phase 6 — Stage 5: profile, and separate real extremes from errors
 
 ## The principle
 
-**Detect first, decide later.** This phase produces no fixes. It produces a list of candidate faults. Deciding which are real and what to do about them is Phase 7, and keeping the two separate is what stops you from "fixing" something that was never broken.
+**A threshold cannot tell an error from an extreme.** *Star Wars* returned 70x its
+budget and a budget of 5 is a typo, and both are far outside anything typical. One is
+the most informative row on the list; the other is a mistake. Telling them apart needs
+a reason per value, which is why every flag here carries a verdict and a sentence, and
+why nothing is deleted at this stage.
+
+Four verdicts:
+
+| Verdict | Meaning | What stage 6 does with it |
+|---|---|---|
+| `error` | the value cannot be right (a zero, a budget of 5) | decide and record an exclusion |
+| `real_extreme` | unusual and true | nothing: it stays in every metric |
+| `unreliable` | true but too thin to lean on (a rating on 40 votes) | keep the film, do not rank on that field |
+| `check` | needs a human to look | nothing is excluded on a `check` |
 
 ## Step 6.1 💻 `src/streamvault/profile.py`
 
-One `profile(frame)` function, reused on every table. For each column: dtype, non-null count, null count, distinct count, min/max (numeric and dates), and the **disguised-null** counts that `isna()` will never show you:
+The profile reports **percentiles, not mean and standard deviation**. Money is
+heavily skewed, and a sigma rule on a skewed distribution is precisely how a real
+extreme gets reclassified as an error. It also counts **zeros separately from nulls**,
+because a zero budget is TMDb's way of saying "unknown" and would never appear in a
+null count.
 
-| Disguised fault | The check | Why it's not a null to pandas |
-|-----------------|-----------|-------------------------------|
-| `budget == 0` | `(films["budget"] == 0).sum()` | Zero is a valid integer |
-| `revenue == 0` | same | ditto |
-| `release_date == ""` | `(films["release_date"] == "").sum()` | Empty string is a valid string |
-| `runtime == 0` or null | both | a film with no runtime |
-| implausibly small money | `films["budget"].between(1, 1000)` | budget of `5` — reported in millions by mistake |
-| unreliable rating | `films["vote_count"] < 10` | the rating is real, the sample isn't |
-| non-feature entries | `adult`, `status != "Released"`, `runtime < 40` | all valid values |
-| merged/duplicate films | duplicate `imdb_id`, or duplicate (title, release year), across *different* `tmdb_id` | two ids, one film — invisible until after the fetch |
-
-## Step 6.2 🧑 The part that earns the Analyze marks
-
-For **every** candidate fault, answer four questions in `reports/data_diagnosis.md`. Three are easy. The third is the one that decides the risk rank:
-
-1. **How did you detect it?** The actual check, as code.
-2. **How many rows?**
-3. **Which group does it hit?** Franchise or standalone? Pre- or post-2000? **This is the whole game.** 40 zero-budget films spread evenly across both groups barely moves the comparison. Eight zero-budget films that are all franchise entries will flatter or damn franchises depending on which way you treat them, and that *is* the recommendation.
-4. **What does it do to the recommendation?** Compute the headline KPI both ways and show the two numbers.
-
-Then rank by the size of the answer to #4. A ranked list of four findings with numbers beats a flat list of twenty without.
-
-```python
-# The shape of the check that produces #3 — do this for every fault
-films.assign(
-    is_franchise=films["collection_id"].notna(),
-    era=np.where(films["release_year"] >= 2000, "2000+", "pre-2000"),
-    zero_budget=films["budget"].eq(0),
-).groupby(["is_franchise", "era"])["zero_budget"].agg(["sum", "size", "mean"])
+```bash
+.venv/Scripts/python.exe -c "import pandas as pd; p=pd.read_csv('data/processed/profile.csv'); print(p[p.column.isin(['budget','revenue','vote_count','runtime'])][['column','n','n_missing','n_zero','min','median','max']].to_string(index=False))"
 ```
 
-## Step 6.3 🧠 Real extremes stay
+✅ **ARTEFACT** — `profile.csv` (every column), `flags.csv` (every value worth a look,
+with a verdict and a reason), `era_comparability.csv`.
 
-A $2bn-revenue film is real. A 1977 film with a $11M budget is real. Do not winsorise, clip or drop them because they're far from the median — you'd be deleting the exact films Kwame is trying to buy. Errors get flagged; extremes stay. Write this down, because "we removed outliers" is the single most common way an analysis of licensing value destroys its own answer.
+## Step 6.2 🧑 What the profile found here: nothing broken, three things worse
 
-✅ **ARTEFACT** — `reports/data_diagnosis.md` with a ranked table, and a profile output per table in `data/processed/`.
+**Zero errors.** No missing or zero money, no unreleased title, no future date, no
+duplicate title-and-year, every rating on 4,000+ votes, every runtime between 81 and
+202 minutes. The disguised-null fault this stage was built for is simply absent.
+
+🧠 Say so explicitly rather than moving on. A check that found nothing is worth as
+much as one that found something **only if you can show it ran** — and this project
+has already been caught twice by checks that reported nothing because the check itself
+was wrong (F4's `[0-9]*`, the `Bearer` grep in Step 3.3).
+
+Then the three findings, none of which is a data fault, and all of which outrank every
+fault found so far:
+
+- **F10: nominal money is not one unit across the window boundary.** Budgets are 5.0x
+  higher post-2000, revenue only 2.3x, so pre-2000 ROI looks twice as good. And an old
+  film's revenue is *lifetime* revenue — re-releases earning later, larger dollars
+  against a frozen budget. This is the specific, articulable version of Yaw's
+  complaint, and the answer is to compare within a window and never across one
+  (DR-12).
+- **F11: all eight extreme-ROI films are pre-2000.** So winsorising would delete 20%
+  of the pre-2000 group and 0% of the modern one. An outlier treatment that only fires
+  on one era is not hygiene (DR-15).
+- **F12: no film on the list lost money.** Lowest ROI is 1.13x. The list is
+  pre-selected successes, so **CL1's "higher floor" claim cannot be tested at all** —
+  there is no downside in the data to compare (DR-14).
+
+## Step 6.3 🧠 Set the thresholds now, and say what fixed them
+
+`hit_roi_threshold` and `min_budget_for_roi` were marked TO SET AFTER PROFILING. This
+is the moment, and the temptation is to pick the value that makes the groups separate.
+
+```bash
+.venv/Scripts/python.exe -c "import pandas as pd; a=pd.read_csv('data/interim/analysis.csv'); r=a.revenue/a.budget; [print(f'ROI >= {t}: {100*(r>=t).mean():.0f}% are hits') for t in (2.0,2.5,4.0,5.0,8.0)]"
+```
+
+At 2.5, **92% of the list is a hit**. The metric barely discriminates — and that is a
+symptom of F12, not a reason to move the threshold. Keep 2.5, which has an answer to
+"why that number?" (roughly theatrical break-even after the exhibitor split and P&A),
+report `above_median` and `top_quartile` beside it, and show where they disagree.
+Choosing a cutoff *after* seeing which one separates the groups is fitting the measure
+to the answer, and it cannot survive a board member asking what happens at 4.0.
+
+`min_budget_for_roi` stays at 1,000,000 and is inactive: the smallest budget on the
+list is 1,200,000, so it excludes nobody. Keep it as a guard and say that it is
+currently doing nothing — a setting that silently has no effect is worse than one
+documented as dormant.
 
 ---
 
@@ -1048,48 +1083,79 @@ A $2bn-revenue film is real. A 1977 film with a $11M budget is real. Do not wins
 
 ## The principle
 
-**Never delete, always flag. And parameterise, so every metric can be computed both ways.**
+**Cleaning is where an analysis starts lying, and it does it by being helpful** —
+dropping the awkward rows, filling the gaps, smoothing the extremes. Each of those is
+defensible in isolation and each one quietly changes a denominator.
 
-A cleaning rule that is a hard-coded `df = df[df.budget > 0]` can only be defended by argument. A rule that's a parameter can be defended by *number*: "under the alternative, franchise median ROI is 1.8× instead of 2.4×, and the recommendation does not change."
+Three rules:
+
+1. **Nothing is deleted. Exclusion is a column, and it is per metric.** A film with no
+   usable budget is out of ROI and still in the film count, the rating analysis and the
+   franchise split. One global "clean" table forces a single answer to "is this film
+   in?", when the honest answer is "in for some things, out for others".
+2. **Every threshold comes from settings** — not for configurability's sake, but so
+   the rejected alternative is *runnable*. That is what makes the sensitivity table a
+   measurement instead of an argument.
+3. **A relative measure is recomputed inside every window it is reported for.**
 
 ## Step 7.1 💻 `src/streamvault/clean.py`
 
-Every rule takes its threshold from settings and adds a **flag column**, never removes a row:
+Columns added, none removed: `roi`, `money_quality`, `in_money_metrics`,
+`rating_reliable`, `is_hit_roi`, `is_hit_above_median`, `is_hit_top_quartile`,
+`franchise_group_strict`, `franchise_group_loose`.
 
-```python
-def flag_money_quality(films: pd.DataFrame, treat_zero_as_missing: bool, min_budget: int) -> pd.DataFrame:
-    """Add flags. Removes nothing. Every exclusion downstream reads a flag."""
-    out = films.copy()
-    out["budget_missing"] = out["budget"].eq(0) if treat_zero_as_missing else False
-    out["revenue_missing"] = out["revenue"].eq(0) if treat_zero_as_missing else False
-    out["budget_implausible"] = out["budget"].between(1, 1000)
-    out["roi_unstable"] = out["budget"].lt(min_budget) & ~out["budget_missing"]
-    out["in_money_metrics"] = ~(out["budget_missing"] | out["revenue_missing"] | out["budget_implausible"])
-    return out
+`assert_clean` hard-asserts the row count is unchanged, and that **ROI exists exactly
+where `in_money_metrics` is true and is NA everywhere else** — so nothing downstream
+can average a ratio that was never valid.
+
+🧠 **The trap that leaves no trace.** `above_median` and `top_quartile` are defined
+against a pool. Compute them once over all 112 films, reuse them for the 71 modern
+ones, and you are comparing modern films against a median partly set by 1970s films —
+whose ROI is inflated by inflation and re-release revenue (F10). No error, no warning,
+nothing in the output to see. `add_hit_flags` takes a frame and computes within it;
+stage 7 calls it again per window; a test pins a four-film case where the two methods
+disagree (DR-17).
+
+## Step 7.2 ✅ The sensitivity table is the deliverable
+
+T6 asks for cleaning "parameterised so each metric can be computed both ways". The
+artefact that proves it is `data/processed/sensitivity.csv`: the same comparison
+re-run under each choice.
+
+```bash
+.venv/Scripts/python.exe -c "import pandas as pd; print(pd.read_csv('data/processed/sensitivity.csv')[['parameter','value','franchise_median_roi','standalone_median_roi','franchise_ahead','gap']].to_string(index=False))"
 ```
 
-Then the exclusions table is derived, not performed: `films.loc[~films["in_money_metrics"]]` with the reason columns. And `in_money_metrics` flows back into the ledger, which is how a film can be *analysed* and still be absent from the ROI numbers — a distinction the memo has to make honestly.
+What it says here: **franchise films lead in all six runs** — so the direction of the
+answer depends on none of these choices — **but the gap swings 3.4x**, from 0.53 to
+1.78. One choice drives nearly all of it: where the 9 lone collection members go.
 
-## Step 7.2 🧑 Write the decision records now, not later
+🧠 Read `franchise_ahead` first and `gap` second. The first column answers "is the
+recommendation safe?"; the second answers "how precisely may I state it?". A memo that
+gives a point estimate when the sensitivity table gives a 3.4x range is the most
+misleading thing it could do.
 
-Use the five-part template for each. The ones you will certainly need:
+🧠 **Report a dormant rule as dormant.** `treat_zero_money_as_missing` changes
+nothing here, because there are no zeros (F8). Saying so is better than leaving it
+looking like it did cleaning work — and better than deleting it, since next quarter's
+list may need it.
 
-| DR | The call | Why it's contested |
-|----|----------|--------------------|
-| What is a franchise? | `belongs_to_collection` not null, vs ≥2 members on our list | A collection with one film on the list isn't a bundle anyone can buy |
-| What is a bundle? | only the films on our list, vs the whole collection | Pricing a six-film bundle on the three good ones you happen to have |
-| What is performance? | revenue, ROI, profit, rating, vote_count | ROI explodes on tiny budgets; revenue favours the big-budget era; ratings ignore reach |
-| What is a hit? | ROI ≥ 2.5×, vs above median, vs top quartile | The threshold *is* the hit rate. Sensitivity-test it or it's arbitrary |
-| Zero money | disguised null vs real flop | Whichever group has more zeros gets flattered |
-| Inflation | CPI-adjust, vs use ratios, vs drop pre-2000 | Yaw will ask. Ratios are inflation-neutral *within* a film |
-| Lead actor | `billing_order == 0` vs top-3 billed | Ensemble films |
-| Reliable talent | minimum film count | A "star" with two films misleads a negotiator |
+## Step 7.3 ✅ Fill the column stage 1 reserved
 
-And the one that has to be in there:
+Stage 1 created `in_money_metrics` on the ledger as empty, commented "decided at
+stage 6". This is stage 6. Filling it means the ledger accounts for every source row
+all the way to the numbers in the memo, not just to the fetch.
 
-🧠 **DR: selection bias in franchises.** Sequels only get commissioned when the first film succeeded. So franchises will look safer *partly because their failures never became franchises*. You cannot correct for this with the data you have. Name it, quantify what you can (compare first entries only vs all entries), and state in the memo that the franchise advantage is an upper bound. This is the single highest-value paragraph in the decision notes: it's the kind of reasoning the Evaluate criterion exists to reward, and almost nobody writes it.
+🧠 **The same bug appeared here a second time.** Mapping the flag onto the ledger by
+`tmdb_id` marks all six **duplicate** rows `True`, because a duplicate carries the same
+id as the row that was kept — the ledger then claims 118 rows entered the money
+metrics when 112 films did. Stage 4's accounting made the identical mistake and a test
+caught it; here it surfaced only because the run printed a `groupby` nobody had asked
+for a reason to doubt.
 
-✅ **ARTEFACT** — `reports/decision_log.md` (five parts each, risk-ranked), `data/processed/exclusions.csv`, and the ledger's `in_money_metrics` column filled in.
+The fix was not just the arithmetic: `ANALYSED_STATUSES` now lives in one module and is
+imported, so there is a single answer to "which row owns the film?". **A bug that
+recurs is a missing shared definition, not a slip.**
 
 ---
 
@@ -1097,58 +1163,116 @@ And the one that has to be in there:
 
 ## The principle
 
-**Counts beside every statistic, and the window as a parameter.** A median with no `n` is not a finding. And "both windows" means one function called twice, never two blocks of copy-pasted code — because copy-paste is how the two windows silently diverge.
+**Counts beside every statistic, and the window as a parameter.** A median with no `n`
+is not a finding. And "both windows" means one function called twice — two blocks of
+similar code is how the windows silently diverge when somebody edits one of them.
+
+Then a third principle that only becomes obvious when you compute it:
+
+🧠 **Choose the statistic for the question actually asked.** Kwame's team says
+franchises are the *safer* buy. Safety is a claim about the **floor** and the
+**spread**, not the average. So the lower quartile and the interquartile range do the
+work here, and the mean is reported beside them only so the disagreement is visible.
 
 ## Step 8.1 💻 `src/streamvault/kpis.py`
 
-```python
-def compare_groups(films: pd.DataFrame, min_year: int | None) -> pd.DataFrame:
-    """Franchise vs standalone for one window. min_year=None means all years.
+Named aggregation throughout, no row loops. The real column names are
+`franchise_group_strict` / `_loose` and three hit flags — stage 6 produced those, and
+`by_window` recomputes the two **relative** flags inside each window before comparing
+(DR-17).
 
-    Named aggregation, counts beside every statistic, no row loops.
-    """
-    scope = films if min_year is None else films.loc[films["release_year"] >= min_year]
-    money = scope.loc[scope["in_money_metrics"]]
-    return money.groupby("is_franchise", as_index=False).agg(
-        films=("tmdb_id", "size"),
-        median_roi=("roi", "median"),
-        lower_quartile_roi=("roi", lambda s: s.quantile(0.25)),   # the floor
-        mean_roi=("roi", "mean"),
-        roi_spread=("roi", "std"),
-        hit_rate=("is_hit", "mean"),
-        hits=("is_hit", "sum"),
-        median_rating=("vote_average", "median"),
-        median_votes=("vote_count", "median"),
-    )
+```bash
+.venv/Scripts/python.exe -c "import pandas as pd; print(pd.read_csv('data/processed/kpi_all_years.csv')[['franchise_group_strict','films','mean_roi','median_roi','floor_roi','iqr_roi']].to_string(index=False))"
 ```
 
-Note which statistics are there and why: Kwame's question is about **risk**, not average. The claim "franchises are the safer buy" is a claim about the *floor* and the *spread*, so the lower quartile and the standard deviation matter more than the mean. A comparison on means alone doesn't answer what he asked.
+## Step 8.2 🧠 Run that command and look at the mean next to the median
 
-## Step 8.2 💻 The flip check — make it shout
+| Group | Films | Mean ROI | Median ROI | IQR |
+|---|---|---|---|---|
+| franchise | 87 | **7.94** | **5.53** | 4.39 |
+| standalone | 25 | **10.48** | **5.00** | 11.71 |
 
-```python
-def flip_check(all_years: pd.DataFrame, modern: pd.DataFrame) -> dict:
-    """C2: if the recommendation changes between windows, say so loudly."""
-    winner_all = all_years.loc[all_years["median_roi"].idxmax(), "is_franchise"]
-    winner_modern = modern.loc[modern["median_roi"].idxmax(), "is_franchise"]
-    flipped = bool(winner_all != winner_modern)
-    if flipped:
-        print("=" * 70)
-        print("RECOMMENDATION FLIPS BETWEEN WINDOWS — see the memo's first line")
-        print("=" * 70)
-    return {"flipped": flipped, "all_years": winner_all, "modern": winner_modern}
+**On the mean, standalones win. On the median, franchises win.** The statistic reverses
+the recommendation.
+
+Why: the eight extreme-ROI films (F11) are concentrated in the smaller group — 3 of 25
+standalone films against 5 of 87 franchise films. *Jaws* at 67x, *The Good, the Bad
+and the Ugly* at 32x and *Pulp Fiction* at 27x drag the standalone mean above the
+franchise mean while the *typical* standalone film sits below the typical franchise
+film.
+
+🧠 This is the single most consequential line of code in the project, and it looks
+like a formatting preference. A mean-based analysis — the obvious first thing anyone
+computes — would advise Kwame to buy standalone hits on the strength of three films
+from 1966, 1975 and 1994. Report both, say which one you are using, and say why
+(DR-18).
+
+## Step 8.3 💻 The flip check — every measure, not just the median
+
+CL1 is a claim about safety, which is *three* measures. A flip check on the median
+alone reports "no flip" while half the claim has reversed.
+
+| Measure | Better is | All years | 2000 onward | Flips? |
+|---|---|---|---|---|
+| median ROI | higher | franchise | franchise | no |
+| floor (lower quartile) | higher | franchise | franchise | no |
+| hit rate | higher | franchise | franchise | no |
+| **spread (IQR)** | **lower** | **franchise** | **standalone** | **yes** |
+
+⚠️ **`iqr_roi` is marked `better_is: lower`.** A tighter group is the safer buy, so
+reading spread like a median inverts the answer. That is why the direction is a column
+in the table rather than knowledge in someone's head.
+
+And when it flips, print it loudly — then **report the margin beside it**. This flip is
+0.17 ROI points on 12 films, so the honest statement is "the franchise spread advantage
+disappears after 2000", not "standalones are now safer" (F15, DR-19).
+
+## Step 8.4 🧠 Test the claim about middle entries inside one era
+
+Pooled, the position effect is dramatic and supports the team completely:
+
+| Position | Films | Median ROI | Median revenue |
+|---|---|---|---|
+| first | 22 | 7.76 | $454m |
+| middle | 41 | 5.41 | $661m |
+| last | 22 | 4.44 | $770m |
+
+Before quoting it, check whether position is confounded with era:
+
+```bash
+.venv/Scripts/python.exe -c "import pandas as pd; a=pd.read_csv('data/interim/cleaned.csv'); a=a[a.collection_id.notna()]; a['n']=a.groupby('collection_id').tmdb_id.transform('size'); a=a[a.n>=3]; a['r']=a.groupby('collection_id').release_date.rank(method='first'); print(a.assign(pos=lambda d: d.r.where(d.r>1,'first').where(d.r!=d.n,'last')).groupby('pos').release_year.median())"
 ```
 
-If it flips, that goes in the memo's **first paragraph**, not a footnote. The brief says "loudly" — and a flip is genuinely the most useful thing you could tell Kwame, because it means Yaw's objection changes the answer and he needs to know before the room does.
+It is: openers median 2000 and 50% pre-2000; final entries median 2008.5 and 14%
+pre-2000. Inside the modern window the decline shrinks from **43% to 14%** — and
+middle entries (5.05) come out *above* last entries (4.55).
 
-## Step 8.3 💻 The rest of the KPI set
+🧠 So the team is right that later entries return less and **wrong about which
+entries are weak**. Report the within-era figures as the finding and the pooled ones as
+the illustration of why era control matters (F16, DR-21). Note too that revenue
+*rises* with position: anyone reading revenue alone concludes the opposite.
 
-- **Position within franchise** — rank entries by release date inside each collection; compare first vs middle vs last. This tests the "weak middle entries" claim, which is half the team's position and nobody has numbers for.
-- **Bundle-level economics** — aggregate to the collection, because that's the unit of purchase. A bundle's value is its *total*, and its risk is its weakest entries.
-- **Talent** — group `cast` (`billing_order == 0`) and directors by `person_id`; report film count, median performance, hit rate, spread. Filter to `min_films_for_reliable`, but **report the count beside every name** so a negotiator can see a 3-film star for what it is.
-- **The shortlist** — 3 franchises, 5 standalones, by a rule simple enough to say out loud. Show the runners-up; "why it made the cut" means something only next to what didn't.
+## Step 8.5 ✅ The rest of the KPI set
 
-✅ **ARTEFACT** — `data/processed/kpi_*.csv` per window, the flip flag, bundle table, talent table, shortlist with runners-up, and verdicts written into `reports/claims.md` against the claim register in the project plan.
+- **Bundles** — aggregate to the collection, because that is the unit of purchase.
+  `bundle_roi` is total revenue over total budget, not an average of per-film ratios.
+  `best_share_of_revenue` answers Q6: Star Wars' top film is only 23.6% of its bundle
+  revenue, so its value is broad-based, while Jurassic Park's is 51.7% from one film.
+  Two bundles with the same median are different buys.
+- **Talent** — 13 of 66 directors have 3+ films; 7 beat the overall median. **The film
+  count stays visible on every row**, below the minimum as well as above it, so a
+  3-film record is never mistaken for an 8-film one.
+- **The shortlist** — 3 franchises, 5 standalones, each with runners-up, because "why
+  it made the cut" means nothing without what did not. Carry `franchise_status` on
+  every row: 2 of the 5 standalone picks are lone collection members, and presenting
+  *Jaws* as a standalone without qualification invites a fair objection (DR-20).
+
+✅ **ARTEFACT** — `kpi_all_years.csv`, `kpi_modern.csv`, their `_lone_as_franchise`
+variants, `kpi_flip_check.csv`, `kpi_bundles.csv`, `kpi_position_in_franchise.csv`,
+`kpi_bundle_gaps.csv`, `kpi_talent_directors.csv`, `kpi_talent_leads.csv`,
+`shortlist_franchises.csv`, `shortlist_standalones.csv`. Claim verdicts go into the
+claim register in `reports/data_diagnosis.md` — **not** a separate `claims.md`, so
+there is one place a reader looks for the status of CL1–CL8.
 
 ---
 

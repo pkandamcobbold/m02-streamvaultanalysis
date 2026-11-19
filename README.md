@@ -5,12 +5,13 @@ project pulls public data on the candidate titles, checks it for problems, and
 produces a recommendation with a shortlist to negotiate from — the same way every
 time, so it can be re-run each quarter without anyone having to remember how.
 
-> **Status: in progress — stages 1 to 4 of 10 work.** `python run_pipeline.py`
-> loads the candidate list, fetches every film from TMDb, flattens the results
-> into four tables and joins them into one analysis-ready table of 112 films.
-> It writes `data/processed/id_ledger.csv`, `fetch_log.csv`,
-> `run_timings.csv`, `join_report.csv` and `id_accounting.csv`, plus the
-> tables in `data/interim/`. The stages that turn those into a recommendation are not
+> **Status: in progress — stages 1 to 7 of 10 work.** `python run_pipeline.py`
+> loads the candidate list, fetches every film from TMDb, flattens and joins
+> the results into one analysis-ready table of 112 films, profiles it for
+> faults, applies the cleaning rules, and produces the KPI tables for both
+> time windows — including the shortlist and the check on whether the answer
+> changes after 2000. The timing, spot-check and memo stages are not built
+> yet, so `reports/memo.md` and `spotcheck.md` do not exist. The stages that turn those into a recommendation are not
 > built yet, so `reports/memo.md`, `spotcheck.md` and the KPI tables listed
 > below do not exist. The project plan, the source brief and the full build
 > runbook are in [`docs/`](docs/). This note goes away when the clean-clone
@@ -111,6 +112,13 @@ python run_pipeline.py --force
 | `data/processed/run_timings.csv` | How long each stage took, every time it has been run. Appended to, never overwritten. |
 | `data/processed/join_report.csv` | Every merge: rows in, rows out, what matched. Proof that no join quietly multiplied or dropped a film. |
 | `data/processed/id_accounting.csv` | Every title on the list and whether it reached the analysis. The table the memo's "112 of 127" sentence is read off. |
+| `data/processed/profile.csv` | Every column: how much is present, how much is zero, and the shape of the distribution. |
+| `data/processed/flags.csv` | Every value worth a second look, each with a verdict (is it an error or a real extreme?) and a reason. |
+| `data/processed/exclusions.csv` | Every film left out of a metric, why, and the setting responsible — so any exclusion can be traced to a switch you can flip. |
+| `data/processed/sensitivity.csv` | The headline comparison recomputed under each alternative setting. Read this to see whether the answer depends on a judgement call. |
+| `data/processed/kpi_all_years.csv`, `kpi_modern.csv` | Franchise against standalone, one file per time window, with the film count beside every statistic. |
+| `data/processed/kpi_flip_check.csv` | Whether the answer changes between the two windows, measure by measure. |
+| `data/processed/shortlist_franchises.csv`, `shortlist_standalones.csv` | The picks, plus the runners-up they beat — so "why this one" has something to be compared against. |
 | `data/processed/` | The KPI tables, timings and exclusions behind the memo. |
 | `data/raw/` | Untouched copies of what the API returned, each stamped with when it was fetched. |
 

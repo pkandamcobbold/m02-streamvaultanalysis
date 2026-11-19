@@ -1,0 +1,7 @@
+parameter,value,films_in_money_metrics,franchise_n,franchise_median_roi,standalone_n,standalone_median_roi,franchise_ahead,gap
+performance.treat_zero_money_as_missing,true (default),112,87,5.526,25,5.0,True,0.526
+performance.treat_zero_money_as_missing,false,112,87,5.526,25,5.0,True,0.526
+franchise.min_members_on_list,2 — lone members are standalone (default),112,87,5.526,25,5.0,True,0.526
+franchise.min_members_on_list,1 — lone members are franchise,112,96,5.624,16,3.845,True,1.779
+performance.min_budget_for_roi,"1,000,000 (default)",112,87,5.526,25,5.0,True,0.526
+performance.min_budget_for_roi,"10,000,000",105,85,5.451,20,4.762,True,0.689

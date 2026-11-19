@@ -1,0 +1,7 @@
+collection_name,films_on_list,median_roi,floor_roi,best_roi,bundle_roi,total_revenue,median_rating,first_year,last_year,selected
+Star Wars Collection,6,13.402,5.412,70.491,10.828,4432411744,7.69,1977,2005,True
+The Lord of the Rings Collection,3,11.725,9.37,11.903,10.964,2916544743,8.452,2001,2003,True
+Indiana Jones Collection,4,10.888,4.252,21.663,7.111,1983841081,7.584,1981,2008,True
+Jurassic Park Collection,3,8.475,3.965,16.801,8.934,2045874038,6.565,1993,2001,False
+Back to the Future Collection,3,8.322,6.127,20.608,9.793,969485632,7.784,1985,1990,False
+Ice Age Collection,3,8.262,6.496,9.852,8.432,1930942709,6.784,2002,2009,False

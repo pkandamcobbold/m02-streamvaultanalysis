@@ -49,11 +49,50 @@ min_year = 2000                 # Yaw's window
 treat_zero_money_as_missing = true  # zero budget/revenue as a disguised null.
                                     # Set false to compute every money metric
                                     # the other way (zeros as real flops).
-min_budget_for_roi = 1000000        # TO SET AFTER PROFILING. Below this, ROI
-                                    # is unstable; such films are flagged.
-hit_roi_threshold = 2.5             # TO SET AFTER PROFILING. Rough box-office
-                                    # break-even rule of thumb.
+# SET AFTER PROFILING (stage 5, 2026-11-19). Both values below are now
+# justified against the actual distribution rather than assumed — see DR-14.
+min_budget_for_roi = 1000000        # a guard, inactive this quarter: the
+                                    # smallest budget on the list is 1,200,000,
+                                    # so no film is excluded. Kept because next
+                                    # quarter's list may include a small film,
+                                    # where ROI on a tiny budget is unstable.
+hit_roi_threshold = 2.5             # kept at the break-even rule of thumb, an
+                                    # industry justification, NOT fitted to
+                                    # this data. But note what it does here:
+                                    # 92% of the list clears it, so hit rate
+                                    # barely discriminates — a direct symptom
+                                    # of the selection bias in F11. Stage 7
+                                    # therefore reports all three definitions
+                                    # below, not just this one.
 hit_definition = "roi"              # roi | above_median | top_quartile
+report_all_hit_definitions = true   # because no single one is defensible alone
+                                    # on a list with no failures in it:
+                                    #   roi >= 2.5     -> 92% are hits
+                                    #   above_median   -> 50% by construction
+                                    #   top_quartile   -> ROI >= 8.85
+
+[profile]
+# Plausibility floors, not cleaning rules. A value below one of these is
+# *flagged with a reason* and classified; nothing is ever deleted here. The
+# floors are deliberately far below anything a real film would have, so that a
+# flag means "look at this", not "this is unusual" — a profile that flags 30
+# films flags nothing.
+min_plausible_budget = 100000      # below this, suspect a figure entered in
+                                   # millions (a budget of 5 meaning $5m)
+min_plausible_revenue = 100000     # same reasoning, on the other side
+min_votes_for_reliable_rating = 1000   # a high average on few votes is noise
+min_feature_runtime = 70           # below this, suspect a short or a TV cut
+max_plausible_runtime = 300        # above this, suspect a boxed set
+extreme_roi = 20.0                 # not an error — a flag to check the era on
+flop_roi = 1.0                     # revenue below budget: real, and the thing
+                                   # CL1's "floor" argument is about
+
+# TMDb's `popularity` is a rolling engagement score that changes daily and is
+# heavily recency-biased (Endgame 85.7, a 1966 classic 0.5). It is kept in the
+# tables as fetched, and excluded from every performance metric: using it would
+# measure how much a film is being looked at this week, and would make the
+# analysis unreproducible from the same cache a month later. See DR-13.
+use_popularity_as_performance = false
 
 [talent]
 lead_actor_billing_order = 0    # order == 0 is "the lead"

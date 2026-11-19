@@ -18,7 +18,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
-from streamvault import fetch, flatten, join, timings
+from streamvault import clean, fetch, flatten, join, kpis, profile, timings
 from streamvault.config import MissingTokenError, load_settings
 from streamvault.ingest import load_id_list, reconciliation_summary, save_ledger
 
@@ -111,6 +111,72 @@ def main(argv: list[str] | None = None) -> int:
     print("Join report — every merge, counted:")
     print(joined["join_report"].to_string(index=False))
 
+    # --- Stage 5: profile and diagnose -----------------------------------
+    print()
+    print("=" * 72)
+    print("Stage 5 — profile, and separate real extremes from errors")
+    print("=" * 72)
+    started = time.monotonic()
+    profiled = profile.run(settings, joined["analysis"])
+    timings.record(
+        timings_path, "5_profile", time.monotonic() - started,
+        rows=len(profiled["flags"]), run_at=run_at,
+        note=f"{len(profiled['profile'])} columns profiled",
+    )
+    print()
+    print("Money either side of the window boundary — nominal, so not one unit:")
+    print(profiled["era_comparability"].to_string(index=False))
+
+    # --- Stage 6: cleaning rules, every one reversible ------------------
+    print()
+    print("=" * 72)
+    print("Stage 6 — cleaning as flags, with every choice runnable both ways")
+    print("=" * 72)
+    started = time.monotonic()
+    cleaned = clean.run(settings, joined["analysis"], ledger)
+    ledger = cleaned["ledger"]
+    timings.record(
+        timings_path, "6_clean", time.monotonic() - started,
+        rows=len(cleaned["cleaned"]), run_at=run_at,
+        note=f"{len(cleaned['exclusions'])} exclusions, "
+             f"{len(cleaned['sensitivity'])} sensitivity runs",
+    )
+    save_ledger(ledger, processed / "id_ledger.csv")
+
+    print()
+    print("Sensitivity — the same comparison under each cleaning choice:")
+    print(cleaned["sensitivity"].to_string(index=False))
+
+    # --- Stage 7: the KPI tables -----------------------------------------
+    print()
+    print("=" * 72)
+    print("Stage 7 — KPIs, both windows, counts beside every statistic")
+    print("=" * 72)
+    started = time.monotonic()
+    measured = kpis.run(settings, cleaned["cleaned"], joined["directors"])
+    timings.record(
+        timings_path, "7_kpis", time.monotonic() - started,
+        rows=len(cleaned["cleaned"]), run_at=run_at,
+        note=f"{len(measured['windows_strict'])} windows, "
+             f"{len(measured['bundles'])} bundles",
+    )
+
+    for window, table in measured["windows_strict"].items():
+        print()
+        print(f"Franchise vs standalone — {window}:")
+        print(table[[
+            kpis.GROUP_STRICT, "films", "median_roi", "floor_roi", "iqr_roi",
+            "hit_rate_roi", "median_revenue",
+        ]].to_string(index=False))
+
+    print()
+    print("Does the answer change between windows?")
+    print(measured["flips"].to_string(index=False))
+
+    print()
+    print("Inside a franchise, by position:")
+    print(measured["positions"].to_string(index=False))
+
     print()
     print("-" * 72)
     print("Every source row, accounted for:")
@@ -125,6 +191,14 @@ def main(argv: list[str] | None = None) -> int:
     print("  run_timings.csv  — appended: how long each stage took, every run")
     print("  join_report.csv  — every merge: rows in, rows out, what matched")
     print("  id_accounting.csv— every source row, and whether it reached the analysis")
+    print("  profile.csv      — every column: completeness, zeros, distribution")
+    print("  flags.csv        — every value worth a look, with a verdict and a reason")
+    print("  era_comparability.csv — why pre- and post-2000 money is not one unit")
+    print("  exclusions.csv   — every film out of a metric, and the setting responsible")
+    print("  sensitivity.csv  — the comparison recomputed under each cleaning choice")
+    print("  kpi_*.csv        — the comparison per window, bundles, positions, talent")
+    print("  kpi_flip_check.csv — whether the answer changes between windows")
+    print("  shortlist_*.csv  — the picks and the runners-up they beat")
     print(f"Tables written to {settings.path(settings['paths']['interim_dir'])}/")
     print("  films.csv, cast.csv, crew.csv, genres.csv — one table per grain")
     print("  analysis.csv     — one row per film, analysis-ready")

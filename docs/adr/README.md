@@ -41,7 +41,8 @@ ours to make. Where a decision should have been the client's, the record says so
 | [029](029-the-one-improvement-is-a-release-gate.md) | The one improvement beyond the brief is a release gate | Checks |
 | [030](030-a-settings-key-must-be-live-or-refuse-to-load.md) | A settings key must change behaviour, or refuse to load | Whole pipeline |
 | [031](031-extraction-uses-a-loop-and-the-kpis-do-not.md) | Extraction loops over films; the KPIs never loop over rows | Extract |
-| [032](032-five-stage-modules-in-a-flat-pipeline-package.md) | Five stage modules in a flat `pipeline/` package | Whole pipeline |
+| [032](032-five-stage-modules-in-a-flat-pipeline-package.md) | Five stage modules in a flat `pipeline/` package *(partly superseded by 033)* | Whole pipeline |
+| [033](033-a-stage-with-more-than-one-job-is-a-package.md) | A stage with more than one job is a package, not one long file | Whole pipeline |
 
 The ones that decide the answer rather than the plumbing are
 **[010](010-three-franchise-categories-not-two.md)** (the central split),

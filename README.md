@@ -124,7 +124,7 @@ go in front of a board without someone looking first. That is not a crash; see A
 
 | Path | What it holds | Why it is separate |
 | --- | --- | --- |
-| `pipeline/` | Production code: one file per stage, plus `config.py` | This is what runs every quarter. Nothing else lives here |
+| `pipeline/` | Production code: one package per stage, plus `config.py` and `load.py`. Each package holds one module per job, and its `__init__.py` holds the stage's entry point (ADR-033) | This is what runs every quarter. Nothing else lives here |
 | `run_pipeline.py` | The orchestrator | The one command, and the only thing that times and records a run |
 | `tests/` | Tests on tiny hand-made data, one file per stage module | Prove the code is right before it touches a 127-title list |
 | `docs/adr/` | Architecture Decision Records, one file per decision | The why behind the code, versioned with it |

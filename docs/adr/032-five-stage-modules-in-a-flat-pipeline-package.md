@@ -1,6 +1,10 @@
 # ADR-032: Five stage modules in a flat `pipeline/` package, with the rationale in the ADRs
 
-**Status:** Accepted · **Date:** 2026-11-19 · **Deciders:** Data team, with the module reviewer
+**Status:** Accepted, and **partly superseded by [ADR-033](033-a-stage-with-more-than-one-job-is-a-package.md)** · **Date:** 2026-11-19 · **Deciders:** Data team, with the module reviewer
+
+> ADR-033 keeps the five stages decided here and changes only their file shape: `extract` and
+> `checks` became packages of small modules, because each was doing three unrelated jobs in one
+> file. The mapping table below still describes what each stage is responsible for.
 
 ## Context
 The analysis was built as ten stage modules under `src/streamvault/`, following the ten stages the

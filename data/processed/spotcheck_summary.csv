@@ -3,7 +3,7 @@ flagged_extreme,expected_drift,9,6
 flagged_extreme,identical,45,6
 pre_2000,expected_drift,3,3
 pre_2000,identical,24,3
-random_control,expected_drift,2,2
-random_control,identical,25,3
+random_control,expected_drift,3,3
+random_control,identical,24,3
 shortlisted,expected_drift,3,3
 shortlisted,identical,24,3

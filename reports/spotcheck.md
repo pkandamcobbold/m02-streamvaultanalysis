@@ -64,8 +64,8 @@ usually miss every film that does. So the sample is stratified:
 | `flagged_extreme` | `identical` | 45 | 6 |
 | `pre_2000` | `expected_drift` | 3 | 3 |
 | `pre_2000` | `identical` | 24 | 3 |
-| `random_control` | `expected_drift` | 2 | 2 |
-| `random_control` | `identical` | 25 | 3 |
+| `random_control` | `expected_drift` | 3 | 3 |
+| `random_control` | `identical` | 24 | 3 |
 | `shortlisted` | `expected_drift` | 3 | 3 |
 | `shortlisted` | `identical` | 24 | 3 |
 
@@ -92,6 +92,7 @@ discrepancy. None of them enters a performance metric (ADR-014).
 | Alien Resurrection | `vote_count` | 5882 | 5883.0 |
 | Return of the Jedi | `vote_count` | 17573 | 17574.0 |
 | The Dark Knight Rises | `vote_count` | 25344 | 25345.0 |
+| The Bourne Identity | `vote_count` | 10582 | 10583.0 |
 | Schindler's List | `vote_count` | 18205 | 18206.0 |
 
 ## How a difference is classified

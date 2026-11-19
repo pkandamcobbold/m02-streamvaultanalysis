@@ -123,7 +123,7 @@ tmdb_id,title,slice,field,analysed_value,live_value,verdict,note
 2501,The Bourne Identity,random_control,collection_id,31562,31562.0,identical,
 2501,The Bourne Identity,random_control,title,The Bourne Identity,The Bourne Identity,identical,
 2501,The Bourne Identity,random_control,popularity,10.8776,10.8776,identical,
-2501,The Bourne Identity,random_control,vote_count,10582,10582.0,identical,
+2501,The Bourne Identity,random_control,vote_count,10582,10583.0,expected_drift,expected: rises continuously as people vote
 2501,The Bourne Identity,random_control,vote_average,7.491,7.491,identical,
 424,Schindler's List,random_control,budget,22000000,22000000.0,identical,
 424,Schindler's List,random_control,revenue,321365567,321365567.0,identical,

@@ -41,6 +41,8 @@ from typing import Any
 
 import pandas as pd
 
+from .join import ANALYSED_STATUSES
+
 MONEY_USABLE = "usable"
 MONEY_ZERO_AS_MISSING = "zero_treated_as_missing"
 MONEY_ZERO_AS_REAL = "zero_treated_as_real"
@@ -339,8 +341,6 @@ def update_ledger(ledger: pd.DataFrame, cleaned: pd.DataFrame) -> pd.DataFrame:
     accounting made, caught there by a test; `ANALYSED_STATUSES` is imported
     rather than redefined so there is one answer to "which row owns the film?".
     """
-    from .join import ANALYSED_STATUSES
-
     ledger = ledger.copy()
     flags = dict(zip(cleaned["tmdb_id"].astype("Int64"), cleaned["in_money_metrics"]))
     ledger["in_money_metrics"] = [

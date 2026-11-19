@@ -35,6 +35,12 @@ from typing import Any, Callable
 import numpy as np
 import pandas as pd
 
+from . import clean as clean_module
+from . import flatten as flatten_module
+from . import join as join_module
+from . import kpis as kpis_module
+from . import profile as profile_module
+
 # Stages inside the budget. Acquisition is deliberately not here; see DR-22.
 ANALYSIS_STAGES = ("3_flatten", "4_join", "5_profile", "6_clean", "7_kpis")
 ACQUISITION_STAGE = "2_acquire"
@@ -127,12 +133,6 @@ def measure_scaling(
       is the least contaminated estimate of the real cost. A mean would carry
       every scheduling hiccup into the projection.
     """
-    from . import clean as clean_module
-    from . import flatten as flatten_module
-    from . import join as join_module
-    from . import kpis as kpis_module
-    from . import profile as profile_module
-
     def one_pass(sample: list[dict[str, Any]]) -> dict[str, float]:
         timed: dict[str, float] = {}
         started = time.perf_counter()

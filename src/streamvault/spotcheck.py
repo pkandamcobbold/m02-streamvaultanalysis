@@ -41,6 +41,16 @@ from typing import Any, Callable
 
 import pandas as pd
 
+from .clean import clean as clean_frame
+from .config import load_token
+from .fetch import (
+    ENDPOINT_DETAILS_CREDITS,
+    RateLimiter,
+    build_session,
+    fetch_one,
+)
+from .kpis import GROUP_STRICT, compare_groups
+
 # Fields where a change would change an answer, and why it would.
 MATERIAL_FIELDS = {
     "budget": "feeds ROI directly",
@@ -280,9 +290,6 @@ def would_it_move_the_recommendation(
     honest way to answer that is to recompute it with the live figures in place
     and look, rather than reasoning about whether a difference seems large.
     """
-    from .clean import clean as clean_frame
-    from .kpis import GROUP_STRICT, compare_groups
-
     before = compare_groups(cleaned, GROUP_STRICT)
     winner_before = (
         before.loc[before["median_roi"].idxmax(), GROUP_STRICT]
@@ -571,9 +578,6 @@ def run(
     session_factory: Callable[[], Any] | None = None,
 ) -> dict[str, Any]:
     """Stage 9 entry point. Re-fetches live; writes to a separate cache."""
-    from .config import load_token
-    from .fetch import ENDPOINT_DETAILS_CREDITS, RateLimiter, build_session, fetch_one
-
     api = settings["api"]
     sample = build_sample(
         cleaned, flags, shortlisted_film_ids(shortlist, cleaned), settings

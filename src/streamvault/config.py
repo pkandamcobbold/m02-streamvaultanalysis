@@ -16,6 +16,7 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
 from dotenv import load_dotenv
 
 # src/streamvault/config.py -> src/streamvault -> src -> project root

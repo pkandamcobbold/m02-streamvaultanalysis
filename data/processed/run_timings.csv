@@ -130,3 +130,39 @@ run_at,stage,seconds,api_calls,cache_hits,rows,note
 2026-11-19T15:45:19+00:00,7_kpis,0.176,0,0,112,"2 windows, 32 bundles"
 2026-11-19T15:45:19+00:00,9_spotcheck,2.81,15,0,15,"4 slices, moved=False"
 2026-11-19T15:45:19+00:00,10_memo,0.019,0,0,147,gate passed
+2026-11-19T15:51:40+00:00,1_ingest,0.01,0,0,127,117 ids queued
+2026-11-19T15:51:40+00:00,2_acquire,0.256,0,117,117,append_credits=True
+2026-11-19T15:51:40+00:00,3_flatten,1.419,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T15:51:40+00:00,4_join,0.203,0,0,112,3 validated merges
+2026-11-19T15:51:40+00:00,5_profile,0.147,0,0,8,28 columns profiled
+2026-11-19T15:51:40+00:00,6_clean,0.147,0,0,112,"0 exclusions, 6 sensitivity runs"
+2026-11-19T15:51:40+00:00,7_kpis,0.382,0,0,112,"2 windows, 32 bundles"
+2026-11-19T15:51:40+00:00,9_spotcheck,3.138,15,0,15,"4 slices, moved=False"
+2026-11-19T15:51:40+00:00,10_memo,0.02,0,0,147,gate passed
+2026-11-19T15:52:42+00:00,1_ingest,0.01,0,0,127,117 ids queued
+2026-11-19T15:52:42+00:00,2_acquire,0.211,0,117,117,append_credits=True
+2026-11-19T15:52:42+00:00,3_flatten,0.614,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T15:52:42+00:00,4_join,0.064,0,0,112,3 validated merges
+2026-11-19T15:52:42+00:00,5_profile,0.061,0,0,8,28 columns profiled
+2026-11-19T15:52:42+00:00,6_clean,0.062,0,0,112,"0 exclusions, 6 sensitivity runs"
+2026-11-19T15:52:42+00:00,7_kpis,0.148,0,0,112,"2 windows, 32 bundles"
+2026-11-19T15:52:42+00:00,9_spotcheck,3.007,15,0,15,"4 slices, moved=False"
+2026-11-19T15:52:42+00:00,10_memo,0.027,0,0,147,gate passed
+2026-11-19T15:54:51+00:00,1_ingest,0.01,0,0,127,117 ids queued
+2026-11-19T15:54:51+00:00,2_acquire,0.196,0,117,117,append_credits=True
+2026-11-19T15:54:51+00:00,3_flatten,0.643,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T15:54:51+00:00,4_join,0.064,0,0,112,3 validated merges
+2026-11-19T15:54:51+00:00,5_profile,0.069,0,0,8,28 columns profiled
+2026-11-19T15:54:51+00:00,6_clean,0.065,0,0,112,"0 exclusions, 6 sensitivity runs"
+2026-11-19T15:54:51+00:00,7_kpis,0.173,0,0,112,"2 windows, 32 bundles"
+2026-11-19T15:54:51+00:00,9_spotcheck,4.418,15,0,15,"4 slices, moved=False"
+2026-11-19T15:54:51+00:00,10_memo,0.019,0,0,147,gate passed
+2026-11-19T15:55:04+00:00,1_ingest,0.011,0,0,127,117 ids queued
+2026-11-19T15:55:04+00:00,2_acquire,0.237,0,117,117,append_credits=True
+2026-11-19T15:55:04+00:00,3_flatten,0.67,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T15:55:04+00:00,4_join,0.061,0,0,112,3 validated merges
+2026-11-19T15:55:04+00:00,5_profile,0.06,0,0,8,28 columns profiled
+2026-11-19T15:55:04+00:00,6_clean,0.059,0,0,112,"0 exclusions, 6 sensitivity runs"
+2026-11-19T15:55:04+00:00,7_kpis,0.148,0,0,112,"2 windows, 32 bundles"
+2026-11-19T15:55:04+00:00,9_spotcheck,4.434,15,0,15,"4 slices, moved=False"
+2026-11-19T15:55:04+00:00,10_memo,0.019,0,0,147,gate passed

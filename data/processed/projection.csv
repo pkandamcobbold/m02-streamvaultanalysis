@@ -1,6 +1,6 @@
 stage,measured_films,measured_seconds,exponent_k,scaling,fit_quality,projected_films,projected_seconds
-3_flatten,112,0.379,1.07,roughly linear,measured,500,1.88
-4_join,112,0.045,0.23,sub-linear (fixed costs dominate at this size),measured,500,0.06
-5_profile,112,0.05,0.08,sub-linear (fixed costs dominate at this size),measured,500,0.06
-6_clean,112,0.053,0.04,sub-linear (fixed costs dominate at this size),measured,500,0.06
-7_kpis,112,0.079,1.0,roughly linear,assumed linear (measured exponent was negative),500,0.35
+3_flatten,112,0.335,0.98,roughly linear,measured,500,1.45
+4_join,112,0.044,0.24,sub-linear (fixed costs dominate at this size),measured,500,0.06
+5_profile,112,0.047,0.05,sub-linear (fixed costs dominate at this size),measured,500,0.05
+6_clean,112,0.05,0.07,sub-linear (fixed costs dominate at this size),measured,500,0.06
+7_kpis,112,0.066,1.0,roughly linear,assumed linear (measured exponent was negative),500,0.29

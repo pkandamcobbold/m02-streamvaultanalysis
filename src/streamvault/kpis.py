@@ -27,6 +27,8 @@ from typing import Any
 
 import pandas as pd
 
+from .clean import add_hit_flags
+
 GROUP_STRICT = "franchise_group_strict"
 GROUP_LOOSE = "franchise_group_loose"
 
@@ -104,8 +106,6 @@ def by_window(
     comparison, which is the whole of DR-17: inherited flags would measure
     modern films against a median partly set by 1970s films.
     """
-    from .clean import add_hit_flags
-
     tables: dict[str, pd.DataFrame] = {}
     for name, window in settings.windows.items():
         min_year = window["min_year"]

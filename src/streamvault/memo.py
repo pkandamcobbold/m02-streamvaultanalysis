@@ -26,9 +26,13 @@ signal that it is wrong.
 """
 from __future__ import annotations
 
+import re
+import textwrap
 from typing import Any
 
 import pandas as pd
+
+from .kpis import GROUP_STRICT
 
 GATE_COLUMNS = ["check", "passed", "detail"]
 
@@ -169,8 +173,6 @@ def gather(
     eras: pd.DataFrame,
 ) -> dict[str, Any]:
     """Everything the memo quotes, in one dictionary, computed once."""
-    from .kpis import GROUP_STRICT
-
     source_rows = int(accounting["source_rows"].sum()) if not accounting.empty else 0
     analysed = int(accounting.loc[accounting["status"] == "fetched",
                                   "reached_analysis"].sum()) \
@@ -241,9 +243,6 @@ def rewrap(text: str, width: int = 78) -> str:
     headings and blank lines are passed through untouched; only runs of plain
     prose are joined and re-wrapped.
     """
-    import re
-    import textwrap
-
     # A numbered item and its indented continuation lines are passed through
     # exactly as written: re-wrapping them would strip the indentation markdown
     # needs to keep a continuation inside its list item, and silently turn one

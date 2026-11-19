@@ -1,0 +1,7 @@
+run_at,stage,seconds,api_calls,cache_hits,rows,note
+2026-11-19T13:27:19+00:00,1_ingest,0.028,0,0,127,117 ids queued
+2026-11-19T13:27:19+00:00,2_acquire,20.261,117,0,117,append_credits=True
+2026-11-19T13:27:41+00:00,1_ingest,0.009,0,0,127,117 ids queued
+2026-11-19T13:27:41+00:00,2_acquire,2.302,0,117,117,append_credits=True
+2026-11-19T13:29:58+00:00,1_ingest,0.022,0,0,127,117 ids queued
+2026-11-19T13:29:58+00:00,2_acquire,2.66,1,116,117,append_credits=True

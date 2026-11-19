@@ -645,123 +645,61 @@ python -m pytest tests -q
 
 **Cache first, and never fetch the same id twice without a reason.** Three forces point the same way: TMDb is a shared service, Adjoa reruns this quarterly on a laptop, and you'll run the pipeline fifty times while building. A cache-first fetcher makes all three cheap, and makes the pipeline resumable for free — if it dies at film 80, the rerun starts at 81 because 1–79 are already on disk.
 
+> **Green tests do not mean a clean clone works.** `pyproject.toml` sets
+> `pythonpath = ["src"]`, so pytest imports the package whether or not the editable
+> install succeeded. Only Phase 12's clean-clone test proves the pipeline runs for
+> someone who just cloned the repo; it cannot be skipped on the strength of a green
+> suite.
+
 ## Step 3.1 💻 `src/streamvault/fetch.py`
 
-```python
-"""Stage 2 — fetch movie details and credits, cached, retried, rate-limited.
+The module is in the repo; read it there rather than from a listing in a document
+that can drift out of date. What follows is the part you cannot see by reading it:
+why it is shaped this way.
 
-One JSON file per (id, endpoint) in data/raw/, each wrapped in an envelope
-that records the HTTP status and when it was fetched. The envelope is what
-makes the as-of date in the memo defensible, and what lets the spot-check
-compare today's live values against what the analysis actually used.
-"""
-from __future__ import annotations
+**Five things it guarantees, each with a test that would fail if it stopped being true:**
 
-import json
-import time
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Any
+| Guarantee | Why it is not obvious | Test |
+|---|---|---|
+| The token is in a header, never a URL or a cached file | a key in a query string reaches shell history, logs, exception text and the cached `request_path` | `test_token_never_reaches_the_url_or_the_cache_file` |
+| A second run makes zero calls | this is what makes the pipeline resumable *and* runnable offline in a meeting | `test_a_second_run_is_all_cache_and_costs_no_calls` |
+| A 404 is cached, recorded, and never retried | a missing film is an answer; retrying it five times is slow and rude to a shared service | `test_404_is_not_retried` |
+| Toggling `append_credits` cannot serve the wrong cache | the two modes request different things, so they must write different filenames | `test_toggling_append_does_not_serve_a_credit_less_cache` |
+| A missing credits block is not an empty cast list | one means we cannot see the cast; the other means there isn't one. Collapsing them hides a fetch failure as a real fact | `test_no_credits_block_is_distinct_from_an_empty_cast` |
+| An interrupted write leaves no half-written file | `write_text` is not atomic; a truncated cache entry breaks *every* later run, not just this one | `test_an_interrupted_write_leaves_no_partial_file` |
+| A corrupt cache entry is a miss, not a crash | the old failure was a `JSONDecodeError` naming neither the film nor the fix | `test_a_corrupt_cache_entry_is_refetched_not_raised` |
+| The log reads back with the dtypes it was written with | the CSV holds `139`; a plain `read_csv` returns `139.0`, because the column also holds blanks for the ids that 404'd | `test_the_fetch_log_round_trips_without_floating_the_counts` |
 
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+**The cache key carries the policy.** `550__details_credits.json` and
+`550__details.json` are different files on purpose. If both modes wrote to
+`550__details.json`, flipping `api.append_credits` would read a response fetched
+under the other policy and the fetcher would report credits it never received. The
+filename is the only place that distinction can live, because the cache is checked
+before anything knows what the response contains.
 
+**`fetch_one` returns `(envelope, from_cache)`,** not just the envelope.
+`from_cache` describes *this run*, not the response — writing it into the JSON
+would make every cached file claim forever that it had been fetched live.
 
-def build_session(token: str, max_retries: int, backoff_factor: float) -> requests.Session:
-    """One Session for the whole run: connection reuse, one retry policy.
+**The session is built lazily, on the first cache miss.** So a fully cached run
+needs neither a token nor a network, and a missing token only becomes an error at
+the moment something actually has to be fetched. That is the difference between
+"the analysis re-runs in a meeting" and "the analysis re-runs in a meeting with
+wifi".
 
-    404 is deliberately NOT in status_forcelist. A missing film is an answer,
-    not a failure, and retrying it four times is rude and pointless.
-    """
-    session = requests.Session()
-    session.headers.update(
-        {
-            "Authorization": f"Bearer {token}",   # v4 token in a header: no key in any URL
-            "Accept": "application/json",
-            "User-Agent": "streamvault-catalog-analysis/0.1",
-        }
-    )
-    retry = Retry(
-        total=max_retries,
-        backoff_factor=backoff_factor,            # 0.5s, 1s, 2s, 4s, 8s
-        status_forcelist=(429, 500, 502, 503, 504),
-        allowed_methods=frozenset(["GET"]),
-        respect_retry_after_header=True,          # honour TMDb's Retry-After
-        raise_on_status=False,
-    )
-    session.mount("https://", HTTPAdapter(max_retries=retry, pool_connections=4, pool_maxsize=4))
-    return session
+**`fetched_at` is UTC and says so.** A naive local timestamp in a file that
+outlives a clock change is not evidence of anything, and this field is what the
+memo's as-of date rests on.
 
+> **"No row loops" does not apply here.** That rule is about stage 7 — don't loop
+> over DataFrame rows to compute statistics. Fetching is sequential I/O against a
+> rate-limited service; a loop is the right shape. Said explicitly in the decision
+> log so it doesn't read as an oversight.
 
-class RateLimiter:
-    """A floor on the gap between calls. Crude, and crude is correct here."""
-
-    def __init__(self, min_interval: float) -> None:
-        self.min_interval = min_interval
-        self._last = 0.0
-
-    def wait(self) -> None:
-        gap = time.monotonic() - self._last
-        if gap < self.min_interval:
-            time.sleep(self.min_interval - gap)
-        self._last = time.monotonic()
-
-
-def cache_path(raw_dir: Path, tmdb_id: int, endpoint: str) -> Path:
-    return raw_dir / f"{tmdb_id}__{endpoint}.json"
-
-
-def _envelope(tmdb_id: int, endpoint: str, status: int, payload: Any, request_path: str) -> dict:
-    return {
-        "tmdb_id": tmdb_id,
-        "endpoint": endpoint,
-        "request_path": request_path,   # path only — the token lives in a header
-        "http_status": status,
-        "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "payload": payload,
-    }
-
-
-def fetch_one(
-    session: requests.Session,
-    base_url: str,
-    raw_dir: Path,
-    limiter: RateLimiter,
-    tmdb_id: int,
-    endpoint: str,
-    timeout: float,
-    params: dict[str, str] | None = None,
-    force: bool = False,
-) -> dict:
-    """Return the envelope for one (id, endpoint), from cache when possible."""
-    path = cache_path(raw_dir, tmdb_id, endpoint)
-    if path.exists() and not force:
-        return json.loads(path.read_text(encoding="utf-8"))
-
-    request_path = f"/movie/{tmdb_id}" if endpoint == "details" else f"/movie/{tmdb_id}/{endpoint}"
-    limiter.wait()
-    response = session.get(
-        f"{base_url}{request_path}",
-        params=params or {},
-        timeout=timeout,            # every call has a timeout. Every one.
-    )
-
-    if response.status_code == 200:
-        payload: Any = response.json()
-    else:
-        # 404 and anything else that survived the retries: record, don't raise.
-        payload = None
-
-    envelope = _envelope(tmdb_id, endpoint, response.status_code, payload, request_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(envelope, ensure_ascii=False), encoding="utf-8")
-    return envelope
-```
-
-Then a `fetch_all(ids, ...)` that loops the ids, calls `fetch_one`, and returns a **fetch log**: one row per id with `http_status`, `fetched_at`, `from_cache`, and whether credits came back. Print progress every 25 films so Adjoa can see it's alive.
-
-> **"No row loops" does not apply here.** That rule is about stage 7 — don't loop over DataFrame rows to compute statistics. Fetching is inherently sequential I/O; a loop is the right shape. Say this explicitly in the decision log so nobody thinks you missed the requirement.
+✅ **ARTEFACT** — `data/processed/fetch_log.csv`: one row per id with HTTP status,
+`fetched_at`, cache hit, calls made, and whether credits arrived. Integer columns
+are `Int64`, for the same reason stage 1 is explicit about dtype: one film with no
+credits block must not turn every count in the column into a float.
 
 ## Step 3.2 🧠 DR-02: one call per film or two
 
@@ -772,33 +710,112 @@ The brief names two endpoints. TMDb also supports `?append_to_response=credits`,
 
 Decision: **append, with the two-call path kept behind the `api.append_credits` flag in settings.** That way the alternative isn't hypothetical — you can run it both ways and show the timing difference, which is what "rejected alternatives are real" means. Cost if wrong: none to correctness, but you must still prove credits came back for every film, so the fetch log carries a `has_credits` column and stage 4 asserts on it.
 
-## Step 3.3 🧑 Smoke-test on three ids before fetching 127
+## Step 3.3 🧑 Smoke-test on three ids before fetching 117
 
-Don't discover an auth problem on call 90. Fetch three ids by hand first, then look at the files:
-
-```bash
-python -c "import json,pathlib; p=sorted(pathlib.Path('data/raw').glob('*.json'))[0]; d=json.loads(p.read_text()); print(p.name, d['http_status'], d['fetched_at']); print(sorted(d['payload'].keys()))"
-```
-
-Check: status 200, a `fetched_at` that looks like now, `belongs_to_collection` and `credits` among the keys, and **no token anywhere in the file**.
+Don't discover an auth problem on call 90. Three ids first:
 
 ```bash
-grep -rl "Bearer" data/raw/ | head
+.venv/Scripts/python.exe -c "import sys; sys.path.insert(0,'src'); from streamvault.config import load_settings, load_token; from streamvault import fetch as F; s=load_settings(); ctx=F.context_from_settings(s); sess=F.build_session(load_token(), 5, 0.5); print([F.fetch_film(sess, ctx, i) for i in (550,155,603)])"
 ```
 
-That should print nothing.
+Checked, and what came back: status 200 for all three, `fetched_at` in the current
+hour, credits present, cast counts 75 / 139 / 37.
 
-## Step 3.4 🧑 Then the full fetch, once
-
-Run the full fetch. Expect a few minutes. Then:
+Then prove the token is not in the files it just wrote — and be careful which
+check you use, because the obvious one lies:
 
 ```bash
-ls data/raw/*.json | wc -l
+grep -rl "Bearer" data/raw/
 ```
 
-✅ **ARTEFACT** — `data/raw/` full of envelopes, and `data/processed/fetch_log.csv`: one row per id with HTTP status, timestamp, cache hit, and whether credits arrived. Every 404 is a ledger status update (`not_found_404`), not an exception.
+That printed **three files**, and all three are false positives: `"Medal Bearer"`
+and `"Flag Bearer"` are character names in the Star Wars credits. A check that
+cries wolf is as useless as one that stays silent — the second time it fires you
+stop reading it. Grep for the thing that would actually be wrong:
 
-🧠 **DR: what a 404 means.** A 404 is a real finding, not noise. Ask *which* ids 404 — if the dead ids cluster in one source batch or one era, that's a bias in the candidate list and belongs high in the risk ranking. "Four 404s" is a sentence; "all four 404s came from the emailed studio batch, and all four are pre-2000" is a finding.
+```bash
+grep -rl "Authorization" data/raw/
+```
+
+Nothing, which is what it must print. Then check the real token itself, without
+printing it:
+
+```bash
+.venv/Scripts/python.exe -c "import sys,pathlib; sys.path.insert(0,'src'); from streamvault.config import load_token; t=load_token(); print([str(p) for p in pathlib.Path('data/raw').rglob('*') if p.is_file() and t in p.read_text(encoding='utf-8',errors='ignore')] or 'NONE')"
+```
+
+`NONE`. (A test asserts the same guarantee, but against a fake token; this checks
+the real one.)
+
+🧠 **The second time this project has been caught by its own check.** The first
+was `grep -nv "^[0-9]*$"`, which reported a blank line as fine because `[0-9]*`
+matches zero digits (F4). Both failures are the same shape: the check was written
+by thinking about what the answer should be, not about what else could produce that
+answer. Write the check, then feed it a case you know the answer to.
+
+## Step 3.4 🧑 Settle row 95 with a live `/find` call
+
+This is F3, and it is worth doing before the full fetch because the answer changes
+what gets fetched. `resolve_foreign_ids` does it for every IMDb-shaped row it finds,
+so it also covers next quarter's file.
+
+**Result:** `tt0468569` → TMDb **155, *The Dark Knight* (2008-07-16)** — already on
+the list at rows 2 and 91. The hypothesis in the diagnosis held: resolving it would
+have added a *third* copy of one franchise film rather than recovering a lost one.
+Row 95 is excluded as `duplicate_other_namespace`. Recorded as DR-05.
+
+🧠 **The lesson worth keeping.** The obvious fix and the correct fix pointed in
+opposite directions, and the only thing that separated them was asking what the row
+*was* before deciding what to do with it. Nothing in the data looked wrong about
+recovering it.
+
+## Step 3.5 🧑 Then the full fetch, once
+
+```bash
+.venv/Scripts/python.exe run_pipeline.py
+```
+
+**Measured from an empty cache:** 117 API calls for 117 films in **20.3s**, append
+mode. A second run: **0 calls, 2.3s**. The briefed two-call path would have issued
+234.
+
+Every run appends these to `data/processed/run_timings.csv`, so the figure in the
+decision log can be checked against something. `fetch_log.csv` is overwritten each
+run, so after one cached re-run it reports 1 call in 0.7s — true of that run, and no
+longer evidence for a claim about acquisition cost. A number quoted in a report and
+held nowhere else is a memory, not a measurement.
+
+Then read what came back rather than assuming:
+
+```bash
+.venv/Scripts/python.exe -c "import pandas as pd; d=pd.read_csv('data/processed/fetch_log.csv'); print(d.http_status.value_counts()); print('credits for every 200:', bool(d[d.http_status==200].has_credits.all()))"
+```
+
+✅ **ARTEFACT** — `data/raw/` full of envelopes, `data/processed/fetch_log.csv`, and
+an `id_ledger.csv` that now reconciles **127 = 112 fetched + 6 duplicate + 5
+not_found_404 + 3 invalid + 1 duplicate_other_namespace**.
+
+## Step 3.6 🧠 DR-06: ask what the 404s have in common
+
+Five ids returned 404. "Five 404s" is a sentence; the finding is in what they share.
+
+Positions in the file — rows 18, 35, 73, 93, 99 — say nothing: they are spread
+through it. The ids say everything. Every one of the 112 that resolved is ≤ 301,528;
+every dead one is ≥ 7,733,901, with nothing in between and two consecutive pairs.
+TMDb issues ids sequentially, so those five belong to entries created long after any
+real back-catalog film's entry, and later removed.
+
+```bash
+.venv/Scripts/python.exe -c "import pandas as pd; l=pd.read_csv('data/processed/id_ledger.csv'); print(l.groupby(l.status=='not_found_404').tmdb_id.agg(['min','max','count']))"
+```
+
+🧠 **What makes this a finding rather than a tidy-up.** It changes the risk
+*downward*: a random loss of 5 films could skew the comparison, while five entries
+that were probably never back-catalog films cannot skew it much. And it leaves a gap
+that cannot be closed — a deleted entry has no year and no collection, so there is
+no way to test whether the loss falls unevenly on pre-2000 films or franchises. Say
+that in the memo. An unclosable gap stated plainly reads as competence; the same gap
+unmentioned reads as an oversight when someone finds it.
 
 ---
 

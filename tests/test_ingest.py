@@ -12,10 +12,12 @@ import pandas as pd
 import pytest
 
 from streamvault.ingest import (
+    assert_ledger,
     build_ledger,
     classify_value,
+    load_ledger,
     reconciliation_summary,
-    assert_ledger,
+    save_ledger,
 )
 
 
@@ -145,7 +147,7 @@ def test_every_unusable_row_carries_a_reason(messy_file):
     assert (unusable["reason"].str.len() > 0).all()
 
 
-def test_count_mismatch_is_a_note_not_a_crash(messy_file, capsys):
+def test_count_mismatch_is_a_note_not_a_crash(messy_file):
     """Next year the list is ~500 titles. A hard assert would break the rerun."""
     notes = assert_ledger(build_ledger(messy_file, expected_id_count=127))
     assert any("RECONCILIATION NOTE" in note for note in notes)
@@ -170,3 +172,44 @@ def test_clean_file_has_no_findings(tmp_path):
     ledger = build_ledger(path, expected_id_count=3)
     assert assert_ledger(ledger) == []
     assert (ledger.loc[ledger["status"] != "header_row", "status"] == "parsed").all()
+
+
+# --------------------------------------------------------------------------
+# The artefact round trip — the file boundary is where the guarantee leaks
+# --------------------------------------------------------------------------
+
+def test_ledger_round_trips_without_floating_the_ids(messy_file, tmp_path):
+    """Writing it right is half the job; reading it back is the other half.
+
+    A plain pd.read_csv on this file returns tmdb_id as float64, because the
+    column also holds the blanks belonging to rows with no id. Every id would
+    then carry a .0 and 404 against the API — this module's whole purpose,
+    undone one line after it succeeded.
+    """
+    ledger = build_ledger(messy_file, expected_id_count=8)
+    path = tmp_path / "id_ledger.csv"
+    save_ledger(ledger, path)
+
+    naive = pd.read_csv(path)
+    assert str(naive["tmdb_id"].dtype) == "float64", (
+        "if this ever fails, pandas changed and load_ledger may be redundant"
+    )
+
+    back = load_ledger(path)
+    assert str(back["tmdb_id"].dtype) == "Int64"
+    assert back.loc[back["status"] == "parsed", "tmdb_id"].tolist() == [155, 550, 603]
+    assert back["status"].tolist() == ledger["status"].tolist()
+    assert len(back) == len(ledger)
+
+
+def test_round_trip_keeps_reasons_as_text_not_missing(messy_file, tmp_path):
+    """An empty reason means "nothing to report", not "no reason recorded"."""
+    ledger = build_ledger(messy_file, expected_id_count=8)
+    path = tmp_path / "id_ledger.csv"
+    save_ledger(ledger, path)
+    back = load_ledger(path)
+
+    assert back["reason"].notna().all()
+    unusable = back.loc[back["status"].isin(["invalid_id", "duplicate"])]
+    assert (unusable["reason"].str.len() > 0).all()
+    assert (back.loc[back["status"] == "parsed", "reason"] == "").any()

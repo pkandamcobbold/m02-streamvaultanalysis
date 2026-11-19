@@ -15,8 +15,14 @@
 > - **J15 (one request or two)** — `append_to_response=credits`, with the two-call path kept
 >   behind a settings flag so the rejected alternative is runnable, not hypothetical.
 >
-> Still open: Q12 (time budget), Q14 (the four slices), Q16 (as-of date), and whether the
-> "one improvement" must be code. Each has a stated default in the runbook, so none blocks work.
+> - **Q16 (as-of date)** — settled at stage 2, since the data now exists and the question
+>   stopped being hypothetical. The memo's as-of date is the **`fetched_at` stamp carried in
+>   the cached envelopes**, not the date the memo is written. The two differ as soon as a run
+>   reads from cache — which is the normal case, and the case where quoting today's date
+>   would overstate how fresh the numbers are. Currently 2026-11-19.
+>
+> Still open: Q12 (time budget), Q14 (the four slices), and whether the "one improvement"
+> must be code. Each has a stated default in the runbook, so none blocks work.
 >
 > The step-by-step build order, including every manual setup task, is in
 > [02_build_runbook.md](02_build_runbook.md). This file stays the *why*; that one is the *how*.

@@ -5,11 +5,13 @@ project pulls public data on the candidate titles, checks it for problems, and
 produces a recommendation with a shortlist to negotiate from — the same way every
 time, so it can be re-run each quarter without anyone having to remember how.
 
-> **Status: in progress.** The project plan, the source brief and the full build
-> runbook are in [`docs/`](docs/). The pipeline itself is being built stage by
-> stage; `run_pipeline.py` does not exist yet, so the Run section below describes
-> where it is going rather than what works today. This note goes away when the
-> clean-clone test passes.
+> **Status: in progress — stages 1 and 2 of 10 work.** `python run_pipeline.py`
+> loads the candidate list and fetches every film from TMDb, and writes
+> `data/processed/id_ledger.csv` and `fetch_log.csv`. The analysis stages that
+> turn those into a recommendation are not built yet, so `reports/memo.md`,
+> `spotcheck.md` and the KPI tables listed below do not exist. The project plan,
+> the source brief and the full build runbook are in [`docs/`](docs/). This note
+> goes away when the clean-clone test passes.
 
 ---
 
@@ -75,16 +77,22 @@ around the `=`. That file is ignored by git and never leaves your machine.
 python run_pipeline.py
 ```
 
-**The first run fetches the data** — a few minutes, and it needs an internet
-connection. Every response is saved to `data/raw/`, so **every run after that
-reads from disk** and takes seconds. That is deliberate: a re-run during a
-meeting does not depend on the network, and it does not hammer a service other
-people are sharing.
+**The first run fetches the data** — about half a minute for the current list of
+117 ids, and it needs an internet connection. Every response is saved to
+`data/raw/`, so **every run after that reads from disk**: the second run takes
+about two seconds and makes no API calls at all. That is deliberate — a re-run
+during a meeting does not depend on the network, it does not need the token, and
+it does not hammer a service other people are sharing.
 
-If a run is interrupted, just start it again. It picks up where it stopped.
+If a run is interrupted, just start it again. It picks up where it stopped —
+including when it was interrupted *while writing* a file, which used to leave a
+half-written response that broke every later run.
 
-To refresh the data deliberately — a new quarter, say — delete `data/raw/` and
-run again.
+To refresh the data deliberately — a new quarter, say:
+
+```bash
+python run_pipeline.py --force
+```
 
 ---
 
@@ -97,6 +105,7 @@ run again.
 | `reports/decision_log.md` | Every judgement call, why it was made, and what it costs if it's wrong. |
 | `reports/spotcheck.md` | A live re-check of a sample of titles against the source, to catch our own errors. |
 | `data/processed/id_ledger.csv` | Every title on the candidate list and what happened to it. Nothing disappears silently. |
+| `data/processed/run_timings.csv` | How long each stage took, every time it has been run. Appended to, never overwritten. |
 | `data/processed/` | The KPI tables, timings and exclusions behind the memo. |
 | `data/raw/` | Untouched copies of what the API returned, each stamped with when it was fetched. |
 
@@ -162,4 +171,12 @@ python -m pytest
 ```
 
 Runs the tests, which cover the parts that don't need live data: parsing the
-candidate list, the cleaning rules, and the join assertions.
+candidate list, the fetcher's caching and retry behaviour, the cleaning rules,
+and the join assertions.
+
+They do **not** prove that a fresh clone works. Pytest is configured to find the
+code in `src/` whether or not `pip install -r requirements.txt` succeeded, so a
+green suite says nothing about whether `python run_pipeline.py` runs for someone
+who has just cloned the repo. Only actually cloning it into a new folder and
+running it proves that, which is why that check is a step of its own in the
+runbook rather than something the tests can be trusted to cover.

@@ -51,6 +51,20 @@ LEDGER_COLUMNS = [
     "source_row", "raw_value", "tmdb_id", "status", "reason", "in_money_metrics",
 ]
 
+# Read the ledger back with these, never with inference. The written CSV holds
+# `155`, but pandas reading it unaided returns `155.0`, because the column also
+# holds the blanks belonging to rows that have no id — the blank row, the
+# placeholders, the header. That is this module's entire reason for existing,
+# undone at the file boundary, so load_ledger below is not optional politeness.
+LEDGER_DTYPES = {
+    "source_row": "Int64",
+    "raw_value": "str",
+    "tmdb_id": "Int64",
+    "status": "str",
+    "reason": "str",
+    "in_money_metrics": "boolean",
+}
+
 # Statuses a row can carry leaving stage 1. Later stages add not_found_404,
 # not_released, analysed and excluded_<reason>.
 STATUS_PARSED = "parsed"
@@ -94,6 +108,24 @@ def read_raw_rows(path: Path) -> pd.DataFrame:
     return frame
 
 
+def normalise_cell(raw: str) -> str:
+    """Strip the invisible junk a spreadsheet leaves behind, then the quotes.
+
+    Written with escapes rather than the characters themselves so that the
+    thing being removed is visible to whoever reads this next: ﻿ is a
+    byte-order mark,   a non-breaking space. Both render as nothing or as
+    an ordinary space, which is exactly why they cost hours.
+    """
+    return (
+        raw.replace("﻿", "")
+        .replace(" ", " ")
+        .strip()
+        .strip('"')
+        .strip("'")
+        .strip()
+    )
+
+
 def classify_value(raw: str) -> tuple[int | None, str, str]:
     """Classify one raw cell. Returns (tmdb_id, status, reason).
 
@@ -102,14 +134,7 @@ def classify_value(raw: str) -> tuple[int | None, str, str]:
     IMDb check comes before the catch-all so the reason names what it actually
     is instead of calling it unparseable.
     """
-    text = (
-        raw.replace("﻿", "")      # byte-order mark
-        .replace(" ", " ")        # non-breaking space, a copy-paste artefact
-        .strip()
-        .strip('"')
-        .strip("'")
-        .strip()
-    )
+    text = normalise_cell(raw)
 
     if text == "":
         return None, STATUS_INVALID, "blank row"
@@ -246,6 +271,24 @@ def save_ledger(ledger: pd.DataFrame, path: Path) -> None:
     """Write the ledger. The one artefact stage 1 must leave behind."""
     path.parent.mkdir(parents=True, exist_ok=True)
     ledger.to_csv(path, index=False)
+
+
+def load_ledger(path: Path) -> pd.DataFrame:
+    """Read the ledger back with explicit dtypes, never by inference.
+
+    Use this everywhere — later stages, the notebook, the spot-check. A plain
+    `pd.read_csv` on this file returns `tmdb_id` as float64, and every id then
+    carries a `.0` that 404s against the API. The round trip is tested, because
+    an artefact that silently degrades on the way back in is a worse fault than
+    one that never existed: the numbers still look right.
+
+    `reason` is read as a string and empty reasons come back as NA, so it is
+    filled: "no reason recorded" and "nothing to report" are different facts,
+    and only rows that failed should carry text.
+    """
+    ledger = pd.read_csv(path, dtype=LEDGER_DTYPES, keep_default_na=True)
+    ledger["reason"] = ledger["reason"].fillna("")
+    return ledger
 
 
 def load_id_list(path: Path, expected_id_count: int) -> tuple[pd.DataFrame, list[int]]:

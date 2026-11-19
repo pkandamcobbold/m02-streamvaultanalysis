@@ -827,34 +827,79 @@ unmentioned reads as an oversight when someone finds it.
 
 ## Step 4.1 💻 `src/streamvault/flatten.py`
 
-Build these, each from the cached envelopes:
+Four tables. The grain of each is in its builder's docstring **and asserted**, because
+a grain mistake is the one bug class that never raises — a sum over `cast` counts a
+film once per actor and returns a plausible number.
 
-| Table | Grain | Key fields |
-|-------|-------|-----------|
-| `films` | one row per film | `tmdb_id`, `imdb_id`, `title`, `release_date`, `status`, `budget`, `revenue`, `runtime`, `vote_average`, `vote_count`, `popularity`, `adult`, `original_language`, `collection_id`, `collection_name` |
-| `cast` | one row per film per cast member | `tmdb_id`, `person_id`, `name`, `character`, `billing_order` |
-| `crew` | one row per film per crew credit | `tmdb_id`, `person_id`, `name`, `job`, `department` |
-| `genres` | one row per film per genre | `tmdb_id`, `genre_id`, `genre_name` |
+| Table | Grain | Rows (actual) |
+|-------|-------|------|
+| `films` | one row per film | 112 |
+| `cast` | one row per film per cast member | 7,827 |
+| `crew` | one row per film per crew **credit** | 24,932 |
+| `genres` | one row per film per genre | 320 |
 
-Use `pd.json_normalize` with `record_path` and `meta` for the nested lists, e.g.:
+**Look at a payload before writing the flattener.** Doing that first is what produced
+the one non-obvious design constraint: TMDb reuses the field names `id`, `name`,
+`popularity` and `adult` in the film object, in every cast entry *and* in every crew
+entry, and `json_normalize` turns the collection into `belongs_to_collection.name`
+with a dot in it.
 
-```python
-cast = pd.json_normalize(
-    payloads,                                  # list of credit payloads
-    record_path=["cast"],
-    meta=["id"],
-    meta_prefix="film_",
-    errors="ignore",                           # a film with no cast must not crash this
-)
+```bash
+.venv/Scripts/python.exe -c "import json,pathlib; p=sorted(pathlib.Path('data/raw').glob('*details_credits*'))[0]; d=json.loads(p.read_text())['payload']; print(sorted(d)); print(sorted(d['credits']['cast'][0]))"
 ```
 
-Three things to get right:
+So **every column is named once, at the point of creation**, and no table has a column
+called `id` or `name`. Left alone, those names collide on the first merge, pandas
+invents `id_x` and `id_y`, and the join still "works" — on the wrong columns. There is
+a test asserting no table has a column named `id`, `name`, or anything containing a
+dot.
 
-1. **`belongs_to_collection` is a nested object or `null`.** Flatten it to two flat columns on `films` — `collection_id`, `collection_name` — in one place, once. This single field is the entire franchise/standalone split, so it deserves its own assertion: no film may have a `collection_name` without a `collection_id`.
-2. **Rename generated columns once, immediately.** `json_normalize` gives you `id`, `film_id`, `belongs_to_collection.name`. Rename at the point of creation, never twice, never downstream. Dots in column names break attribute access and will bite you.
-3. **A film with no cast or no crew still exists.** Its absence from `cast` must not remove it from `films`. That's what stage 4's `indicator=True` is for.
+**`record_path` is deliberately not used for cast and crew.** It raises on a film whose
+credits block is absent, and the usual workaround, `errors="ignore"`, collapses "this
+film has no cast" into "we never fetched the credits" — a distinction stage 2 went to
+trouble to preserve. An explicit loop over 112 payloads costs 1.4s and cannot make
+that mistake.
 
-✅ **ARTEFACT** — row counts and stated grain per table; the counts go in the diagnosis. `len(films)` must equal the number of ids with HTTP 200.
+🧠 **The one derived column stage 3 is allowed to add** is the franchise label, and
+it has three values, not two: `franchise` (≥2 of its collection on our list),
+`lone_collection_member` (in a collection, but the only one of it on offer), and
+`standalone` (no collection). Belonging to a collection is *not* the same as being a
+bundle anyone can sell. See DR-09 — this is the central split of the whole analysis,
+and the threshold lives in `franchise.min_members_on_list` so the alternative stays
+runnable.
+
+✅ **ARTEFACT** — `data/interim/films.csv`, `cast.csv`, `crew.csv`, `genres.csv`
+(gitignored: derived, regenerated in 1.4s). `len(films)` equals the number of ids that
+returned HTTP 200, asserted.
+
+## Step 4.2 🧑 Then look at what the shape tells you
+
+Flattening is where the data stops being 112 JSON files and starts being a thing you
+can ask questions of. Ask them now, before building anything on top:
+
+```bash
+.venv/Scripts/python.exe -c "import pandas as pd; f=pd.read_csv('data/interim/films.csv'); print(f.franchise_status.value_counts()); print('pre-2000:', (f.release_date.str[:4].astype(int)<2000).sum())"
+```
+
+This produced the two findings that matter most so far, neither of them a data fault:
+
+- **F7: the standalone group is 16 films** — 87 franchise against 16 standalone, and
+  post-2000, 59 against **8**. The brief's central comparison has a thin side, and a
+  median over 8 films is the least stable number in the project. Ranked the highest
+  risk in the diagnosis: no amount of cleaning fixes it, and it changes what can
+  honestly be concluded rather than how many films are involved.
+- **F8: no disguised money nulls at all** — zero films with `budget == 0` or
+  `revenue == 0`, none missing a runtime or release date, all 112 `Released`, none
+  `adult`. The fault most expected in a list merged from three sources is simply
+  absent. Recorded anyway: a check that finds nothing is worth as much as one that
+  finds something, *provided it was a real check* — and this project has already been
+  caught twice by checks that reported nothing because they were wrong.
+
+🧠 **Two facts to carry into stage 4.** 914 crew rows are the same person in more than
+one job on one film, so any count of *people* must deduplicate and any count of
+*credits* must not. And **9 films have more than one credited director** — a naive
+merge will pick whichever row comes first and produce an attribution that is arbitrary
+but looks authoritative. Resolve it explicitly (DR-10).
 
 ---
 

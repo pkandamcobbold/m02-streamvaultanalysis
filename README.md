@@ -5,13 +5,15 @@ project pulls public data on the candidate titles, checks it for problems, and
 produces a recommendation with a shortlist to negotiate from — the same way every
 time, so it can be re-run each quarter without anyone having to remember how.
 
-> **Status: in progress — stages 1 and 2 of 10 work.** `python run_pipeline.py`
-> loads the candidate list and fetches every film from TMDb, and writes
-> `data/processed/id_ledger.csv` and `fetch_log.csv`. The analysis stages that
-> turn those into a recommendation are not built yet, so `reports/memo.md`,
-> `spotcheck.md` and the KPI tables listed below do not exist. The project plan,
-> the source brief and the full build runbook are in [`docs/`](docs/). This note
-> goes away when the clean-clone test passes.
+> **Status: in progress — stages 1 to 3 of 10 work.** `python run_pipeline.py`
+> loads the candidate list, fetches every film from TMDb, and flattens the
+> results into four tables. It writes `data/processed/id_ledger.csv`,
+> `fetch_log.csv` and `run_timings.csv`, plus `data/interim/films.csv` and its
+> three companions. The stages that turn those into a recommendation are not
+> built yet, so `reports/memo.md`, `spotcheck.md` and the KPI tables listed
+> below do not exist. The project plan, the source brief and the full build
+> runbook are in [`docs/`](docs/). This note goes away when the clean-clone
+> test passes.
 
 ---
 

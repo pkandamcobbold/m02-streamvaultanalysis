@@ -8,8 +8,10 @@
 > will fill it. A decision record with an invented impact figure is worse than
 > one that admits the measurement is still to come.
 >
-> **Status: stages 1–2 complete.** DR-00 to DR-06 below. Cleaning and KPI
-> decisions (DR-07 onward) arrive with stages 6 and 7.
+> **Status: stages 1–3 complete.** DR-00 to DR-10 below. DR-07 and DR-08 came
+> out of an audit of stages 1–2 rather than from building them, and are kept
+> because both were judgement calls with real alternatives. Cleaning and KPI
+> decisions (DR-11 onward) arrive with stages 6 and 7.
 
 ---
 
@@ -245,6 +247,71 @@
    stages away from the cause. That is the exact bug stage 1 was built to
    prevent, which is what makes it worth a decision record rather than a
    commit message.
+
+---
+
+### DR-09: three franchise categories, not two — Risk rank: **high** (this is the central split)
+
+1. **Observation** — 96 of 112 films belong to a TMDb collection, but 9 of those
+   are the *only* film of their collection on the candidate list. A collection
+   with one film on offer is not a bundle anyone can sell. So the data has
+   three groups, not the two the brief names: 87 franchise, 9 lone collection
+   members, 16 true standalones (F7).
+2. **Options** — (a) franchise = `belongs_to_collection is not null`, giving
+   96 vs 16; (b) franchise = in a collection with ≥2 films on our list, and
+   fold the 9 lone members into standalone, giving 87 vs 25; (c) keep all
+   three categories and decide at the KPI stage, with the threshold in
+   settings.
+3. **Decision** — (c). `franchise.min_members_on_list = 2` controls it, and the
+   9 lone members carry their own label so they can be moved either way
+   without recomputing anything. Option (a) is the tempting one and it is
+   wrong: it would count a film as a "bundle" when there is no bundle to buy.
+4. **Impact** — directly changes the central comparison's group sizes:
+
+   | Definition | Franchise | Standalone |
+   |---|---|---|
+   | (a) any collection | 96 | 16 |
+   | (b) ≥2 on list, lone members → standalone | 87 | 25 |
+   | (c) three groups *(chosen)* | 87 | 16, plus 9 reported separately |
+
+   Stage 7 reports the headline comparison under (c) and a sensitivity row
+   under (b), because moving 9 films out of a 16-film group changes it by 56%.
+   No KPI numbers exist yet, so the impact cannot be given in performance
+   terms until stage 7 — flagged there rather than guessed here.
+5. **Cost if wrong** — if the 9 lone members really are franchise films that
+   Kwame could buy individually, excluding them understates the franchise
+   group by 10% and overstates nothing. If they are treated as standalones
+   instead, a 16-film group becomes 25 and its median is pulled by films whose
+   performance may owe everything to a franchise the list does not contain.
+   The second error is worse, which is why the default is (c). At 500 titles
+   the lone-member group should shrink proportionally — if it does not, the
+   list is being assembled by picking single entries out of franchises, which
+   is itself worth telling Kwame.
+
+---
+
+### DR-10: the crew grain is one row per credit, not per person — Risk rank: medium
+
+1. **Observation** — 914 of 24,932 crew rows are the same person in more than
+   one job on the same film: a writer-director, a producer-director. And 9 of
+   112 films have more than one person credited as Director.
+2. **Options** — (a) deduplicate to one row per person per film at stage 3,
+   losing the jobs; (b) keep one row per credit and resolve the director
+   question explicitly at stage 4; (c) keep credits and add a derived
+   "primary director" column here.
+3. **Decision** — (b). Stage 3 changes shape and nothing else — no filtering,
+   no cleaning, no derived judgements — so that every judgement lives in one
+   place with a record. The exception is the franchise label (DR-09), which is
+   in `add_franchise_flags` and named as derived.
+4. **Impact** — none yet by construction. It determines what stage 4 must
+   handle: with 9 multi-director films, a naive merge would silently pick
+   whichever row comes first and produce a director attribution that is
+   arbitrary but looks authoritative.
+5. **Cost if wrong** — (a) would have been the silent error. Deduplicating a
+   writer-director to one row makes any count of *credits* wrong, while a
+   count of *people* needs the deduplication — so both numbers have to be
+   derivable from the same table, and only the per-credit grain allows that.
+   A note is printed at every run so the 914 figure is never a surprise.
 
 ---
 

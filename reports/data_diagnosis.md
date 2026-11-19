@@ -5,10 +5,14 @@
 > (stage 7) — a problem's rank is the size of its effect on the answer, and that
 > cannot be known before there is an answer to move.
 >
-> **Status: stages 1–2 complete.** F1–F5 are from the candidate list itself,
-> before any API call. F6 is from the acquisition. Findings from the *contents*
-> of the fetched data — disguised nulls, implausible money, non-features —
-> follow after stage 5.
+> **Status: stages 1–3 complete.** F1–F5 are from the candidate list itself,
+> before any API call. F6 is from the acquisition. F7–F8 are from the flattened
+> tables. Findings that need distributions rather than counts — implausible
+> money, unreliable ratings, real extremes versus errors — follow after stage 5.
+>
+> **Risk order as it stands: F7, then F3 and F6, then F1, F2, F4.** F7 is ranked
+> first because it is the only one that limits what the analysis can conclude
+> rather than how many films it runs on.
 >
 > Data as of **2026-11-19** (the `fetched_at` stamp on every envelope in
 > `data/raw/`; the pipeline reads that date rather than today's, so a memo
@@ -239,6 +243,124 @@ cheapest bias test in the project.
 
 ---
 
+## F7 — The standalone group is 16 films · risk: **high**
+
+**Detected:** stage 3, by counting collection membership rather than assuming it.
+This is not a data fault. Every value is correct. It is a property of the candidate
+list that limits what the analysis can honestly conclude, and on current evidence it
+is the largest risk to the recommendation — larger than every fault in F1–F6
+combined.
+
+**The split.** 96 of 112 films belong to a TMDb collection, but belonging to a
+collection is not the same as being a bundle Kwame can buy. A collection with one
+film on our list is not a bundle anyone is selling:
+
+| Category | Films | Collections | What it means |
+|---|---|---|---|
+| **franchise** | **87** | 23 | in a collection with ≥2 of its films on our list — a real bundle |
+| **lone_collection_member** | **9** | 9 | belongs to a franchise, but only one film of it is on offer |
+| **standalone** | **16** | — | no collection at all |
+
+And in Yaw's window the standalone group nearly halves again:
+
+| Window | Films | franchise | lone member | standalone |
+|---|---|---|---|---|
+| All years (1966–2019) | 112 | 87 | 9 | **16** |
+| 2000 onward | 71 | 59 | 4 | **8** |
+
+**Why this is ranked above every data-quality finding.** The brief's central question
+is franchise versus standalone. Answering it means comparing a group of 87 against a
+group of **16** — and post-2000, 59 against **8**. A median over 8 films moves
+materially if one film is added or removed, so the comparison Yaw cares about rests
+on the least stable number in the project. Nothing in the cleaning or the KPI code
+can fix that; only a larger candidate list could.
+
+**What it does to the recommendation.** Three consequences, all of which belong in
+the memo rather than in a footnote:
+
+1. **Every statistic must be reported with its group size beside it.** A median with
+   n=8 under it invites the right amount of scepticism; the same median alone does
+   not. (This is why T7 asks for counts beside every statistic — now there is a
+   concrete reason, not a convention.)
+2. **The franchise-versus-standalone verdict will be directional, not precise.** "On
+   this list, franchises show a higher floor" is supportable. "Franchises outperform
+   standalones by X%" is not, with n=8 on one side.
+3. **The list itself is evidence about the sourcing.** 78% of the candidates are
+   franchise films. Whoever assembled it across three sources was already leaning
+   toward bundles, which means the list cannot be used to argue that bundles are more
+   available in the market — that would be reasoning from the selection back to the
+   population.
+
+**Cost if wrong:** nil to correctness; this is a limitation, not an error. The cost of
+*not stating it* is a board making a $14M decision on a comparison whose weaker side
+is eight films, believing it to be as solid as the 112-film headline suggests.
+
+**At 500 titles:** re-check first. If the proportions hold, the standalone group grows
+to roughly 70 and the comparison becomes properly stable — which is itself worth
+telling Kwame, because it means the method improves with the next list rather than
+needing to be rebuilt.
+
+---
+
+## F8 — The money fields are complete, which was not expected · risk: **none** (good news, verified)
+
+**Detected:** stage 3, checking for the fault before assuming it.
+
+A list assembled from three sources over four years is where disguised nulls live, and
+`budget == 0` / `revenue == 0` is TMDb's classic one — a zero that is really "unknown"
+and would compute an ROI of zero or infinity. So it was checked explicitly:
+
+| Check | Films affected |
+|---|---|
+| `budget == 0` | **0** of 112 |
+| `revenue == 0` | **0** of 112 |
+| missing `runtime` | 0 |
+| missing `release_date` | 0 |
+| `status != "Released"` | 0 |
+| `adult == True` | 0 |
+
+**Why this is recorded rather than passed over.** A check that finds nothing is worth
+exactly as much as one that finds something, provided it was a real check — and this
+project has already been caught twice by checks that reported nothing because they
+were wrong (F4's `[0-9]*`, and the `Bearer` grep in the runbook). So: the counts above
+come from the flattened `films` table, which has one asserted row per film, and the
+test suite pins the dtype so a zero cannot be hiding as a NaN or vice versa.
+
+**What it means for the settings.** `performance.treat_zero_money_as_missing = true`
+currently has nothing to act on. It stays, because next quarter's list may not be this
+clean, but the decision log must not claim it changed an answer here: it changed
+nothing, and saying so is the honest version.
+
+**Still to check at stage 5**, because "present" is not "plausible": a budget of 5
+(reported in millions by mistake), a revenue smaller than a plausible print-and-
+advertising spend, and a high `vote_average` resting on a handful of votes.
+
+---
+
+## Stage 3 output: the four tables and their grains
+
+| Table | Grain | Rows |
+|---|---|---|
+| `films` | one row per film | 112 |
+| `cast` | one row per film per cast member | 7,827 |
+| `crew` | one row per film per crew **credit** | 24,932 |
+| `genres` | one row per film per genre | 320 |
+
+Grains are asserted, not assumed: `films.tmdb_id` is unique, every child row
+references a film that exists, and a `collection_name` without a `collection_id` is a
+hard failure because the franchise split rests entirely on that field.
+
+Two facts about the crew table worth carrying forward: **914 rows are the same person
+in more than one job on the same film** (a writer-director), so any count of *people*
+must deduplicate and any count of *credits* must not; and **9 films have more than one
+director**, which stage 4 has to resolve explicitly rather than by taking whichever row
+the merge happens to return first.
+
+Coverage is complete where the analysis needs it: all 112 films have at least one
+director, and all 112 have a billed lead (`billing_order == 0`).
+
+---
+
 ## The claim register: what has been tested so far
 
 The claims in `docs/00_project_plan.md` Part 4 are what the team believes. Findings
@@ -248,12 +370,12 @@ Every row says which stage settles it, so nothing sits in "pending" by accident.
 | | Claim | Status | What the evidence says |
 |---|---|---|---|
 | **CL6** | "The list has 127 titles" *(implicit)* | **Answered — false as meant, true as a row count** | The file holds exactly 127 data rows, so nobody miscounted. But 127 ≠ 127 *usable films*: 6 rows duplicate an earlier id, 1 is the same film under an IMDb id, 5 ids no longer exist on TMDb, 3 are placeholders or blank. The analysis runs on **112**. Anyone quoting "127 titles" to the board would be quoting a row count as a film count. (F1–F6) |
-| **CL7** | "TMDb data is accurate enough to decide on" *(implicit)* | Partly answered | What has been checked is *availability*, not accuracy: 112 of 117 ids resolve, and all 112 returned a credits block. Whether the money fields are plausible is stage 5; whether our figures match the live source is the stage-9 spot-check. |
-| **CL1** | "Franchise bundles are the safer buy" | Pending — stage 7 | Nothing yet. Note for later: F3 would have put a third copy of one franchise film into every KPI, which is the direction that would have *flattered* this claim. |
-| **CL2** | "We overpay for weak middle entries" | Pending — stage 7 | Needs collection membership and release order, which arrive at stage 3. |
-| **CL3** | "Cherry-picking standalone hits beats bundles" | Pending — stage 7 | — |
-| **CL4** | "Talent is a reliable lever" | Pending — stage 7 | Precondition met: credits are present for all 112 films, so no-one is excluded for want of data. Cast counts 9–177. |
-| **CL5** | "Pre-2000 numbers can't be trusted" *(Yaw)* | Pending — stage 7, both windows | Nothing yet, and F6 is an honest obstacle: the 5 dead ids have no year, so the diagnosis cannot say whether the losses fall unevenly on pre-2000 films. |
+| **CL7** | "TMDb data is accurate enough to decide on" *(implicit)* | Partly answered, so far favourably | Completeness is established: 112 of 117 ids resolve, all 112 carry credits, and **no** film has a zero budget, zero revenue, missing runtime or missing release date (F8) — the disguised-null fault this was most likely to fail on is simply absent. Still open: whether present values are *plausible* (stage 5) and whether they match the live source (stage 9). |
+| **CL1** | "Franchise bundles are the safer buy" | Pending — stage 7, **and already constrained** | The groups are now sized: 87 franchise films against 16 standalone, 59 against 8 post-2000 (F7). Whatever stage 7 finds, this claim can be answered directionally and not precisely. Note too that F3 would have put a third copy of one franchise film into every KPI — the direction that would have *flattered* this claim. |
+| **CL2** | "We overpay for weak middle entries" | Pending — stage 7 | Precondition now met: 23 collections carry ≥2 films on the list, sized 2 to 8 (Harry Potter 8, Star Wars 6, Pirates 5, Mission: Impossible 5). Position-within-series is computable from `release_date`, which is present for all 112 films. |
+| **CL3** | "Cherry-picking standalone hits beats bundles" | Pending — stage 7 | Weakly answerable at best: "the top standalones" would be chosen from a pool of 16, and `shortlist.n_standalones = 5` means picking the top 5 of 16. That is cherry-picking from a thin list, and the claim's own logic makes the thinness matter. |
+| **CL4** | "Talent is a reliable lever" | Pending — stage 7 | Precondition met in full: credits present for all 112 films (cast counts 9–177), every film has a billed lead and at least one director. The constraint will be `talent.min_films_for_reliable = 3` against a 112-film pool, not missing data. |
+| **CL5** | "Pre-2000 numbers can't be trusted" *(Yaw)* | Pending — stage 7, both windows | Both windows are viable: 41 films pre-2000, 71 from 2000 on, spanning 1966–2019. But Yaw's window is where F7 bites hardest — 8 standalone films — so the honest answer may be that his concern cannot be *settled* either way on this list. Two obstacles are already known: the 5 dead ids have no year, so F6's loss cannot be tested for era bias. |
 | **CL8** | "The trilogy failed / the passed bundle was a miss" | Out of scope by design | Note only. The method should be able to score any bundle; proving Kwame's history is not this project's job. |
 
 ---
@@ -261,10 +383,12 @@ Every row says which stage settles it, so nothing sits in "pending" by accident.
 ## Still to assess (requires stage 3 onward)
 
 - Merged/redirected TMDb entries: two different ids returning the same film
-- Disguised nulls in the money fields: `budget == 0`, `revenue == 0`
+- ~~Disguised nulls in the money fields: `budget == 0`, `revenue == 0`~~ — checked at
+  stage 3, none found (F8)
 - Implausible money values (a budget of `5`, reported in millions by mistake)
-- Non-feature entries: `adult`, `status != "Released"`, very short runtimes
-- Films with no director or no cast
+- ~~Non-feature entries: `adult`, `status != "Released"`~~ — checked at stage 3, none
+  found (F8). Very short runtimes still to check as a distribution, not a flag
+- ~~Films with no director or no cast~~ — checked at stage 3: all 112 have both
 - Rating reliability: high `vote_average` on a handful of votes
 - Whether any of the above falls unevenly on franchise vs standalone, or pre- vs
   post-2000 — which is what turns a tidiness problem into a risk to the recommendation

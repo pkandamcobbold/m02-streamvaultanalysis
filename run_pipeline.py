@@ -18,7 +18,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
-from streamvault import fetch, timings
+from streamvault import fetch, flatten, timings
 from streamvault.config import MissingTokenError, load_settings
 from streamvault.ingest import load_id_list, reconciliation_summary, save_ledger
 
@@ -81,6 +81,20 @@ def main(argv: list[str] | None = None) -> int:
 
     save_ledger(ledger, processed / "id_ledger.csv")
 
+    # --- Stage 3: flatten to tables --------------------------------------
+    print()
+    print("=" * 72)
+    print("Stage 3 — flatten to one table per grain")
+    print("=" * 72)
+    started = time.monotonic()
+    films_fetched = int((log["http_status"] == 200).sum())
+    tables = flatten.run(settings, expected_films=films_fetched)
+    timings.record(
+        timings_path, "3_flatten", time.monotonic() - started,
+        rows=len(tables["films"]), run_at=run_at,
+        note=f"{len(tables['cast'])} cast, {len(tables['crew'])} crew rows",
+    )
+
     print()
     print("-" * 72)
     print("Every source row, accounted for:")
@@ -90,8 +104,10 @@ def main(argv: list[str] | None = None) -> int:
     print("  id_ledger.csv    — one row per source row, with a reason on each")
     print("  fetch_log.csv    — one row per id fetched, with HTTP status and timing")
     print("  run_timings.csv  — appended: how long each stage took, every run")
+    print(f"Tables written to {settings.path(settings['paths']['interim_dir'])}/")
+    print("  films.csv, cast.csv, crew.csv, genres.csv — one table per grain")
     print()
-    print("Stages 3-10 are not built yet. See docs/02_build_runbook.md.")
+    print("Stages 4-10 are not built yet. See docs/02_build_runbook.md.")
     return 0
 
 

@@ -5,3 +5,9 @@ run_at,stage,seconds,api_calls,cache_hits,rows,note
 2026-11-19T13:27:41+00:00,2_acquire,2.302,0,117,117,append_credits=True
 2026-11-19T13:29:58+00:00,1_ingest,0.022,0,0,127,117 ids queued
 2026-11-19T13:29:58+00:00,2_acquire,2.66,1,116,117,append_credits=True
+2026-11-19T13:49:52+00:00,1_ingest,0.022,0,0,127,117 ids queued
+2026-11-19T13:49:52+00:00,2_acquire,0.386,0,117,117,append_credits=True
+2026-11-19T13:49:52+00:00,3_flatten,1.428,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T13:52:43+00:00,1_ingest,0.02,0,0,127,117 ids queued
+2026-11-19T13:52:43+00:00,2_acquire,0.438,0,117,117,append_credits=True
+2026-11-19T13:52:43+00:00,3_flatten,1.109,0,0,112,"7827 cast, 24932 crew rows"

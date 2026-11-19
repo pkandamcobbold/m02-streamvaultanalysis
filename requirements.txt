@@ -1,0 +1,25 @@
+# Pinned exactly, not >=. Adjoa reruns this in a year; an unpinned pandas
+# major release is how a pipeline that worked in October fails in March.
+#
+# These pins target Python 3.15, which is what this project is developed on.
+# See docs/02_build_runbook.md, Step 1.5, for why pandas 3.x rather than 2.x:
+# on Python 3.15 there is no 2.x option, and 3.x changed the default string
+# dtype, so the code is written against 3.x deliberately rather than by accident.
+
+pandas==3.1.1
+numpy==2.5.5
+requests==2.34.2
+urllib3==2.8.0
+python-dotenv==1.2.4
+tabulate==0.10.0
+
+# Notebook narrative
+jupyter==1.1.1
+
+# Tests
+pytest==9.2.0
+
+# The project itself, installed in editable mode, so `import streamvault`
+# works from run_pipeline.py, the notebook and the tests without any
+# sys.path manipulation or a second install command.
+-e .

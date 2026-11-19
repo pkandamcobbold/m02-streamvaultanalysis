@@ -1,0 +1,83 @@
+# StreamVault back-catalog analysis — every tunable parameter.
+#
+# Adjoa: change values here, not in the code. Nothing in src/ hard-codes a
+# threshold, a path or a window boundary; it all comes from this file.
+#
+# TOML, read with Python's built-in tomllib — no library to install, nothing
+# to build, and it will still load on whatever Python you have next year.
+#
+# Values marked TO SET AFTER PROFILING are placeholders. They get set once the
+# stage-5 profile shows what the data actually looks like, and each one gets a
+# sensitivity row in reports/decision_log.md showing what the recommendation
+# looks like if it were set differently. Do not treat them as principled until
+# that has been done.
+
+[input]
+id_list_path = "data/input/id_list.csv"
+expected_id_count = 127     # the brief's number. A mismatch is reported as a
+                            # finding, not a crash. Next year: 500.
+
+[paths]
+raw_dir = "data/raw"
+interim_dir = "data/interim"
+processed_dir = "data/processed"
+reports_dir = "reports"
+
+[api]
+base_url = "https://api.themoviedb.org/3"
+timeout_seconds = 10            # ceiling on every single call
+max_retries = 5
+backoff_factor = 0.5            # waits 0.5s, 1s, 2s, 4s, 8s
+min_seconds_between_calls = 0.08  # ~12 req/s, comfortably inside TMDb's limits
+append_credits = true           # DR-02: one call per film instead of two.
+                                # Set false to run the briefed two-call path
+                                # and compare the timings.
+progress_every = 25             # print a progress line every N films
+
+# Both windows are computed by the same code path, called twice.
+# all_years has no min_year key at all: TOML has no null, and an absent key
+# is read as "no lower bound". Do not set it to 0 — that would be a real
+# boundary that silently excludes films with an unparseable release date.
+[windows.all_years]
+label = "All years"
+
+[windows.modern]
+label = "2000 onward"
+min_year = 2000                 # Yaw's window
+
+[performance]
+treat_zero_money_as_missing = true  # zero budget/revenue as a disguised null.
+                                    # Set false to compute every money metric
+                                    # the other way (zeros as real flops).
+min_budget_for_roi = 1000000        # TO SET AFTER PROFILING. Below this, ROI
+                                    # is unstable; such films are flagged.
+hit_roi_threshold = 2.5             # TO SET AFTER PROFILING. Rough box-office
+                                    # break-even rule of thumb.
+hit_definition = "roi"              # roi | above_median | top_quartile
+
+[talent]
+lead_actor_billing_order = 0    # order == 0 is "the lead"
+sensitivity_top_n_billed = 3    # re-run the talent analysis on top-3 billed
+min_films_for_reliable = 3      # below this, report but never recommend
+
+[franchise]
+min_members_on_list = 2         # a collection with one film on our list is not
+                                # a bundle anyone can buy. Set to 1 to compute
+                                # it the other way.
+
+[shortlist]
+n_franchises = 3
+n_standalones = 5
+show_runners_up = 3             # "why it made the cut" means something only
+                                # next to what did not
+
+[budget]
+analysis_seconds_limit = 10     # stages 3-7, cache warm, acquisition excluded
+projection_target_titles = 500
+
+[spotcheck]
+films_per_slice = 3             # 4 slices x 3 = 12 live re-fetches
+random_seed = 20251031          # seeded so the sample is reproducible
+always_include_flagged = true   # force recovered ids and disguised nulls into
+                                # the sample: a check that avoids the risky
+                                # rows is not a check

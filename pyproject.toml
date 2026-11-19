@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "streamvault"
+version = "0.1.0"
+description = "Back-catalog licensing analysis for StreamVault: franchise bundles vs standalone hits."
+requires-python = ">=3.10"
+
+# Dependencies live in requirements.txt, pinned, because that is what the
+# clean-clone instructions tell Adjoa to install. Listing them loosely here
+# as well would create two sources of truth.
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+# Lets `python -m pytest` find the package even if the editable install
+# has not been done yet.
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,0 +1,50 @@
+# ---------------------------------------------------------------------------
+# Secrets. This block exists before the first commit, by design.
+# ---------------------------------------------------------------------------
+.env
+.env.local
+*.pem
+*.key
+
+# ---------------------------------------------------------------------------
+# Generated data.
+#
+# Note the trailing /* rather than /. "data/raw/" excludes the directory
+# itself, and git will not descend into an excluded directory, so a later
+# "!data/raw/.gitkeep" would never be reached. "data/raw/*" excludes the
+# contents, which leaves the negation able to work.
+#
+# data/input/     is committed — it is the given input.
+# data/processed/ is committed — ledger, KPIs and reports are evidence.
+# data/raw/       is not — see DR-01 (size, TMDb redistribution terms).
+# data/interim/   is not — regenerable from raw in seconds.
+# ---------------------------------------------------------------------------
+data/raw/*
+!data/raw/.gitkeep
+data/interim/*
+!data/interim/.gitkeep
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ipynb_checkpoints/
+.ruff_cache/
+
+# ---------------------------------------------------------------------------
+# Editors and OS
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

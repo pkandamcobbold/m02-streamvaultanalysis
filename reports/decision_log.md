@@ -8,11 +8,12 @@
 > will fill it. A decision record with an invented impact figure is worse than
 > one that admits the measurement is still to come.
 >
-> **Status: all ten stages complete.** DR-00 to DR-28 below. DR-07 and DR-08 came
+> **Status: all ten stages complete.** DR-00 to DR-29 below. DR-07 and DR-08 came
 > out of an audit of stages 1–2 rather than from building them, and are kept
 > because both were judgement calls with real alternatives. Cleaning and KPI
-> DR-07, DR-08 and DR-26 came out of auditing the work rather than building
-> it, and are kept because each was a judgement call with real alternatives.
+> DR-07, DR-08, DR-26 and DR-29 came out of auditing the work rather than
+> building it, and are kept because each was a judgement call with real
+> alternatives.
 
 ---
 
@@ -845,6 +846,37 @@
    somebody makes and can be asked about rather than something that happens
    silently. A gate with twenty conditions is one that gets permanently
    disabled the first time it fires over something cosmetic.
+
+---
+
+### DR-29: a settings key must be live, or refuse to load - Risk rank: medium
+
+1. **Observation** - an audit found five keys in `settings.toml` that no code
+   read (F20). Two of them were cited in decision records as the mechanism
+   that made a judgement reversible: DR-13 credited
+   `use_popularity_as_performance` with making a choice visible, and DR-14
+   credited `report_all_hit_definitions` with exposing the fragility of the hit
+   rate. Both behaviours were real and both were hardcoded.
+2. **Options** - (a) delete the inert keys; (b) wire each one up; (c) wire up
+   what is implementable and make the rest fail loudly at load.
+3. **Decision** - (c). `hit_definition`, `report_all_hit_definitions`,
+   `lead_actor_billing_order` and `sensitivity_top_n_billed` are now read and
+   change behaviour. `use_popularity_as_performance` cannot be implemented
+   without contradicting DR-13, so `validate_settings` **refuses to load** a
+   configuration that sets it true, with a message that explains why and names
+   the record. A setting that cannot work is better as an error than as a
+   decoration.
+4. **Impact** - every key in the file is now read by code, asserted by a test.
+   One wiring produced a finding that had been unreachable: the top-3-billed
+   talent view takes the reliable names from 19 to 44, with 25 visible only
+   when the net is widened. A "rejected alternative kept runnable" that nothing
+   ran was not an alternative at all.
+5. **Cost if wrong** - `validate_settings` can refuse a configuration somebody
+   deliberately wants. That is the intent, and the message says what to do; the
+   alternative is a switch that looks live, is read by nobody, and is quoted in
+   a decision record as evidence of flexibility. At 500 titles this matters
+   more: the person flipping a setting next year will not be the person who
+   wrote the comment next to it.
 
 ---
 

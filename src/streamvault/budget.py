@@ -46,6 +46,17 @@ ANALYSIS_STAGES = ("3_flatten", "4_join", "5_profile", "6_clean", "7_kpis")
 ACQUISITION_STAGE = "2_acquire"
 INGEST_STAGE = "1_ingest"
 
+# Why each stage outside the boundary is outside it. A stage that is excluded
+# from a judgement should say so in the artefact; one that is simply absent
+# looks like a stage that never ran.
+OUT_OF_BUDGET_NOTES = {
+    "8_budget": "this stage measures the others by re-running them, so timing it "
+                "inside the budget would count them twice",
+    "9_spotcheck": "excluded: network-bound by design — it exists to compare "
+                   "against the live source, so it cannot run from cache",
+    "10_memo": "excluded: writes the reports rather than computing the analysis",
+}
+
 BUDGET_COLUMNS = ["stage", "seconds", "share_of_analysis", "in_budget", "note"]
 SCALING_COLUMNS = ["films", "stage", "seconds"]
 PROJECTION_COLUMNS = [
@@ -80,8 +91,16 @@ def time_budget(timings: pd.DataFrame, settings: Any) -> pd.DataFrame:
                     "TMDb and the connection, not this code")
         elif row.stage == INGEST_STAGE:
             note = "outside the stated boundary, reported for completeness"
-        else:
+        elif in_budget:
             note = ""
+        else:
+            # Every stage outside the boundary says why, so a reader of this
+            # artefact can tell that a stage was excluded from a judgement
+            # rather than simply absent. Before an audit, stages 9 and 10 were
+            # missing from the table altogether and nothing said so.
+            note = OUT_OF_BUDGET_NOTES.get(
+                row.stage, "outside the stated boundary, reported for completeness"
+            )
         rows.append({
             "stage": row.stage,
             "seconds": round(float(row.seconds), 3),

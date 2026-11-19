@@ -65,6 +65,45 @@ class Settings:
         }
 
 
+def validate_settings(settings: "Settings") -> None:
+    """Refuse a setting that cannot do what it says.
+
+    A settings key implies a switch: set it, and behaviour changes. Several
+    keys in this file were inert until an audit found them, which is worse than
+    their not existing — a decision record credited one of them with making a
+    judgement reversible when flipping it did nothing.
+
+    So anything not implemented fails loudly here rather than being read by
+    nobody. `use_popularity_as_performance` is the case in point: DR-13 decided
+    popularity must never enter a performance metric, because it is recomputed
+    daily and recency-biased, so there is no code path for `true` and setting it
+    is an error rather than a request.
+    """
+    profile = settings.get("profile") or {}
+    if bool(profile.get("use_popularity_as_performance", False)):
+        raise ValueError(
+            "profile.use_popularity_as_performance = true is not implemented, "
+            "deliberately.\n"
+            "TMDb's popularity score is recomputed daily and is heavily biased "
+            "toward recent films (Avengers: Endgame 85.7 against a 1966 classic "
+            "at 0.5), so using it would rank against the back catalog this "
+            "project exists to evaluate, and would make the analysis "
+            "irreproducible from the same cache a month later. See DR-13 in "
+            "reports/decision_log.md.\n"
+            "Set it back to false. If you genuinely want a demand signal, it "
+            "needs a source whose values do not move under the analysis."
+        )
+
+    performance = settings.get("performance") or {}
+    definition = performance.get("hit_definition")
+    allowed = {"roi", "above_median", "top_quartile"}
+    if definition is not None and definition not in allowed:
+        raise ValueError(
+            f"performance.hit_definition is {definition!r}; expected one of "
+            f"{sorted(allowed)}."
+        )
+
+
 def load_settings(path: Path | None = None) -> Settings:
     settings_path = path or DEFAULT_SETTINGS
     if not settings_path.exists():
@@ -75,7 +114,9 @@ def load_settings(path: Path | None = None) -> Settings:
         )
     with settings_path.open("rb") as handle:   # tomllib requires binary mode
         raw = tomllib.load(handle)
-    return Settings(raw=raw, root=PROJECT_ROOT)
+    settings = Settings(raw=raw, root=PROJECT_ROOT)
+    validate_settings(settings)
+    return settings
 
 
 def load_token() -> str:

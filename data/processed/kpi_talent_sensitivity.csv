@@ -1,0 +1,45 @@
+person_id,person_name,films_as_lead,median_roi_as_lead,reliable_as_lead,films_top_3,median_roi_top_3,reliable_top_3,appears_only_when_widened
+2,Mark Hamill,3.0,29.911,True,3,29.911,True,False
+4,Carrie Fisher,,,False,3,29.911,True,True
+3,Harrison Ford,5.0,9.879,True,8,14.8,True,False
+109,Elijah Wood,3.0,11.725,True,3,11.725,True,False
+110,Viggo Mortensen,,,False,3,11.725,True,True
+3896,Liam Neeson,2.0,11.854,False,3,9.1,True,True
+521,Michael J. Fox,3.0,8.322,True,3,8.322,True,False
+1062,Christopher Lloyd,,,False,3,8.322,True,True
+15757,Ray Romano,3.0,8.262,True,3,8.262,True,False
+5723,John Leguizamo,,,False,3,8.262,True,True
+5724,Denis Leary,,,False,3,8.262,True,True
+524,Natalie Portman,,,False,3,7.522,True,True
+3061,Ewan McGregor,,,False,3,7.522,True,True
+103,Mark Ruffalo,,,False,3,6.904,True,True
+16828,Chris Evans,,,False,3,6.904,True,True
+1327,Ian McKellen,2.0,3.829,False,6,6.727,True,True
+10205,Sigourney Weaver,3.0,3.195,True,4,6.367,True,False
+10980,Daniel Radcliffe,8.0,6.165,True,8,6.165,True,False
+10989,Rupert Grint,,,False,8,6.165,True,True
+10990,Emma Watson,,,False,8,6.165,True,True
+31,Tom Hanks,5.0,6.136,True,5,6.136,True,False
+3223,Robert Downey Jr.,7.0,6.078,True,7,6.078,True,False
+139,Uma Thurman,2.0,5.551,False,3,6.03,True,True
+12898,Tim Allen,,,False,4,5.831,True,True
+12073,Mike Myers,4.0,5.634,True,4,5.634,True,False
+776,Eddie Murphy,,,False,4,5.634,True,True
+6941,Cameron Diaz,,,False,4,5.634,True,True
+1100,Arnold Schwarzenegger,3.0,5.077,True,3,5.077,True,False
+6384,Keanu Reeves,3.0,4.924,True,3,4.924,True,False
+2975,Laurence Fishburne,,,False,3,4.924,True,True
+530,Carrie-Anne Moss,,,False,4,4.688,True,True
+114,Orlando Bloom,,,False,3,4.679,True,True
+500,Tom Cruise,5.0,4.551,True,5,4.551,True,False
+7060,Martin Freeman,1.0,4.084,False,3,3.834,True,True
+30315,Richard Armitage,,,False,3,3.834,True,True
+62,Bruce Willis,4.0,3.777,True,4,3.777,True,False
+1892,Matt Damon,3.0,3.847,True,4,3.707,True,False
+1461,George Clooney,3.0,3.663,True,3,3.663,True,False
+1158,Al Pacino,3.0,2.641,True,5,3.663,True,False
+287,Brad Pitt,,,False,4,3.48,True,True
+85,Johnny Depp,5.0,3.461,True,5,3.461,True,False
+118,Geoffrey Rush,,,False,4,3.333,True,True
+3894,Christian Bale,4.0,3.409,True,5,2.742,True,False
+3895,Michael Caine,,,False,3,2.742,True,True

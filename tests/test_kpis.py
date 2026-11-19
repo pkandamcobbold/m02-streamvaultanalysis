@@ -15,6 +15,7 @@ import pandas as pd
 import pytest
 
 from streamvault.clean import clean
+from streamvault.join import build_analysis_table
 from streamvault.config import Settings
 from streamvault.kpis import (
     GROUP_LOOSE,
@@ -208,7 +209,9 @@ def test_every_measure_is_checked_not_just_the_median(settings):
         film(1, 6.0, 2001, "franchise", 10), film(2, 3.0, 2002, "standalone"),
     ], settings)
     flips = flip_check(by_window(frame, settings, GROUP_STRICT), GROUP_STRICT)
-    assert set(flips["measure"]) == {"median_roi", "floor_roi", "hit_rate_roi", "iqr_roi"}
+    assert set(flips["measure"]) == {
+        "median_roi", "floor_roi", "hit_rate_primary", "iqr_roi",
+    }
 
 
 def test_a_flip_is_announced_loudly_and_a_hold_is_stated_plainly():
@@ -446,3 +449,175 @@ def test_the_alternative_grouping_uses_the_same_function(settings):
     assert strict.set_index(GROUP_STRICT).loc["standalone", "films"] == 2
     assert loose.set_index(GROUP_LOOSE).loc["franchise", "films"] == 2
     assert list(strict.columns)[1:] == list(loose.columns)[1:]
+
+
+# --------------------------------------------------------------------------
+# Settings that were inert until an audit found them
+# --------------------------------------------------------------------------
+
+def films_frame(*ids):
+    return pd.DataFrame({
+        "tmdb_id": pd.array(ids, dtype="Int64"),
+        "title": [f"Film {i}" for i in ids],
+        "release_date": ["2001-06-01"] * len(ids),
+        "release_year": pd.array([2001] * len(ids), dtype="Int64"),
+        "budget": pd.array([10_000_000] * len(ids), dtype="Int64"),
+        "revenue": pd.array([60_000_000] * len(ids), dtype="Int64"),
+        "vote_average": [7.5] * len(ids),
+        "vote_count": pd.array([20_000] * len(ids), dtype="Int64"),
+        "franchise_status": ["franchise"] * len(ids),
+        "collection_id": pd.array([10] * len(ids), dtype="Int64"),
+        "collection_name": ["Collection 10"] * len(ids),
+    })
+
+
+def cast_frame(rows):
+    """rows of (tmdb_id, person_id, person_name, billing_order)"""
+    return pd.DataFrame({
+        "tmdb_id": pd.array([r[0] for r in rows], dtype="Int64"),
+        "person_id": pd.array([r[1] for r in rows], dtype="Int64"),
+        "person_name": [r[2] for r in rows],
+        "character": [f"Role {r[1]}" for r in rows],
+        "billing_order": pd.array([r[3] for r in rows], dtype="Int64"),
+    })
+
+
+def crew_frame(rows):
+    """rows of (tmdb_id, person_id, person_name, job)"""
+    return pd.DataFrame({
+        "tmdb_id": pd.array([r[0] for r in rows], dtype="Int64"),
+        "person_id": pd.array([r[1] for r in rows], dtype="Int64"),
+        "person_name": [r[2] for r in rows],
+        "job": [r[3] for r in rows],
+        "department": ["Directing"] * len(rows),
+    })
+
+
+def genres_frame(rows):
+    """rows of (tmdb_id, genre_id, genre_name)"""
+    return pd.DataFrame({
+        "tmdb_id": pd.array([r[0] for r in rows], dtype="Int64"),
+        "genre_id": pd.array([r[1] for r in rows], dtype="Int64"),
+        "genre_name": [r[2] for r in rows],
+    })
+
+def test_hit_definition_selects_the_primary_hit_rate(settings):
+    """The setting offered three choices and selected none of them."""
+    from streamvault.kpis import primary_hit_column
+
+    frame = cleaned_frame([
+        film(1, 9.0, 2001, "franchise", 10), film(2, 2.0, 2002, "standalone"),
+    ], settings)
+
+    assert primary_hit_column(settings) == "hit_rate_roi"
+    table = compare_groups(frame, GROUP_STRICT, settings=settings)
+    assert table["hit_rate_primary"].tolist() == table["hit_rate_roi"].tolist()
+
+    settings.raw["performance"]["hit_definition"] = "top_quartile"
+    table = compare_groups(frame, GROUP_STRICT, settings=settings)
+    assert table["hit_rate_primary"].tolist() == table["hit_rate_top_quartile"].tolist()
+
+
+def test_an_unknown_hit_definition_is_rejected(settings):
+    from streamvault.kpis import primary_hit_column
+
+    settings.raw["performance"]["hit_definition"] = "vibes"
+    with pytest.raises(ValueError, match="expected one of"):
+        primary_hit_column(settings)
+
+
+def test_report_all_hit_definitions_false_drops_the_alternatives(settings):
+    """It claimed to control this and controlled nothing."""
+    frame = cleaned_frame([
+        film(1, 9.0, 2001, "franchise", 10), film(2, 2.0, 2002, "standalone"),
+    ], settings)
+
+    both = compare_groups(frame, GROUP_STRICT, settings=settings)
+    assert {"hit_rate_roi", "hit_rate_above_median", "hit_rate_top_quartile"} <= set(
+        both.columns
+    )
+
+    settings.raw["performance"]["report_all_hit_definitions"] = False
+    one = compare_groups(frame, GROUP_STRICT, settings=settings)
+    assert "hit_rate_roi" in one.columns
+    assert "hit_rate_above_median" not in one.columns
+    assert "hit_rate_top_quartile" not in one.columns
+    assert "hit_rate_primary" in one.columns
+
+
+def test_the_flip_check_follows_the_primary_hit_rate(settings):
+    frame = cleaned_frame([
+        film(1, 9.0, 1999, "franchise", 10), film(2, 4.0, 2005, "franchise", 10),
+        film(3, 3.0, 2006, "standalone"),
+    ], settings)
+    flips = flip_check(by_window(frame, settings, GROUP_STRICT), GROUP_STRICT)
+    assert "hit_rate_primary" in set(flips["measure"])
+
+
+def test_the_lead_billing_order_comes_from_settings(settings):
+    """A hardcoded constant meant changing the setting did nothing."""
+    cast = cast_frame([
+        (1, 500, "Billed First", 0), (1, 501, "Billed Second", 1),
+    ])
+    films = films_frame(1)
+    crew = crew_frame([(1, 900, "Director", "Director")])
+    genres = genres_frame([(1, 18, "Drama")])
+
+    analysis, _ = build_analysis_table(films, cast, crew, genres, settings)
+    assert analysis["lead_name"].item() == "Billed First"
+
+    settings.raw["talent"]["lead_actor_billing_order"] = 1
+    analysis, _ = build_analysis_table(films, cast, crew, genres, settings)
+    assert analysis["lead_name"].item() == "Billed Second"
+
+
+def test_billed_as_credits_takes_the_top_n_only():
+    from streamvault.kpis import billed_as_credits
+
+    cast = cast_frame([
+        (1, 500, "First", 0), (1, 501, "Second", 1), (1, 502, "Third", 2),
+        (1, 503, "Fourth", 3),
+    ])
+    assert set(billed_as_credits(cast, 3)["person_id"]) == {500, 501, 502}
+    assert set(billed_as_credits(cast, 1)["person_id"]) == {500}
+
+
+def test_the_talent_sensitivity_shows_who_only_appears_when_widened(settings):
+    """Promised in settings since the planning stage; nothing read it until now."""
+    from streamvault.kpis import talent_sensitivity
+
+    # The lead columns on `cleaned` must agree with the cast table, or the
+    # lead-only view sees a different person per film and the comparison is
+    # between two fixtures rather than two definitions.
+    frame = cleaned_frame([
+        film(i, 6.0, 2000 + i, "standalone",
+             lead_person_id=500, lead_name="Always Lead")
+        for i in range(1, 4)
+    ], settings)
+    cast = cast_frame(
+        [(i, 500, "Always Lead", 0) for i in range(1, 4)]
+        + [(i, 501, "Always Second", 1) for i in range(1, 4)]
+    )
+    widened = talent_sensitivity(cast, frame, settings)
+    by_name = widened.set_index("person_name")
+
+    assert bool(by_name.loc["Always Lead", "appears_only_when_widened"]) is False
+    assert bool(by_name.loc["Always Second", "appears_only_when_widened"]) is True
+    assert by_name.loc["Always Second", "films_top_3"] == 3
+    assert pd.isna(by_name.loc["Always Second", "films_as_lead"])
+
+
+def test_the_sensitivity_keeps_only_names_reliable_under_one_view(settings):
+    from streamvault.kpis import talent_sensitivity
+
+    frame = cleaned_frame([
+        film(i, 6.0, 2000 + i, "standalone",
+             lead_person_id=500, lead_name="Reliable")
+        for i in range(1, 4)
+    ], settings)
+    cast = cast_frame(
+        [(i, 500, "Reliable", 0) for i in range(1, 4)]
+        + [(1, 502, "One Film Only", 1)]
+    )
+    widened = talent_sensitivity(cast, frame, settings)
+    assert set(widened["person_name"]) == {"Reliable"}

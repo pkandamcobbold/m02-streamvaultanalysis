@@ -32,6 +32,20 @@ from .clean import add_hit_flags
 GROUP_STRICT = "franchise_group_strict"
 GROUP_LOOSE = "franchise_group_loose"
 
+# `performance.hit_definition` names one of these. All three are computed at
+# stage 6; this decides which one the reports treat as *the* hit rate, and
+# `report_all_hit_definitions` decides whether the other two travel with it.
+#
+# Both settings were inert until an audit found them: the code reported all
+# three unconditionally while DR-14 credited a setting with that behaviour.
+# A switch nothing reads is worse than no switch, because the decision record
+# claims it can be flipped.
+HIT_RATE_COLUMNS = {
+    "roi": "hit_rate_roi",
+    "above_median": "hit_rate_above_median",
+    "top_quartile": "hit_rate_top_quartile",
+}
+
 POSITION_FIRST = "first"
 POSITION_MIDDLE = "middle"
 POSITION_LAST = "last"
@@ -49,8 +63,22 @@ def _p75(series: pd.Series) -> float:
     return series.quantile(0.75)
 
 
+def primary_hit_column(settings: Any) -> str:
+    """The hit-rate column `performance.hit_definition` selects."""
+    definition = str(settings["performance"]["hit_definition"])
+    if definition not in HIT_RATE_COLUMNS:
+        raise ValueError(
+            f"performance.hit_definition is {definition!r}; expected one of "
+            f"{sorted(HIT_RATE_COLUMNS)}"
+        )
+    return HIT_RATE_COLUMNS[definition]
+
+
 def compare_groups(
-    films: pd.DataFrame, group_column: str = GROUP_STRICT, min_year: int | None = None
+    films: pd.DataFrame,
+    group_column: str = GROUP_STRICT,
+    min_year: int | None = None,
+    settings: Any = None,
 ) -> pd.DataFrame:
     """Franchise against standalone for one window. `min_year=None` is all years.
 
@@ -94,6 +122,19 @@ def compare_groups(
     # 70x returns (F11) inflate an SD without telling you anything about the
     # typical gap between a good and a bad film in the group.
     table["iqr_roi"] = table["upper_roi"] - table["floor_roi"]
+
+    if settings is not None:
+        primary = primary_hit_column(settings)
+        table["hit_rate_primary"] = table[primary]
+        table.attrs["hit_definition"] = settings["performance"]["hit_definition"]
+        if not bool(settings["performance"]["report_all_hit_definitions"]):
+            # Drop the alternatives the reader asked not to see. Kept as a
+            # setting rather than hard-coded because F12 is the reason all
+            # three are normally shown: on a list with no failures in it, no
+            # single definition is defensible alone.
+            table = table.drop(columns=[
+                column for column in HIT_RATE_COLUMNS.values() if column != primary
+            ])
     return table.round(3)
 
 
@@ -113,7 +154,9 @@ def by_window(
             cleaned["release_year"].notna() & (cleaned["release_year"] >= min_year)
         ]
         rescoped = add_hit_flags(scope.copy(), settings)
-        tables[name] = compare_groups(rescoped, group_column, min_year=None)
+        tables[name] = compare_groups(
+            rescoped, group_column, min_year=None, settings=settings
+        )
     return tables
 
 
@@ -125,7 +168,13 @@ def flip_check(tables: dict[str, pd.DataFrame], group_column: str = GROUP_STRICT
     Kwame than "it flips" or "it holds" — so every measure is checked and
     reported separately.
     """
-    measures = ["median_roi", "floor_roi", "hit_rate_roi", "iqr_roi"]
+    # Check the hit rate the reports actually lead with. With a non-default
+    # hit_definition, `hit_rate_roi` may not even be in the table.
+    sample = next(iter(tables.values()), pd.DataFrame())
+    hit_column = (
+        "hit_rate_primary" if "hit_rate_primary" in sample.columns else "hit_rate_roi"
+    )
+    measures = ["median_roi", "floor_roi", hit_column, "iqr_roi"]
     rows: list[dict[str, Any]] = []
 
     for measure in measures:
@@ -336,6 +385,81 @@ def leads_as_credits(cleaned: pd.DataFrame) -> pd.DataFrame:
     return leads.rename(columns={"lead_person_id": "person_id", "lead_name": "person_name"})
 
 
+def billed_as_credits(cast: pd.DataFrame, top_n: int) -> pd.DataFrame:
+    """The top `top_n` billed actors per film, shaped like directors_long.
+
+    The alternative to judging an actor by their lead roles only: a performer
+    billed second or third is still a draw, and on a 112-film list the
+    lead-only view leaves most of the cast unexamined.
+    """
+    billed = cast.loc[
+        cast["billing_order"].notna() & (cast["billing_order"] < int(top_n)),
+        ["tmdb_id", "person_id", "person_name"],
+    ]
+    return billed.drop_duplicates(["tmdb_id", "person_id"], ignore_index=True)
+
+
+def talent_sensitivity(
+    cast: pd.DataFrame, cleaned: pd.DataFrame, settings: Any
+) -> pd.DataFrame:
+    """Does the reliable-talent list survive widening from leads to top-N billed?
+
+    `talent.sensitivity_top_n_billed` has existed since the planning stage with
+    the comment "re-run the talent analysis on top-3 billed", and until an
+    audit found it, nothing read it — a rejected alternative that was supposed
+    to stay runnable and never was. This is that run.
+
+    Returns one row per person who clears `min_films_for_reliable` under either
+    view, with the film count and median return under each, so a name that
+    appears only when the net is widened is visible as such rather than
+    arriving unexplained.
+    """
+    top_n = int(settings["talent"]["sensitivity_top_n_billed"])
+    minimum = int(settings["talent"]["min_films_for_reliable"])
+
+    lead_view = talent_table(leads_as_credits(cleaned), cleaned, settings, "lead_actor")
+    billed_view = talent_table(
+        billed_as_credits(cast, top_n), cleaned, settings, f"top_{top_n}_billed"
+    )
+    if lead_view.empty and billed_view.empty:
+        return pd.DataFrame(columns=["person_id", "person_name", "films_as_lead",
+                                     "median_roi_as_lead", f"films_top_{top_n}",
+                                     f"median_roi_top_{top_n}", "appears_only_when_widened"])
+
+    keep = ["person_id", "person_name", "films", "median_roi", "meets_min_films"]
+    merged = (
+        lead_view[keep].rename(columns={
+            "films": "films_as_lead", "median_roi": "median_roi_as_lead",
+            "meets_min_films": "reliable_as_lead",
+        })
+        .merge(
+            billed_view[keep].rename(columns={
+                "films": f"films_top_{top_n}",
+                "median_roi": f"median_roi_top_{top_n}",
+                "meets_min_films": f"reliable_top_{top_n}",
+            }),
+            on=["person_id", "person_name"], how="outer",
+        )
+    )
+    for column in ("reliable_as_lead", f"reliable_top_{top_n}"):
+        merged[column] = merged[column].fillna(False).astype("boolean")
+
+    merged = merged.loc[
+        merged["reliable_as_lead"].fillna(False)
+        | merged[f"reliable_top_{top_n}"].fillna(False)
+    ].copy()
+    merged["appears_only_when_widened"] = (
+        ~merged["reliable_as_lead"].fillna(False)
+        & merged[f"reliable_top_{top_n}"].fillna(False)
+    )
+    merged.attrs["min_films_for_reliable"] = minimum
+    merged.attrs["top_n"] = top_n
+    return merged.sort_values(
+        [f"median_roi_top_{top_n}", "median_roi_as_lead"],
+        ascending=False, ignore_index=True,
+    )
+
+
 # ---------------------------------------------------------------------------
 # The shortlist
 # ---------------------------------------------------------------------------
@@ -420,7 +544,10 @@ def assert_kpis(
 # ---------------------------------------------------------------------------
 
 def run(
-    settings: Any, cleaned: pd.DataFrame, directors: pd.DataFrame
+    settings: Any,
+    cleaned: pd.DataFrame,
+    directors: pd.DataFrame,
+    cast: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
     """Stage 7 entry point. Every KPI table, both windows, plus the flip check."""
     strict = by_window(cleaned, settings, GROUP_STRICT)
@@ -438,6 +565,10 @@ def run(
     director_talent = talent_table(directors, cleaned, settings, "director")
     lead_talent = talent_table(leads_as_credits(cleaned), cleaned, settings, "lead_actor")
     picks = shortlist(cleaned, bundles, settings)
+    widened = (
+        talent_sensitivity(cast, cleaned, settings)
+        if cast is not None else pd.DataFrame()
+    )
 
     processed = settings.path(settings["paths"]["processed_dir"])
     processed.mkdir(parents=True, exist_ok=True)
@@ -453,6 +584,15 @@ def run(
     lead_talent.to_csv(processed / "kpi_talent_leads.csv", index=False)
     picks["franchises"].to_csv(processed / "shortlist_franchises.csv", index=False)
     picks["standalones"].to_csv(processed / "shortlist_standalones.csv", index=False)
+    if not widened.empty:
+        widened.to_csv(processed / "kpi_talent_sensitivity.csv", index=False)
+        added = int(widened["appears_only_when_widened"].sum())
+        print(
+            f"[stage 7] talent sensitivity (top-"
+            f"{settings['talent']['sensitivity_top_n_billed']} billed vs leads only): "
+            f"{len(widened)} reliable name(s), {added} of them visible only when "
+            "the net is widened"
+        )
 
     print(f"[stage 7] {len(bundles)} collections, "
           f"{int(bundles['is_buyable_bundle'].sum())} of them buyable bundles")
@@ -468,5 +608,6 @@ def run(
         "bundle_gaps": gaps,
         "talent_directors": director_talent,
         "talent_leads": lead_talent,
+        "talent_sensitivity": widened,
         "shortlist": picks,
     }

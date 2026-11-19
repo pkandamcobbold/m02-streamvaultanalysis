@@ -1,5 +1,5 @@
 measure,better_is,winner_all_years,winner_modern,flipped
 median_roi,higher,franchise,franchise,False
 floor_roi,higher,franchise,franchise,False
-hit_rate_roi,higher,franchise,franchise,False
+hit_rate_primary,higher,franchise,franchise,False
 iqr_roi,lower,franchise,standalone,True

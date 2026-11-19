@@ -329,3 +329,23 @@ def test_no_timings_at_all_is_reported_not_crashed(settings):
     assert budget.empty
     assert any("no timings recorded" in note
                for note in assert_budget(budget, pd.DataFrame()))
+
+
+def test_every_out_of_budget_stage_says_why(settings):
+    """A stage excluded from a judgement must say so; one simply absent from
+    the table looks like a stage that never ran. Before an audit, stages 9 and
+    10 were missing from the budget entirely because stage 8 ran before them.
+    """
+    budget = time_budget(timings_frame([
+        ("1_ingest", 0.02), (ACQUISITION_STAGE, 20.3, 117),
+        ("3_flatten", 1.0), ("4_join", 0.1), ("5_profile", 0.1),
+        ("6_clean", 0.1), ("7_kpis", 0.2),
+        ("8_budget", 1.5), ("9_spotcheck", 5.0), ("10_memo", 0.02),
+    ]), settings)
+    out = budget.loc[~budget["in_budget"]].set_index("stage")
+
+    assert (out["note"].str.len() > 0).all(), "an excluded stage gives no reason"
+    assert "count them twice" in out.loc["8_budget", "note"]
+    assert "network-bound by design" in out.loc["9_spotcheck", "note"]
+    assert "writes the reports" in out.loc["10_memo", "note"]
+    assert budget.attrs["analysis_seconds"] == 1.5      # stages 3-7 only

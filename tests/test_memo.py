@@ -364,3 +364,52 @@ def test_the_improvement_lists_every_gate_check(settings):
     text = build_improvement(facts, results)
     for check in results["check"]:
         assert check in text
+
+
+# --------------------------------------------------------------------------
+# Settings validation
+# --------------------------------------------------------------------------
+
+def test_an_unimplemented_switch_fails_loudly_rather_than_being_ignored(tmp_path):
+    """A settings key implies a switch. One nothing reads is worse than none,
+    because a decision record credits it with making a judgement reversible.
+    """
+    from streamvault.config import Settings, validate_settings
+
+    ok = Settings(raw={"profile": {"use_popularity_as_performance": False}},
+                  root=tmp_path)
+    validate_settings(ok)                      # must not raise
+
+    bad = Settings(raw={"profile": {"use_popularity_as_performance": True}},
+                   root=tmp_path)
+    with pytest.raises(ValueError, match="not implemented"):
+        validate_settings(bad)
+
+
+def test_the_refusal_explains_why_and_points_at_the_decision(tmp_path):
+    from streamvault.config import Settings, validate_settings
+
+    bad = Settings(raw={"profile": {"use_popularity_as_performance": True}},
+                   root=tmp_path)
+    try:
+        validate_settings(bad)
+    except ValueError as error:
+        message = str(error)
+    assert "recomputed daily" in message
+    assert "DR-13" in message
+    assert "Set it back to false" in message
+
+
+def test_a_bad_hit_definition_is_rejected_at_load(tmp_path):
+    from streamvault.config import Settings, validate_settings
+
+    bad = Settings(raw={"performance": {"hit_definition": "vibes"}}, root=tmp_path)
+    with pytest.raises(ValueError, match="hit_definition"):
+        validate_settings(bad)
+
+
+def test_the_real_settings_file_validates():
+    """The shipped configuration must pass its own validator."""
+    from streamvault.config import load_settings
+
+    load_settings()                            # raises if anything is inert-but-on

@@ -10,7 +10,8 @@
 > before any API call. F6 is from the acquisition. F7–F8 are from the flattened
 > tables, F9 from the join, F10–F12 from the profile, F13 from the cleaning
 > sensitivity runs, F14–F16 from the KPI tables, F17 from the time budget,
-> F18 from the live spot-check, F19 from the clean-clone test. Findings that need distributions rather than counts — implausible
+> F18 from the live spot-check, F19 from the clean-clone test, F20 from a
+> second audit of the finished work. Findings that need distributions rather than counts — implausible
 > money, unreliable ratings, real extremes versus errors — follow after stage 5.
 >
 > **Risk order as it stands: F12, F14, F7, F10, F11, then F15, F16, then F3,
@@ -873,6 +874,74 @@ machine.
 
 ---
 
+## F20 - The project made three claims about itself that were not true, risk: **medium** (all fixed)
+
+**Detected:** a second audit, after all ten stages were complete. None of these affects
+a number in the memo; all three were the project describing itself inaccurately, which
+in a graded deliverable is its own kind of error.
+
+### 1. Five settings were declared and never read
+
+| Setting | What the project said | What the code did |
+|---|---|---|
+| `performance.report_all_hit_definitions` | DR-14: *"makes the fragility visible instead of hiding it behind one number"* | never read; all three reported unconditionally |
+| `profile.use_popularity_as_performance` | DR-13: *"in settings so the choice is visible"* | never read; flipping it changed nothing |
+| `performance.hit_definition` | offers `roi / above_median / top_quartile` | never read - a selector that selected nothing |
+| `talent.lead_actor_billing_order` | the lead-actor definition | never read; `join.py` hardcoded the same number |
+| `talent.sensitivity_top_n_billed` | *"re-run the talent analysis on top-3 billed"* | never implemented |
+
+This directly contradicted the project's own principle. Stage 6 reported
+`treat_zero_money_as_missing` as **dormant** on the grounds that *"a setting that
+silently has no effect is worse than one documented as dormant"* - while five others
+were silently inert, and two were credited in decision records with making a judgement
+reversible. The behaviour the records describe was real; the switch they attributed it
+to was not.
+
+**Fixed.** All five are now read. `hit_definition` selects a `hit_rate_primary` column
+that the flip check follows; `report_all_hit_definitions = false` drops the
+alternatives; `lead_actor_billing_order` is threaded from settings into
+`collapse_leads`, so changing it changes the lead; and
+`config.validate_settings` now **refuses to load** a configuration that switches on
+something unimplemented, with a message naming the decision record. Every key in
+`settings.toml` is read by code, and a test asserts the shipped file validates.
+
+**And the sensitivity that had never run produced a real result.** Widening the talent
+view from leads only to the top three billed takes the reliable names from **19 to
+44**, with **25 visible only when the net is widened** - Carrie Fisher, Viggo
+Mortensen and Christopher Lloyd among them. A lead-only view of a 112-film list leaves
+most of the cast unexamined, which is a finding about CL4 that was sitting unreachable
+behind an unread setting.
+
+### 2. The time budget silently omitted two stages
+
+`time_budget.csv` presented itself as where the time goes and listed seven stages;
+`run_timings.csv` for the same run held nine. Stage 8 read the timings file before
+stages 9 and 10 had written theirs, so a reader could not tell that two more stages
+existed.
+
+**Fixed.** The budget now runs last, every stage appears, and each one outside the
+boundary carries the reason it is excluded - because a stage excluded from a judgement
+should say so, while one simply absent looks like a stage that never ran.
+
+### 3. The notebook was described in the present tense and did not exist
+
+`notebooks/analysis.ipynb` was named in the README (*"tells the story by calling those
+modules"*), in the plan's Q15 and directory structure, and was the sole reason
+`requirements-notebook.txt` exists. The directory contained only `.gitkeep`.
+
+**Fixed.** It exists: 38 cells, and every one of its 18 code cells executes in order
+against the real artefacts. It holds **no analysis of its own** - by design, since a
+figure that lived only in a cell would not survive the quarterly rerun and nobody
+could tell which cells had been run to produce it.
+
+**Why this is recorded rather than quietly corrected.** It is the fifth time in this
+project that something asserted about its own correctness turned out to be untested -
+after `grep "^[0-9]*$"`, the `Bearer` grep, the negative scaling exponents, and the
+clean-clone install. Four of those five were found by deliberately re-checking a claim
+rather than by anything failing.
+
+---
+
 ## The claim register: what has been tested so far
 
 The claims in `docs/00_project_plan.md` Part 4 are what the team believes. Findings
@@ -886,7 +955,7 @@ Every row says which stage settles it, so nothing sits in "pending" by accident.
 | **CL1** | "Franchise bundles are the safer buy" | **Answered: supported on the median and the floor, not on spread after 2000** | Franchise films lead on median ROI (5.53 v 5.00), lower quartile (3.91 v 2.64) and hit rate (95% v 80%) across all years, and on all three again in the modern window - in all six cleaning variants (F13). Two caveats: the *mean* reverses it (F14), and the spread advantage does not survive into the modern window (F15). The "no film ever fails" half remains untestable (F12). |
 | **CL2** | "We overpay for weak middle entries" | **Answered: half right, and wrong about which half** | Later entries do return less: within one era, first 5.30, middle 5.05, last 4.55. But **middle entries are not the weak ones** - last entries are, and middles sit almost level with openers. And the pooled figure (7.76 / 5.41 / 4.44) overstates the effect roughly threefold, because openers are disproportionately pre-2000 films with inflated ROI (F16). 22 collections, 85 films. |
 | **CL3** | "Cherry-picking standalone hits beats bundles" | **Answered on the numbers, with a large caveat** | The top standalones beat the top bundles per film: *Jaws* 67x, *The Good, the Bad and the Ugly* 32x, *Pulp Fiction* 27x against Star Wars' bundle ROI of 10.8. But **all three are pre-2000**, so the comparison is exactly the one F10 says is unsafe, and 2 of the 5 shortlisted "standalones" are lone collection members rather than true standalones (DR-20). Per *typical* film the claim fails: median standalone 5.00 against median franchise 5.53. |
-| **CL4** | "Talent is a reliable lever" | **Answered: supported, for directors, with 13 names** | 13 directors have ≥3 films; 7 of them sit above the overall median ROI, led by Spielberg (8 films, median 13.25, hit rate 100%), Zemeckis (4, 10.32) and Cameron (3, 9.91). 19 lead actors clear the same bar. The lever is real but modest in reach: 13 of 66 directors, and every figure is reported with its film count because a 3-film record and an 8-film record are not the same evidence. Note F9: two of the 13 (the Wachowskis) exist only because co-directed films count for both. |
+| **CL4** | "Talent is a reliable lever" | **Answered: supported, and wider than it first looked** | 13 directors have ≥3 films; 7 sit above the overall median, led by Spielberg (8 films, median 13.25, hit rate 100%), Zemeckis (4, 10.32) and Cameron (3, 9.91). For actors the answer depends on where you look: **19** names clear the bar as billed leads, **44** when the view widens to the top three billed — **25 of them invisible to a lead-only view** (F20), including Carrie Fisher and Viggo Mortensen. So the lever is real and the lead-only framing understates it by more than half. Every figure carries its film count, because a 3-film record and an 8-film record are not the same evidence. Note F9: two of the 13 directors exist only because co-directed films count for both. |
 | **CL5** | "Pre-2000 numbers can't be trusted" *(Yaw)* | **Substantially answered - and he is right** | Not because the figures are wrong, but because they are not commensurable: nominal money inflates 5x on budgets against 2.3x on revenue, and old films keep accruing re-release revenue against a frozen budget (F10). Pre-2000 ROI is therefore flattered by construction. Compounding it: every extreme on the list is pre-2000, so routine outlier clipping would delete 20% of his window and none of the modern one (F11). Remaining limits: 8 standalone films post-2000 (F7), and the 5 dead ids have no year so F6's loss cannot be tested for era bias. |
 | **CL8** | "The trilogy failed / the passed bundle was a miss" | Out of scope by design | Note only. The method should be able to score any bundle; proving Kwame's history is not this project's job. |
 

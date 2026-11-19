@@ -155,7 +155,9 @@ def main(argv: list[str] | None = None) -> int:
     print("Stage 7 — KPIs, both windows, counts beside every statistic")
     print("=" * 72)
     started = time.monotonic()
-    measured = kpis.run(settings, cleaned["cleaned"], joined["directors"])
+    measured = kpis.run(
+        settings, cleaned["cleaned"], joined["directors"], tables["cast"]
+    )
     timings.record(
         timings_path, "7_kpis", time.monotonic() - started,
         rows=len(cleaned["cleaned"]), run_at=run_at,
@@ -178,30 +180,6 @@ def main(argv: list[str] | None = None) -> int:
     print()
     print("Inside a franchise, by position:")
     print(measured["positions"].to_string(index=False))
-
-    # --- Stage 8: the time budget and the projection ---------------------
-    print()
-    print("=" * 72)
-    print("Stage 8 — the time budget, and a measured projection to 500 titles")
-    print("=" * 72)
-    # Timed last and not recorded in its own budget: stage 8 measures the other
-    # stages by re-running them, so timing it would double-count them.
-    payloads, _ = flatten.load_payloads(settings.path(settings["paths"]["raw_dir"]))
-    measured_budget = budget.run(
-        settings,
-        timings.load(timings_path),
-        payloads,
-        ledger,
-    )
-    print()
-    print("Where the time goes (stages 3-7, warm cache, acquisition excluded):")
-    print(measured_budget["budget"].to_string(index=False))
-    print()
-    print("Projected to 500 titles, from measured per-stage scaling:")
-    print(measured_budget["projection"][[
-        "stage", "measured_seconds", "exponent_k", "scaling", "fit_quality",
-        "projected_seconds",
-    ]].to_string(index=False))
 
     # --- Stage 9: the live spot-check ------------------------------------
     print()
@@ -267,6 +245,42 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
+    # --- Stage 8: the time budget -----------------------------------------
+    # Runs last, not eighth. It reads run_timings.csv, so running it in
+    # numerical order meant reading a partial file: stages 9 and 10 had not
+    # recorded yet and were silently missing from the budget. Found by an
+    # audit of the artefact, not by anything failing.
+    print()
+    print("=" * 72)
+    print("Stage 8 — the time budget, measured last so it sees every stage")
+    print("=" * 72)
+    started = time.monotonic()
+    payloads, _ = flatten.load_payloads(settings.path(settings["paths"]["raw_dir"]))
+    measured_budget = budget.run(
+        settings,
+        timings.load(timings_path),
+        payloads,
+        ledger,
+    )
+    # Recorded like every other stage, so "time each stage" is literally true —
+    # and excluded from the budget it computes, with the reason in the artefact,
+    # because it measures the other stages by re-running them and would
+    # otherwise count them twice.
+    timings.record(
+        timings_path, "8_budget", time.monotonic() - started, run_at=run_at,
+        rows=len(measured_budget["scaling"]),
+        note="measures stages 3-7 by re-running them at four sample sizes",
+    )
+    print()
+    print("Where the time goes (stages 3-7, warm cache, acquisition excluded):")
+    print(measured_budget["budget"].to_string(index=False))
+    print()
+    print("Projected to 500 titles, from measured per-stage scaling:")
+    print(measured_budget["projection"][[
+        "stage", "measured_seconds", "exponent_k", "scaling", "fit_quality",
+        "projected_seconds",
+    ]].to_string(index=False))
+
     print()
     print("-" * 72)
     print("Every source row, accounted for:")
@@ -301,7 +315,8 @@ def main(argv: list[str] | None = None) -> int:
     print("  analysis.csv     — one row per film, analysis-ready")
     print("  directors.csv    — one row per film per director")
     print()
-    print("Stages 5-10 are not built yet. See docs/02_build_runbook.md.")
+    print("Every stage is built. The build order and the reasoning behind each")
+    print("decision are in docs/02_build_runbook.md and reports/decision_log.md.")
     return 0
 
 

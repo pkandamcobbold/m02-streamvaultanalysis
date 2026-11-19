@@ -40,9 +40,10 @@ pip install -r requirements.txt
 ```
 
 That is everything the analysis needs: ten packages, about a minute. If you also
-want to open the notebook, there is one more command — and it is separate on
-purpose, because a notebook viewer's dependencies should not be able to stop the
-analysis installing:
+want to open [`notebooks/analysis.ipynb`](notebooks/analysis.ipynb) — a guided
+tour of the whole analysis, which computes nothing of its own — there is one more
+command. It is separate on purpose, because a notebook viewer's dependencies
+should not be able to stop the analysis installing:
 
 ```bash
 pip install -r requirements-notebook.txt

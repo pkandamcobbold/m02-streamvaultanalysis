@@ -97,15 +97,22 @@ def collapse_directors(crew: pd.DataFrame) -> pd.DataFrame:
     return grouped
 
 
-def collapse_leads(cast: pd.DataFrame) -> pd.DataFrame:
+def collapse_leads(
+    cast: pd.DataFrame, billing_order: int = LEAD_BILLING_ORDER
+) -> pd.DataFrame:
     """GRAIN: one row per film. The billed lead, where there is exactly one.
 
     `billing_order == 0` is TMDb's lead. All 112 films in this list have
     exactly one, but that is a fact about this data and not a guarantee, so a
     tie is resolved by name — deterministically, for the same reason the
     directors are sorted — and counted, so the join report shows it happened.
+
+    The order comes from `talent.lead_actor_billing_order` via
+    `build_analysis_table`. It used to be read only from the module constant,
+    so changing the setting did nothing — two sources of truth for one number,
+    found by an audit. The constant remains as the default for direct callers.
     """
-    leads = cast.loc[cast["billing_order"] == LEAD_BILLING_ORDER]
+    leads = cast.loc[cast["billing_order"] == billing_order]
     leads = (
         leads.sort_values(["tmdb_id", "person_name"])
         .drop_duplicates("tmdb_id", keep="first")
@@ -192,6 +199,7 @@ def build_analysis_table(
     cast: pd.DataFrame,
     crew: pd.DataFrame,
     genres: pd.DataFrame,
+    settings: Any = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """GRAIN: one row per film. Returns (analysis table, join report).
 
@@ -200,10 +208,16 @@ def build_analysis_table(
     delete it from the film count and the deletion would be invisible —
     the count would simply be smaller than the number of films fetched.
     """
+    billing_order = (
+        int(settings["talent"]["lead_actor_billing_order"])
+        if settings is not None else LEAD_BILLING_ORDER
+    )
     report: list[dict[str, Any]] = []
     analysis = films.copy()
     analysis = _merge_proven(analysis, collapse_directors(crew), "directors", report)
-    analysis = _merge_proven(analysis, collapse_leads(cast), "leads", report)
+    analysis = _merge_proven(
+        analysis, collapse_leads(cast, billing_order), "leads", report
+    )
     analysis = _merge_proven(analysis, collapse_genres(genres), "genres", report)
 
     analysis["release_year"] = (
@@ -320,7 +334,7 @@ def run(
     films, cast, crew, genres = (
         tables["films"], tables["cast"], tables["crew"], tables["genres"]
     )
-    analysis, report = build_analysis_table(films, cast, crew, genres)
+    analysis, report = build_analysis_table(films, cast, crew, genres, settings)
     directors = directors_long(crew)
     accounting = account_for_every_id(ledger, analysis)
 

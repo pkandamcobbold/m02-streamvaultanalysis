@@ -18,7 +18,9 @@ import sys
 import time
 from datetime import datetime, timezone
 
-from streamvault import clean, fetch, flatten, join, kpis, profile, timings
+from streamvault import (
+    budget, clean, fetch, flatten, join, kpis, memo, profile, spotcheck, timings,
+)
 from streamvault.config import MissingTokenError, load_settings
 from streamvault.ingest import load_id_list, reconciliation_summary, save_ledger
 
@@ -177,6 +179,94 @@ def main(argv: list[str] | None = None) -> int:
     print("Inside a franchise, by position:")
     print(measured["positions"].to_string(index=False))
 
+    # --- Stage 8: the time budget and the projection ---------------------
+    print()
+    print("=" * 72)
+    print("Stage 8 — the time budget, and a measured projection to 500 titles")
+    print("=" * 72)
+    # Timed last and not recorded in its own budget: stage 8 measures the other
+    # stages by re-running them, so timing it would double-count them.
+    payloads, _ = flatten.load_payloads(settings.path(settings["paths"]["raw_dir"]))
+    measured_budget = budget.run(
+        settings,
+        timings.load(timings_path),
+        payloads,
+        ledger,
+    )
+    print()
+    print("Where the time goes (stages 3-7, warm cache, acquisition excluded):")
+    print(measured_budget["budget"].to_string(index=False))
+    print()
+    print("Projected to 500 titles, from measured per-stage scaling:")
+    print(measured_budget["projection"][[
+        "stage", "measured_seconds", "exponent_k", "scaling", "fit_quality",
+        "projected_seconds",
+    ]].to_string(index=False))
+
+    # --- Stage 9: the live spot-check ------------------------------------
+    print()
+    print("=" * 72)
+    print("Stage 9 — re-fetch a stratified sample live and classify every difference")
+    print("=" * 72)
+    started = time.monotonic()
+    try:
+        checked = spotcheck.run(
+            settings, cleaned["cleaned"], profiled["flags"], measured["shortlist"]
+        )
+        timings.record(
+            timings_path, "9_spotcheck", time.monotonic() - started,
+            rows=len(checked["sample"]), api_calls=len(checked["sample"]),
+            run_at=run_at,
+            note=f"{checked['sample']['slice'].nunique()} slices, "
+                 f"moved={checked['movement']['moved']}",
+        )
+        print()
+        print("Differences by slice:")
+        print(checked["summary"].to_string(index=False))
+    except MissingTokenError as error:
+        # The only stage that always needs the network: it exists to compare
+        # against the live source, so there is no cached answer to fall back on.
+        print(f"\nSkipped — the spot-check must reach TMDb:\n{error}", file=sys.stderr)
+        checked = None
+
+    # --- Stage 10: the gate, then the memo -------------------------------
+    print()
+    print("=" * 72)
+    print("Stage 10 — the release gate, then the memo")
+    print("=" * 72)
+    started = time.monotonic()
+    try:
+        written = memo.run(
+            settings,
+            accounting=joined["accounting"],
+            ledger=ledger,
+            cleaned=cleaned["cleaned"],
+            windows=measured["windows_strict"],
+            flips=measured["flips"],
+            bundles=measured["bundles"],
+            gaps=measured["bundle_gaps"],
+            positions=measured["positions"],
+            talent=measured["talent_directors"],
+            shortlist=measured["shortlist"],
+            fetch_log=log,
+            spotcheck_movement=checked["movement"] if checked else None,
+            spotcheck_films=len(checked["sample"]) if checked else 0,
+            eras=profiled["era_comparability"],
+        )
+        timings.record(
+            timings_path, "10_memo", time.monotonic() - started,
+            rows=len(written["memo"].splitlines()), run_at=run_at,
+            note="gate passed",
+        )
+    except memo.GateFailed as error:
+        # Not a crash. The analysis ran; its output should not be published.
+        print(f"\n{error}\n", file=sys.stderr)
+        timings.record(
+            timings_path, "10_memo", time.monotonic() - started, run_at=run_at,
+            note="gate blocked publication",
+        )
+        return 2
+
     print()
     print("-" * 72)
     print("Every source row, accounted for:")
@@ -199,6 +289,13 @@ def main(argv: list[str] | None = None) -> int:
     print("  kpi_*.csv        — the comparison per window, bundles, positions, talent")
     print("  kpi_flip_check.csv — whether the answer changes between windows")
     print("  shortlist_*.csv  — the picks and the runners-up they beat")
+    print("  time_budget.csv  — where the time went, and what the boundary excludes")
+    print("  scaling_measurements.csv, projection.csv — the 500-title projection")
+    print("  spotcheck.csv    — every field re-checked live, with a verdict on each")
+    print(f"Reports written to {settings.path(settings['paths']['reports_dir'])}/")
+    print("  spotcheck.md     — the live re-check, generated so it cannot drift")
+    print("  memo.md          — START HERE: one page, for the room")
+    print("  improvement.md   — the one addition beyond the brief, and why this one")
     print(f"Tables written to {settings.path(settings['paths']['interim_dir'])}/")
     print("  films.csv, cast.csv, crew.csv, genres.csv — one table per grain")
     print("  analysis.csv     — one row per film, analysis-ready")

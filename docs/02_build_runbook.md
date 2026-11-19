@@ -1278,213 +1278,349 @@ there is one place a reader looks for the status of CL1–CL8.
 
 # Phase 9 — Stage 8: the time budget
 
-## Step 9.1 💻 `src/streamvault/timing.py`
+## The principle
 
-A context manager that records `time.perf_counter()` per stage into a list, then a table.
+**State the boundary before you quote a number.** "The analysis takes two seconds" is
+meaningless without saying what counts as the analysis, whether the cache was warm, and
+on what machine.
 
-## Step 9.2 🧠 State the boundary explicitly
+The boundary used here, carried verbatim into the memo:
 
-"Acquisition excluded" needs a definition, because a cache hit is a disk read and a cache miss is a network round-trip:
+> **Stages 3 to 7 — flatten, join, profile, clean, KPIs — with a warm cache, on one
+> machine, single-threaded. Acquisition is excluded.**
 
-> **The budget covers stages 3–7** (flatten, join, profile, clean, KPIs), measured with the cache already warm. Stage 1 (reading the file) is included as it is trivially fast. Stage 2 (fetch) is excluded whether it hits the network or the cache, since reading 127 JSON files from disk is part of acquisition, not analysis.
+Acquisition is excluded because it is network-bound and cached: timing it measures
+TMDb's latency and Adjoa's wifi, not this code. It is **measured and reported beside
+the budget**, never inside it, so a reader who wants the cold-start total can add them
+(DR-22). `assert_budget` hard-fails if acquisition ever drifts inside.
 
-Then project to 500 titles and say which stages scale how. Most are linear in films. The ones that aren't: anything grouped by person (scales with cast size, not film count) and any self-join within collections. Measure, then state the projection as a range with the assumption attached.
+## Step 9.1 ✅ Where the time goes
 
-🧠 **DR: the time budget number.** The brief references a client time budget but gives no figure. Decide one — 10 seconds for the analysis stages on a laptop — and justify it from the use case: Adjoa runs this live in a meeting, so the gap between pressing enter and having an answer must be shorter than the gap in conversation it creates.
+```bash
+.venv/Scripts/python.exe -c "import pandas as pd; print(pd.read_csv('data/processed/time_budget.csv').to_string(index=False))"
+```
 
-✅ **ARTEFACT** — `data/processed/timings.csv`, the stated boundary, the 500-title projection.
+| Stage | Seconds | Share of analysis | In budget |
+|---|---|---|---|
+| 1_ingest | 0.02 | — | no (reported for completeness) |
+| 2_acquire | 0.41 warm / **20.3 cold** | — | **no** |
+| 3_flatten | 1.23 | **64%** | yes |
+| 4_join | 0.12 | 6% | yes |
+| 5_profile | 0.09 | 5% | yes |
+| 6_clean | 0.18 | 9% | yes |
+| 7_kpis | 0.30 | 16% | yes |
+
+**1.9s against a 10s limit**, and `3_flatten` is two-thirds of it — it is the only
+stage doing work proportional to the 24,932 crew rows rather than the 112 films.
+
+## Step 9.2 🧠 Projecting to 500: measure it, do not multiply it
+
+The obvious projection is `measured x 500/112`. That assumes every stage is linear in
+films, and stage 3 is linear in **credit rows** (223 per film here), while the small
+stages are dominated by fixed costs at this size. So the projection re-runs stages 3-7
+over subsets of the **real** payloads at four sizes and fits `seconds = a * films ** k`
+per stage.
+
+⚠️ **Not synthetic data.** A generated film carries a made-up cast size, which would
+make stage 3 look linear in films — erasing the distinction the whole projection turns
+on.
+
+| Stage | Measured (112) | k | Scaling | Projected (500) |
+|---|---|---|---|---|
+| 3_flatten | 0.66s | ~1.0 | roughly linear | 2.8s |
+| 4_join | 0.07s | ~0.05 | sub-linear, fixed costs dominate | 0.1s |
+| 5_profile | 0.08s | ~0.07 | sub-linear | 0.1s |
+| 6_clean | 0.09s | ~0.08 | sub-linear | 0.1s |
+| 7_kpis | 0.12s | 1.0 *(assumed)* | roughly linear | 0.5s |
+
+**Fitted total 3.6s; all-linear total 4.5s; limit 10s.** Report both — the sub-linear
+exponents are extrapolated five-fold past the measured range, and fixed costs will stop
+dominating somewhere before 500. The conclusion should hold under either assumption or
+it is not a conclusion (DR-23).
+
+Acquisition, separately: 0.173s per call on the cold run, so **86.6s at 500 titles**.
+
+## Step 9.3 🧠 Read the exponents, not the total
+
+The first version of this measurement produced a projected total of 2.06s, which looked
+entirely reasonable. The exponents did not:
+
+| Stage | Fitted k |
+|---|---|
+| 4_join | **-0.09** |
+| 5_profile | **-0.22** |
+| 6_clean | **-0.47** |
+| 7_kpis | **-0.35** |
+
+**Four of five were negative** — the stages getting *faster* as the data grew. The
+smallest sample had run first and paid pandas' one-off warm-up, coming out slower than
+the largest.
+
+Three fixes, all of which belong in any timing code:
+
+1. **A discarded warm-up pass** before the first measurement.
+2. **Time each size several times and keep the minimum.** Noise on a 0.1s measurement
+   only ever adds time, so the minimum is the least contaminated estimate. A mean
+   carries every scheduling hiccup into the projection.
+3. **Refuse an impossible exponent.** A negative k falls back to linear and the row is
+   **labelled** `assumed linear (measured exponent was negative)`. Assuming linear
+   over-estimates, which is the safe direction for a budget.
+
+🧠 This is the **third** time in this project a check returned a confident wrong
+answer — after `grep "^[0-9]*$"` on blank lines (F4) and the `Bearer` grep on cached
+films. Every time, the headline number looked plausible and something one level down
+gave it away. Check the intermediate quantity, not the conclusion (F17).
+
+✅ **ARTEFACT** — `time_budget.csv`, `scaling_measurements.csv`, `projection.csv`,
+`projection_acquisition.csv`.
 
 ---
 
-# Phase 10 — Stage 9: spot-check against the live API
+# Phase 10 — Stage 9: the live spot-check
 
 ## The principle
 
-**This is the only stage that can tell you your own output is wrong**, and the pipeline guide says plainly that it's the biggest gap in the module. Budget real time for it.
+**Be clear what the check can establish.** It cannot tell you whether TMDb is right;
+nothing available here can. It can tell you whether **you read TMDb correctly**, and
+whether the recommendation would survive if you had read it differently. Those two are
+worth having, and claiming the third would be a lie dressed as diligence.
 
-## Step 10.1 💻 `src/streamvault/spotcheck.py`
+## Step 10.1 🧠 Choose the slices before you look (settles Q14)
 
-The **four slices** are franchise/standalone × pre-2000/2000+. Sample `films_per_slice` from each (seeded, so the sample is reproducible), re-fetch live with `force=True` into a separate cache folder, and compare field by field against what the analysis used.
+The budget is 3 films per slice. A random sample of 12 from 112 would, with high
+probability, contain **none** of the eight extreme-ROI films and none of the
+shortlisted titles — it would report "no discrepancies" having checked nothing that
+matters.
 
-Deliberately include in the sample: a film whose id you recovered from `550.0`, and a film with a disguised null. Those are the rows most likely to be wrong, and a sample that avoids them isn't a check.
+So stratify, and let the findings pick the slices:
 
-## Step 10.2 🧑 Classify every discrepancy
+| Slice | Why | Films |
+|---|---|---|
+| `shortlisted` | an error here is an error in the answer | 3 |
+| `flagged_extreme` | the eight films from F11 — **all of them** | 6\* |
+| `pre_2000` | Yaw's window, where money is least comparable (F10) | 3 |
+| `random_control` | without it the check only looks where problems are expected | 3 |
 
-Not "12 fields differed" — every difference gets a class:
+\* All eight are in the sample; two (*Star Wars*, *The Empire Strikes Back*) arrive via
+`shortlisted`, and no film is sampled twice.
 
-| Class | Example | What it means |
-|-------|---------|---------------|
-| **Our bug** | we flattened the wrong field, or lost precision | fix the code |
-| **Source revision** | TMDb's revenue updated since your fetch | legitimate; this is what the as-of date is for |
-| **Volatile by nature** | `popularity`, `vote_count`, `vote_average` | expected to drift daily; don't build the recommendation on them |
-| **Still unexplained** | can't account for it | say so — an honest unknown beats a confident guess |
+⚠️ **`always_include_flagged` takes every flagged film rather than sampling three.** A
+check that samples the risky rows is not a check. That costs 15 films instead of the
+12 the plan estimated, and it is the right trade.
 
-Then the question that matters: **does any discrepancy move the recommendation?** Recompute the headline KPI with the live values for the sampled films and show whether the winner changes.
+⚠️ **Seed the sample.** `spotcheck.random_seed` is in settings, so a reviewer who
+re-runs it sees the same films. An unseeded spot-check cannot be argued about: nobody
+can tell a fixed fault from a new draw.
 
-> **Why `popularity` drifting is a finding, not noise.** If a discrepancy shows up in a field your shortlist ranks on, your shortlist isn't stable between Tuesday and Thursday. That's a reason to rank on revenue and ROI rather than popularity — and now you can defend that choice with evidence instead of taste.
+## Step 10.2 💻 Re-fetch into a *separate* cache
 
-✅ **ARTEFACT** — `reports/spotcheck.md`: the sample, the per-field comparison, every discrepancy classified, and a yes/no on whether the recommendation moves.
+```python
+raw_dir = settings.path(settings["paths"]["raw_dir"]).parent / "raw_spotcheck"
+```
+
+🧠 **This is the subtle one.** Forcing the refetch into `data/raw/` would overwrite
+the `fetched_at` stamps the memo's as-of date rests on — and, worse, **would make any
+discrepancy vanish the moment it was found**. The next pipeline run would read the new
+values, recompute, and agree with itself. The check would be self-erasing. Separate
+directory, gitignored alongside `data/raw/*` (DR-24).
+
+## Step 10.3 💻 Classify by field, decided in advance
+
+Some fields move on their own. `popularity` is recomputed daily and `vote_count` rises
+continuously, so a change there is **drift**, not a discrepancy. Others cannot move
+without changing an answer.
+
+| Field | Treated as | Because |
+|---|---|---|
+| budget, revenue | material | feed ROI directly |
+| release_date | material | decides which window the film is in |
+| collection_id | material | decides the franchise / standalone split |
+| runtime, title | material | the non-feature check; identifies the film |
+| popularity, vote_count, vote_average | expected drift | move without anyone editing them |
+
+Decide this **before** running it. Deciding afterwards is how a material change gets
+waved through as drift once it is inconvenient.
+
+⚠️ **Normalise both sides before comparing.** A film with no collection holds `pd.NA`
+in the analysis and `None` from the API, and `pd.NA == None` is `False` — so without a
+normalising step **every standalone film reports a material difference on
+`collection_id`**, and the check cries wolf on 25 films while saying nothing useful.
+This bug was in the first version and the tests caught it.
+
+## Step 10.4 ✅ Answer "does it move the recommendation" by trying it
+
+Do not reason about whether a difference looks large. Substitute every live money
+value that differs back into the table, recompute the franchise-versus-standalone
+comparison, and see whether the winner changes. That is the only honest answer, and it
+is five lines of code.
+
+## Step 10.5 ✅ What it found here
+
+**15 of 112 films, 4 slices, zero material differences.** Every budget, revenue,
+runtime, release date, collection and title matches the live source. The single
+difference in the whole sample: *Back to the Future*'s `vote_count` went from 22,791
+to **22,792** — one person voted between the fetch and the check, which is the
+cleanest possible illustration of why that field is classified as drift.
+
+🧠 **State the limit, clearly, in the report.** The analysis cache was fetched hours
+before the check, so only a fast-moving field had time to change. This verifies
+**fidelity** — that nothing was mis-parsed or mis-joined — and is a **weak test of
+drift over time**. Run the same check next quarter against the same cache and it
+becomes a real drift test. A clean result read as "the figures are stable" is an
+over-reading, and the report says so rather than letting the reader do it.
+
+✅ **ARTEFACT** — `spotcheck_sample.csv`, `spotcheck.csv`, `spotcheck_summary.csv`, and
+`reports/spotcheck.md`, which is **generated by the stage**: a hand-written spot-check
+report is a claim about a check, a generated one is the check's own output and cannot
+drift from it.
 
 ---
 
 # Phase 11 — Stage 10: what reaches the client
 
-## Step 11.1 💻 `run_pipeline.py` — the one command
+## Step 11.1 💻 The memo is **generated**, not written
+
+A hand-written memo is a claim about the analysis. A generated one is the analysis
+speaking — and it cannot quote a figure the data no longer supports, because
+re-running the pipeline rewrites it.
+
+That only works if the **judgement** is encoded too, not just the figures:
 
 ```python
-"""One command, top to bottom, from a clean clone. python run_pipeline.py"""
+if headline_flipped:
+    ...                       # the flip becomes the first line
+elif franchise_all is not None:
+    ...                       # "Buy franchise bundles first"
 ```
 
-It calls the stages in order 1 → 10, prints a readable line per stage, writes every artefact, and fails with a message a non-programmer can act on. No notebook needed to produce the numbers.
+Change the data and the memo changes with it. A template fills in numbers; this
+decides what to say about them (DR-27).
 
-## Step 11.2 💻 `notebooks/analysis.ipynb` — the narrative
+🧠 **Test the caveats, not just the figures.** The worst failure in a client document
+is not a wrong number — it is a right number stated with more confidence than the data
+supports, because nobody downstream can tell. So the test suite asserts that the memo
+contains the mean-reversal disclosure (F14), the thin standalone group (F7), the era
+problem (F10), the absence of any failure on the list (F12) and the missing licensing
+prices — and that **no dollar price is ever named**. An edit that quietly drops a
+caveat fails the suite.
 
-Imports from `src/`, calls the same functions, and shows the story: here's the comparison, here's the flip check, here's the shortlist. **No analytical logic lives only in the notebook.** If a number exists in a cell and nowhere in `src/`, it isn't reproducible and it won't survive Adjoa's rerun.
+There is also a jargon test: `roi`, `median`, `null`, `api`, `dataframe` and the rest
+must not appear anywhere in the memo. It is easier to enforce than to remember.
 
-## Step 11.3 🧑 `reports/memo.md` — one page, for the room
+## Step 11.2 🧠 Never invent a threshold
 
-Write it last, and write it for Kwame, who is not a programmer and is going to be challenged live by Yaw. No tool names. No "pandas", no "ROI" without a plain-English gloss, no "null".
+The first draft of the deal note said:
 
-Order it the way the room will consume it:
+> *"If the asking price per film for this set is more than roughly double the others,
+> the case stops being obvious."*
 
-1. **The recommendation**, in one sentence, first line. If it flips between windows, *that* is the first line instead.
-2. **Why**, in three sentences with the numbers that matter.
-3. **The shortlist** — 3 franchises, 5 standalones, one line each saying why it made the cut.
-4. **Both windows**, side by side, with the counts visible.
-5. **The deal note** — one paragraph on the strongest franchise: what to pay *relative to everything else*, and the single number that drove the view. Relative, not absolute: you have no licensing prices, so you cannot name a dollar figure, and pretending otherwise is the fastest way to lose the room.
-6. **What you couldn't stand behind, and what it costs him.** Missing money fields and how many. No licensing prices. No streaming viewership — TMDb gives box office and audience ratings, which are a *proxy* for streaming value, not the thing itself. Era effects. Selection bias in franchises. The 404s.
-7. **As-of date of the data**, and the count: "127 received → X analysed → Y removed, for these reasons."
+**"Double" was not from anywhere.** It sounded authoritative, it would have survived
+into a negotiation, and nothing supported it. The top set's typical film returns 13.4
+times its cost against about 8.5 for the next-best sets — a ratio of **158%**, not
+200%. Now computed:
 
-## Step 11.4 🧑 `reports/improvement.md` — pick one, justify it in their terms
+```python
+premium = float(top["median_roi"]) / float(others.median())
+```
 
-Candidates, strongest first for *this* client:
+A fabricated number in a client document is worse than no number, because it cannot be
+challenged by anyone who does not have the data.
 
-- **Data-quality gate** — the pipeline refuses to produce a shortlist if reconciliation fails or the missing-money share crosses a threshold, with a readable message. Value: Adjoa is running this live in a meeting. The failure mode you're protecting against is her presenting a confident number from a broken run, in front of the board, with no way to know.
-- **Sensitivity panel** — one table showing whether the recommendation survives each judgement call being flipped. Value: it's the answer to Yaw, pre-computed, before he asks.
-- **Run-over-run diff** — what changed since last quarter: new ids, revised TMDb figures, shortlist movements. Value: directly serves the quarterly rerun, and catches source revisions automatically.
-- **Bundle dead-weight score** — the share of a bundle's films below the standalone median. Value: a negotiating number. "You're asking us to pay for three films that underperform the standalones we could buy instead."
+## Step 11.3 ✅ The improvement: a release gate
 
-Justify in terms of *their* problem, not the code's elegance. That's what the criterion asks for.
+Four checks before the memo is written. If any fails, **no memo and no shortlist** —
+the run stops and says what failed.
+
+| Check | Why it blocks |
+|---|---|
+| every source row accounted for | the memo quotes a count; if it does not reconcile the sentence is false |
+| enough films to compare groups | below a floor, the honest output is a description, not a ranking |
+| money data complete enough | otherwise a ranking by return ranks whichever films had figures |
+| live re-check does not change the answer | a human must look before this reaches a board |
+
+🧠 **Why a gate rather than another assertion.** The assertions inside the pipeline
+protect each step from the one before. This protects the **client-facing output** from
+the whole pipeline, and it is the only check whose failure mode is "the board was
+misled" rather than "a stage crashed". Adjoa runs this live; the pipeline is built to
+carry on rather than crash, which is correct — and it is exactly what makes a release
+gate necessary.
+
+⚠️ **Keep it blunt and make the override visible.** Four checks, each of which (if it
+fails) makes the memo actively misleading. The failure message names
+`gate.enabled = false`, so skipping it is a decision somebody makes and can be asked
+about. A gate with twenty conditions is one that gets permanently disabled the first
+time it fires over something cosmetic (DR-28).
+
+✅ **ARTEFACT** — `reports/memo.md`, `reports/improvement.md`, `data/processed/gate.csv`.
 
 ---
 
 # Phase 12 — The clean-clone test
 
-**If this fails, the lab isn't done, whatever state the analysis is in.** 20% of the marks say "runs top to bottom from a clean clone, no manual edits".
-
-## Step 12.1 🧑 Clone into a different folder, as a stranger would
+## Do it for real, and do it last
 
 ```bash
-git clone https://github.com/pkandamcobbold/m02-streamvaultanalysis.git /c/temp/clean-clone-test
+cd "$TEMP" && git clone <this repo> clonetest && cd clonetest
+python -m venv .venv
+./.venv/Scripts/python.exe -m pip install -r requirements.txt
+./.venv/Scripts/python.exe -m pytest
+./.venv/Scripts/python.exe run_pipeline.py
 ```
 
-```bash
-cd /c/temp/clean-clone-test && python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt
+🧠 **Green tests do not substitute for this.** `pyproject.toml` sets
+`pythonpath = ["src"]`, so pytest imports the package whether or not the install
+worked. Only an actual clone proves the install works.
+
+## What it found here, which nothing else had
+
+```
+error: failed-wheel-build-for-install
+x Failed to build installable wheels for some pyproject.toml based projects
++-> pyyaml
 ```
 
-```bash
-cp .env.example .env
+`pip install -r requirements.txt` **installed nothing at all**:
+
+```
+pyyaml>=5.3  <-  jupyter-events  <-  jupyter-server>=2.19  <-  jupyterlab  <-  jupyter
 ```
 
-Paste your token into that `.env`, then:
+PyYAML has no Python 3.15 wheel — the same dependency that forced this project's config
+from YAML to TOML in Phase 1, returning as a transitive dependency of a notebook
+viewer.
 
-```bash
-.venv/Scripts/python run_pipeline.py
-```
+⚠️ **And the audit had already checked this and passed it.** Step 9.3's check was
+`pip install --only-binary :all: --dry-run jupyter==1.1.1`, which resolved cleanly with
+no PyYAML. That check was correct and answered the wrong question: resolved **alone**,
+`jupyter` picks jupyterlab 3.5.3, which predates `jupyter-events`. Resolved
+**alongside the other pins**, pip backtracks differently and picks jupyterlab 4.6.6,
+which does not. **A dependency is only installable in context.**
 
-## Step 12.2 🧑 What you're actually testing
+That is the fourth time in this project a check returned a confident wrong answer —
+after `grep "^[0-9]*$"` on blank lines (F4), the `Bearer` grep on cached films, and a
+negative scaling exponent (F17). The pattern never varied: the check ran, reported
+success, and was answering a question slightly different from the one that mattered.
+If there is one habit to carry out of this project, it is to ask what else could
+produce the answer you just got.
 
-- No absolute paths. If anything references `C:\Users\PaapaAndam-Cobbold\...`, it fails here.
-- `data/input/id_list.csv` is committed. If you gitignored `data/` wholesale, it isn't, and the clone has no input.
-- Nothing depends on a file that only exists in your working copy (an interim CSV you made by hand, a cell you ran once).
-- The error for a missing token is readable.
-- The numbers match your original run. If they don't, something is non-deterministic — an unseeded sample, or a dict ordering.
+**The fix:** `jupyter` moved to an optional `requirements-notebook.txt`. The pipeline
+needs no notebook server, so the thing the brief asks to run from a clean clone now
+installs **wheels only, in 78 seconds, ten packages** (DR-26).
 
-## Step 12.3 🧑 Then delete the test clone
+## The checklist, verified
 
-It has your token in it.
+| | |
+|---|---|
+| Clone installs from `requirements.txt` | yes, 78s, wheels only |
+| `import streamvault` with no `PYTHONPATH`, no `sys.path` hack | yes |
+| Full suite in the clone | **286 tests, all passing** |
+| `run_pipeline.py` with no token | stops at stage 2 with a three-step instruction, not a traceback |
+| `.env` absent from the clone, `.env.example` present | yes |
+| `data/raw/` empty in the clone | yes — the cache is not committed (DR-01) |
+| No secret in any committed file | verified by searching every file for the real token |
 
-```bash
-rm -rf /c/temp/clean-clone-test
-```
+🧑 **Then delete the test clone.** If you put a token in it to test the live path, it
+now contains a credential.
 
 ---
-
-# Final checklist, mapped to the marks
-
-Work through this before submitting. Each line is a thing a grader can look for.
-
-### Analyze (20%)
-- [ ] Every fault: detection method, row count, **which group it hits**, effect on the recommendation, risk rank
-- [ ] Faults ranked by how much they move the answer, not listed flat
-- [ ] Real extremes kept and *said* to be kept; no fix applied to anything unbroken
-- [ ] Disguised nulls found: zero budget, zero revenue, empty-string dates, zero runtime, implausible money
-- [ ] Full account of the list: received → analysed → removed with reasons, adding up exactly
-- [ ] What the gap costs Kwame, stated
-
-### Apply — acquisition (20%)
-- [ ] Explicit dtype on load; uniqueness asserted; reconciliation number recorded
-- [ ] Session with timeout on every call, retry with backoff, `Retry-After` honoured, 404 not retried
-- [ ] Every raw response cached with a timestamp; reruns don't re-fetch; resumable
-- [ ] 404s recorded as ledger statuses, no crash
-- [ ] Ledger status counts reconcile to the file's data-row count
-
-### Apply / Create — analysis (20%)
-- [ ] One table per grain, grain in a comment
-- [ ] Generated columns renamed once
-- [ ] Every merge has `validate=` and `indicator=True`, with the report kept
-- [ ] Row count asserted across every join; no film dropped, no revenue duplicated
-- [ ] No row loops in the analysis stages; named aggregations throughout
-- [ ] Stage timings, boundary stated, 500-title projection
-
-### Evaluate — reasoning (20%)
-- [ ] Every judgement call has a five-part record, risk-ranked
-- [ ] Rejected alternatives are real and *costed* — you can state the KPI under each
-- [ ] Both windows from one parameterised code path
-- [ ] Flip check automatic and loud
-- [ ] Selection bias in franchises named
-- [ ] What survives at 500 titles, per stage
-
-### Evaluate / Create — client (20%)
-- [ ] Memo is one page, business language, no tool names
-- [ ] Recommendation in the first line (or the flip, if it flips)
-- [ ] 3 franchises + 5 standalones, each with why it made the cut
-- [ ] Deal note: relative value, and the one number that drove it
-- [ ] What you couldn't verify, and what it costs him
-- [ ] As-of date present
-- [ ] One improvement, justified in terms of Kwame's or Adjoa's problem
-- [ ] Clean-clone run passes
-
----
-
-# Commit cadence
-
-Commit at the end of every phase, not at the end of the lab. The history is evidence of how you worked, and a phase-sized commit is reviewable:
-
-```
-Scaffold project: structure, secrets handling, config, requirements
-Stage 1: id ledger with explicit dtype, classification and reconciliation
-Stage 2: cached TMDb fetcher with retry, rate limit and 404 log
-Stage 3: flatten nested responses to films, cast, crew, genres
-Stage 4: validated joins with indicator reports
-Stage 5: profiling function and ranked fault list
-Stage 6: parameterised cleaning rules, flags not deletions, decision log
-Stage 7: KPIs for both windows, flip check, shortlist
-Stage 8: stage timings and 500-title projection
-Stage 9: live spot-check across four slices, discrepancies classified
-Stage 10: diagnosis, decision notes, client memo, improvement
-```
-
-Before each one: `git status`, and *read it*.
-
----
-
-# What's still open
-
-Answers I'd get from your instructor rather than decide alone — but every one has a default below it, so none of them blocks you:
-
-1. **Is there a stated time budget for the analysis stages?** Default if not: 10 seconds, acquisition excluded, justified from Adjoa's live-meeting use.
-2. **Are the four spot-check slices franchise/standalone × pre-2000/2000+?** Default: yes, that reading.
-3. **What as-of date should the memo carry** — the fetch date or the 31 October review date? Default: the fetch date, stated as such, since that's what the numbers are true of.
-4. **Does "one improvement beyond the brief" have to be code**, or does a written artefact count? Default: build it as code, since that's unambiguously within scope either way.
 

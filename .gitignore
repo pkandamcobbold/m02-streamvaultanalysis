@@ -21,6 +21,11 @@
 # ---------------------------------------------------------------------------
 data/raw/*
 !data/raw/.gitkeep
+
+# The stage-9 spot-check re-fetches into its own cache, deliberately separate
+# from data/raw/ so the analysis cache and its fetched_at stamps are untouched.
+data/raw_spotcheck/*
+!data/raw_spotcheck/.gitkeep
 data/interim/*
 !data/interim/.gitkeep
 

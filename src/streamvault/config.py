@@ -16,6 +16,7 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from dotenv import load_dotenv
 
 # src/streamvault/config.py -> src/streamvault -> src -> project root
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -81,10 +82,6 @@ def load_token() -> str:
 
     Fails with an instruction the reader can act on, not a KeyError.
     """
-    # Imported here so the rest of the module is usable without python-dotenv,
-    # and so tests can exercise the settings loader in isolation.
-    from dotenv import load_dotenv
-
     load_dotenv(PROJECT_ROOT / ".env")
     token = os.getenv("TMDB_BEARER_TOKEN", "").strip()
 

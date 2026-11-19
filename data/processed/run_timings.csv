@@ -55,3 +55,78 @@ run_at,stage,seconds,api_calls,cache_hits,rows,note
 2026-11-19T14:38:22+00:00,5_profile,0.111,0,0,8,28 columns profiled
 2026-11-19T14:38:22+00:00,6_clean,0.095,0,0,112,"0 exclusions, 6 sensitivity runs"
 2026-11-19T14:38:22+00:00,7_kpis,0.244,0,0,112,"2 windows, 32 bundles"
+2026-11-19T14:46:52+00:00,1_ingest,0.017,0,0,127,117 ids queued
+2026-11-19T14:46:52+00:00,2_acquire,0.411,0,117,117,append_credits=True
+2026-11-19T14:46:52+00:00,3_flatten,1.227,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T14:46:52+00:00,4_join,0.119,0,0,112,3 validated merges
+2026-11-19T14:46:52+00:00,5_profile,0.087,0,0,8,28 columns profiled
+2026-11-19T14:46:52+00:00,6_clean,0.175,0,0,112,"0 exclusions, 6 sensitivity runs"
+2026-11-19T14:46:52+00:00,7_kpis,0.303,0,0,112,"2 windows, 32 bundles"
+2026-11-19T14:48:50+00:00,1_ingest,0.01,0,0,127,117 ids queued
+2026-11-19T14:48:50+00:00,2_acquire,0.215,0,117,117,append_credits=True
+2026-11-19T14:48:50+00:00,3_flatten,0.576,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T14:48:50+00:00,4_join,0.051,0,0,112,3 validated merges
+2026-11-19T14:48:50+00:00,5_profile,0.051,0,0,8,28 columns profiled
+2026-11-19T14:48:50+00:00,6_clean,0.046,0,0,112,"0 exclusions, 6 sensitivity runs"
+2026-11-19T14:48:50+00:00,7_kpis,0.137,0,0,112,"2 windows, 32 bundles"
+2026-11-19T15:12:36+00:00,1_ingest,0.008,0,0,127,117 ids queued
+2026-11-19T15:12:36+00:00,2_acquire,0.218,0,117,117,append_credits=True
+2026-11-19T15:12:36+00:00,3_flatten,0.647,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T15:12:36+00:00,4_join,0.059,0,0,112,3 validated merges
+2026-11-19T15:12:36+00:00,5_profile,0.061,0,0,8,28 columns profiled
+2026-11-19T15:12:36+00:00,6_clean,0.058,0,0,112,"0 exclusions, 6 sensitivity runs"
+2026-11-19T15:12:36+00:00,7_kpis,0.144,0,0,112,"2 windows, 32 bundles"
+2026-11-19T15:12:36+00:00,9_spotcheck,2.753,15,0,15,"4 slices, moved=False"
+2026-11-19T15:14:47+00:00,1_ingest,0.012,0,0,127,117 ids queued
+2026-11-19T15:14:47+00:00,2_acquire,0.232,0,117,117,append_credits=True
+2026-11-19T15:14:47+00:00,3_flatten,0.647,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T15:14:47+00:00,4_join,0.06,0,0,112,3 validated merges
+2026-11-19T15:14:47+00:00,5_profile,0.068,0,0,8,28 columns profiled
+2026-11-19T15:14:47+00:00,6_clean,0.062,0,0,112,"0 exclusions, 6 sensitivity runs"
+2026-11-19T15:14:47+00:00,7_kpis,0.166,0,0,112,"2 windows, 32 bundles"
+2026-11-19T15:14:47+00:00,9_spotcheck,2.643,15,0,15,"4 slices, moved=False"
+2026-11-19T15:28:56+00:00,1_ingest,0.01,0,0,127,117 ids queued
+2026-11-19T15:28:56+00:00,2_acquire,0.242,0,117,117,append_credits=True
+2026-11-19T15:28:56+00:00,3_flatten,0.655,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T15:28:56+00:00,4_join,0.061,0,0,112,3 validated merges
+2026-11-19T15:28:56+00:00,5_profile,0.059,0,0,8,28 columns profiled
+2026-11-19T15:28:56+00:00,6_clean,0.054,0,0,112,"0 exclusions, 6 sensitivity runs"
+2026-11-19T15:28:56+00:00,7_kpis,0.142,0,0,112,"2 windows, 32 bundles"
+2026-11-19T15:28:56+00:00,9_spotcheck,2.722,15,0,15,"4 slices, moved=False"
+2026-11-19T15:28:56+00:00,10_memo,0.017,0,0,132,gate passed
+2026-11-19T15:30:04+00:00,1_ingest,0.024,0,0,127,117 ids queued
+2026-11-19T15:30:04+00:00,2_acquire,2.16,0,117,117,append_credits=True
+2026-11-19T15:30:04+00:00,3_flatten,0.61,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T15:30:04+00:00,4_join,0.063,0,0,112,3 validated merges
+2026-11-19T15:30:04+00:00,5_profile,0.061,0,0,8,28 columns profiled
+2026-11-19T15:30:04+00:00,6_clean,0.054,0,0,112,"0 exclusions, 6 sensitivity runs"
+2026-11-19T15:30:04+00:00,7_kpis,0.147,0,0,112,"2 windows, 32 bundles"
+2026-11-19T15:30:04+00:00,9_spotcheck,3.39,15,0,15,"4 slices, moved=False"
+2026-11-19T15:30:04+00:00,10_memo,0.019,0,0,139,gate passed
+2026-11-19T15:30:46+00:00,1_ingest,0.011,0,0,127,117 ids queued
+2026-11-19T15:30:46+00:00,2_acquire,0.216,0,117,117,append_credits=True
+2026-11-19T15:30:46+00:00,3_flatten,0.64,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T15:30:46+00:00,4_join,0.061,0,0,112,3 validated merges
+2026-11-19T15:30:46+00:00,5_profile,0.062,0,0,8,28 columns profiled
+2026-11-19T15:30:46+00:00,6_clean,0.061,0,0,112,"0 exclusions, 6 sensitivity runs"
+2026-11-19T15:30:46+00:00,7_kpis,0.151,0,0,112,"2 windows, 32 bundles"
+2026-11-19T15:30:46+00:00,9_spotcheck,2.744,15,0,15,"4 slices, moved=False"
+2026-11-19T15:30:46+00:00,10_memo,0.019,0,0,147,gate passed
+2026-11-19T15:43:44+00:00,1_ingest,0.011,0,0,127,117 ids queued
+2026-11-19T15:43:44+00:00,2_acquire,0.24,0,117,117,append_credits=True
+2026-11-19T15:43:44+00:00,3_flatten,0.743,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T15:43:44+00:00,4_join,0.072,0,0,112,3 validated merges
+2026-11-19T15:43:44+00:00,5_profile,0.069,0,0,8,28 columns profiled
+2026-11-19T15:43:44+00:00,6_clean,0.07,0,0,112,"0 exclusions, 6 sensitivity runs"
+2026-11-19T15:43:44+00:00,7_kpis,0.176,0,0,112,"2 windows, 32 bundles"
+2026-11-19T15:43:44+00:00,9_spotcheck,3.054,15,0,15,"4 slices, moved=False"
+2026-11-19T15:43:44+00:00,10_memo,0.027,0,0,147,gate passed
+2026-11-19T15:45:19+00:00,1_ingest,0.011,0,0,127,117 ids queued
+2026-11-19T15:45:19+00:00,2_acquire,0.245,0,117,117,append_credits=True
+2026-11-19T15:45:19+00:00,3_flatten,0.696,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T15:45:19+00:00,4_join,0.063,0,0,112,3 validated merges
+2026-11-19T15:45:19+00:00,5_profile,0.061,0,0,8,28 columns profiled
+2026-11-19T15:45:19+00:00,6_clean,0.063,0,0,112,"0 exclusions, 6 sensitivity runs"
+2026-11-19T15:45:19+00:00,7_kpis,0.176,0,0,112,"2 windows, 32 bundles"
+2026-11-19T15:45:19+00:00,9_spotcheck,2.81,15,0,15,"4 slices, moved=False"
+2026-11-19T15:45:19+00:00,10_memo,0.019,0,0,147,gate passed

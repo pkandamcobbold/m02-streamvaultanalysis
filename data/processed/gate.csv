@@ -1,0 +1,5 @@
+check,passed,detail
+every source row accounted for,True,"0 row(s) unaccounted for, limit 0. The memo quotes a count of what was analysed and what was dropped; if that does not reconcile, the sentence is false."
+enough films to compare groups,True,"112 films analysed, minimum 40. Below this the two groups are too thin to rank; the honest output is a description, not a recommendation."
+money data complete enough to decide on,True,"0% of films have no usable budget or box office, limit 20%. Above that, a ranking by return is a ranking of whichever films happened to have figures."
+live re-check does not change the answer,True,the live re-check leaves the recommendation unchanged

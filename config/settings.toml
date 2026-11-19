@@ -114,6 +114,21 @@ show_runners_up = 3             # "why it made the cut" means something only
 analysis_seconds_limit = 10     # stages 3-7, cache warm, acquisition excluded
 projection_target_titles = 500
 
+# The improvement beyond the brief: a release gate. The pipeline refuses to
+# produce a client-facing memo or shortlist if any of these fails, with a
+# message Adjoa can act on. She reruns this quarterly, sometimes live in the
+# meeting; the failure this protects against is her presenting a confident
+# number from a broken run with no way to know. See reports/improvement.md.
+[gate]
+enabled = true
+max_unaccounted_rows = 0            # every source row must be accounted for
+min_films_for_a_recommendation = 40 # below this the groups are too thin to
+                                    # compare; say so instead of ranking
+max_missing_money_share = 0.20      # above this, money metrics are not a basis
+                                    # for a $14m decision
+block_if_spotcheck_moves = true     # if a live re-check changes the answer,
+                                    # the memo must not be published unread
+
 [spotcheck]
 films_per_slice = 3             # 4 slices x 3 = 12 live re-fetches
 random_seed = 20251031          # seeded so the sample is reproducible

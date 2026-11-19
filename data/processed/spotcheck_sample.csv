@@ -1,0 +1,16 @@
+tmdb_id,title,slice,why_this_slice
+11,Star Wars,shortlisted,named in the recommendation; an error here is an error in the answer
+1891,The Empire Strikes Back,shortlisted,named in the recommendation; an error here is an error in the answer
+1895,Star Wars: Episode III - Revenge of the Sith,shortlisted,named in the recommendation; an error here is an error in the answer
+85,Raiders of the Lost Ark,flagged_extreme,ROI above 20x: the most influential rows in the analysis
+105,Back to the Future,flagged_extreme,ROI above 20x: the most influential rows in the analysis
+238,The Godfather,flagged_extreme,ROI above 20x: the most influential rows in the analysis
+429,"The Good, the Bad and the Ugly",flagged_extreme,ROI above 20x: the most influential rows in the analysis
+578,Jaws,flagged_extreme,ROI above 20x: the most influential rows in the analysis
+680,Pulp Fiction,flagged_extreme,ROI above 20x: the most influential rows in the analysis
+13,Forrest Gump,pre_2000,"the window Finance distrusts, and where money is least comparable"
+8078,Alien Resurrection,pre_2000,"the window Finance distrusts, and where money is least comparable"
+1892,Return of the Jedi,pre_2000,"the window Finance distrusts, and where money is least comparable"
+49026,The Dark Knight Rises,random_control,seeded random draw from the rest: without it the check only looks where problems are expected
+2501,The Bourne Identity,random_control,seeded random draw from the rest: without it the check only looks where problems are expected
+424,Schindler's List,random_control,seeded random draw from the rest: without it the check only looks where problems are expected

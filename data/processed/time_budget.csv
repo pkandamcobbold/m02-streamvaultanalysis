@@ -1,0 +1,8 @@
+stage,seconds,share_of_analysis,in_budget,note
+1_ingest,0.011,,False,"outside the stated boundary, reported for completeness"
+2_acquire,0.245,,False,"excluded: network-bound and cached, so timing it measures TMDb and the connection, not this code"
+3_flatten,0.696,0.657,True,
+4_join,0.063,0.059,True,
+5_profile,0.061,0.058,True,
+6_clean,0.063,0.059,True,
+7_kpis,0.176,0.166,True,

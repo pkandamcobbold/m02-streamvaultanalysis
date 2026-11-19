@@ -5,18 +5,6 @@ project pulls public data on the candidate titles, checks it for problems, and
 produces a recommendation with a shortlist to negotiate from — the same way every
 time, so it can be re-run each quarter without anyone having to remember how.
 
-> **Status: in progress — stages 1 to 7 of 10 work.** `python run_pipeline.py`
-> loads the candidate list, fetches every film from TMDb, flattens and joins
-> the results into one analysis-ready table of 112 films, profiles it for
-> faults, applies the cleaning rules, and produces the KPI tables for both
-> time windows — including the shortlist and the check on whether the answer
-> changes after 2000. The timing, spot-check and memo stages are not built
-> yet, so `reports/memo.md` and `spotcheck.md` do not exist. The stages that turn those into a recommendation are not
-> built yet, so `reports/memo.md`, `spotcheck.md` and the KPI tables listed
-> below do not exist. The project plan, the source brief and the full build
-> runbook are in [`docs/`](docs/). This note goes away when the clean-clone
-> test passes.
-
 ---
 
 ## Setup
@@ -49,6 +37,15 @@ source .venv/Scripts/activate
 
 ```bash
 pip install -r requirements.txt
+```
+
+That is everything the analysis needs: ten packages, about a minute. If you also
+want to open the notebook, there is one more command — and it is separate on
+purpose, because a notebook viewer's dependencies should not be able to stop the
+analysis installing:
+
+```bash
+pip install -r requirements-notebook.txt
 ```
 
 **3. Get your own access token**
@@ -104,7 +101,8 @@ python run_pipeline.py --force
 
 | Location | What's in it |
 |----------|--------------|
-| `reports/memo.md` | **Start here.** One page: the recommendation, the shortlist, what we couldn't verify. |
+| `reports/memo.md` | **Start here.** One page: the recommendation, the shortlist, what we couldn't verify. Written for the room, not for engineers. |
+| `reports/improvement.md` | The one addition beyond the brief — a release gate — and why that one. |
 | `reports/data_diagnosis.md` | Every problem found in the source data, ranked by how much it affects the answer. |
 | `reports/decision_log.md` | Every judgement call, why it was made, and what it costs if it's wrong. |
 | `reports/spotcheck.md` | A live re-check of a sample of titles against the source, to catch our own errors. |
@@ -119,6 +117,8 @@ python run_pipeline.py --force
 | `data/processed/kpi_all_years.csv`, `kpi_modern.csv` | Franchise against standalone, one file per time window, with the film count beside every statistic. |
 | `data/processed/kpi_flip_check.csv` | Whether the answer changes between the two windows, measure by measure. |
 | `data/processed/shortlist_franchises.csv`, `shortlist_standalones.csv` | The picks, plus the runners-up they beat — so "why this one" has something to be compared against. |
+| `data/processed/time_budget.csv` | How long each stage took and what the stated boundary leaves out. |
+| `data/processed/projection.csv` | How long it will take at ~500 titles, from measured scaling rather than from multiplying. |
 | `data/processed/` | The KPI tables, timings and exclusions behind the memo. |
 | `data/raw/` | Untouched copies of what the API returned, each stamped with when it was fetched. |
 
@@ -161,6 +161,15 @@ what the difference was.
 compares a sample of our figures against the live source and classifies any
 differences. Then `data/processed/id_ledger.csv`, which accounts for every
 title on the list.
+
+**"The memo was not written, because these checks failed"** — not a crash. The
+analysis ran, and its results should not go in front of a board without someone
+looking first: the title count did not reconcile, or too few films survived, or
+too much of the money data is missing, or the live re-check changed the answer.
+The message names which. Read `reports/data_diagnosis.md`, then either fix the
+input or — if you have decided the run is sound anyway — set
+`gate.enabled = false` in `config/settings.toml`, run again, and say in the
+meeting that you did.
 
 ---
 

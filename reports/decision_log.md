@@ -8,10 +8,11 @@
 > will fill it. A decision record with an invented impact figure is worse than
 > one that admits the measurement is still to come.
 >
-> **Status: stages 1–7 complete.** DR-00 to DR-21 below. DR-07 and DR-08 came
+> **Status: all ten stages complete.** DR-00 to DR-28 below. DR-07 and DR-08 came
 > out of an audit of stages 1–2 rather than from building them, and are kept
 > because both were judgement calls with real alternatives. Cleaning and KPI
-> Remaining decisions (DR-22 onward) arrive with the spot-check and the memo.
+> DR-07, DR-08 and DR-26 came out of auditing the work rather than building
+> it, and are kept because each was a judgement call with real alternatives.
 
 ---
 
@@ -641,6 +642,209 @@
    three "last" entries and is deliberately not reported as a finding. Had (a)
    been reported alone, the team would have been told they were right and by
    three times the real margin - the most flattering and least useful outcome.
+
+---
+
+### DR-22: acquisition sits outside the time budget, and is reported beside it - Risk rank: low
+
+1. **Observation** - a cold run spends **20.3s** fetching and **1.9s**
+   analysing. Folding them together makes the analysis look twelve times
+   slower than it is, and the combined figure would move with TMDb's latency
+   and Adjoa's wifi rather than with this code.
+2. **Options** - (a) one total, which is what a user experiences; (b) analysis
+   only, acquisition excluded and unmentioned; (c) analysis as the budget,
+   acquisition measured and reported immediately beside it.
+3. **Decision** - (c). The boundary is stated in one place and carried into the
+   memo: **stages 3-7, warm cache, one machine, single-threaded; acquisition
+   excluded.** Stage 1 is reported too, outside the boundary, for
+   completeness. `assert_budget` hard-fails if acquisition ever appears inside
+   the budget, and checks the stage shares sum to 1.
+4. **Impact** - the budget reads **1.9s against a 10s limit**, of which
+   `3_flatten` is 64%. Acquisition is projected separately from the
+   **cold-cache** run - 0.173s per call, so **86.6s at 500 titles** - because
+   projecting from a cached run would promise 2 seconds and deliver ninety.
+5. **Cost if wrong** - a reader who wants "how long until I see the memo on a
+   fresh machine" needs both numbers added, roughly 107s at 500 titles. Giving
+   them separately with the boundary named is what makes that addition
+   possible; one blended figure would not be decomposable. (b) would have been
+   the dishonest option: quietly excluding the expensive part.
+
+---
+
+### DR-23: the 500-title projection is measured, not multiplied - Risk rank: medium
+
+1. **Observation** - the obvious projection is `measured x 500/112`. That
+   assumes every stage scales linearly in films, and at least one plainly does
+   not: stage 3 flattens **credit rows**, of which this list has 223 per film,
+   while the small stages are dominated by fixed costs at this size.
+2. **Options** - (a) multiply by the ratio of film counts; (b) fit a scaling
+   exponent per stage from re-runs over subsets of the real data; (c) generate
+   a synthetic 500-film dataset and run it.
+3. **Decision** - (b), using subsets of the **actual** payloads. (c) was
+   rejected because a synthetic film would carry a made-up cast size, which
+   would make stage 3 look linear in films when it is linear in credit rows -
+   the exact distinction the projection turns on.
+4. **Impact** - fitted projection **3.6s** at 500 titles; all-linear
+   assumption **4.5s**; limit 10s. Both are reported, so the conclusion holds
+   whether or not the fit is right - which matters because the sub-linear
+   exponents (k around 0.05 to 0.1 for join, profile and clean) are
+   extrapolated five-fold beyond the measured range, and fixed costs will stop
+   dominating somewhere before 500. `3_flatten` is the stage to watch: it is
+   64% of the budget today and the only one that measures as linear.
+5. **Cost if wrong** - the fit rests on four sample sizes and sub-second
+   timings, which are noisy: exponents move by a few tenths between runs. That
+   is why the all-linear bound is published beside it and why the conclusion
+   is stated as "comfortably inside the limit under either assumption" rather
+   than as a point estimate. F17 records the first attempt, which produced
+   negative exponents and would have been quoted had the exponents not been
+   read.
+
+---
+
+### DR-24: the spot-check re-fetches into a separate cache - Risk rank: medium
+
+1. **Observation** - the check needs live values, which means a forced
+   refetch. The obvious place to put them is `data/raw/`, where every other
+   response lives.
+2. **Options** - (a) force the refetch into `data/raw/`; (b) hold the live
+   payloads in memory only; (c) write them to a separate
+   `data/raw_spotcheck/`.
+3. **Decision** - (c). Forcing into `data/raw/` would overwrite the
+   `fetched_at` stamps the memo's as-of date rests on, and - worse - **would
+   make any discrepancy disappear the moment it was found**: the next pipeline
+   run would read the new values, recompute, and agree with itself. The check
+   would be self-erasing. (b) was rejected because the live payloads are
+   evidence: a reviewer should be able to see the response the check compared
+   against, not just the verdict.
+4. **Impact** - none on the numbers; it is what makes the check repeatable.
+   `data/raw_spotcheck/*` is gitignored alongside `data/raw/*` for the same
+   reasons (DR-01).
+5. **Cost if wrong** - a second cache directory to explain, and a few MB on
+   disk. Against that: the alternative is a check that cannot fail twice.
+
+---
+
+### DR-25: four stratified slices, not a random sample - Risk rank: medium (settles Q14)
+
+1. **Observation** - the brief asks for a spot-check "sampled across four
+   slices" without naming them, and the budget is 3 films per slice. A simple
+   random sample of 12 from 112 would, with high probability, contain **none**
+   of the eight extreme-ROI films that drive the analysis and none of the
+   shortlisted titles the memo names.
+2. **Options** - (a) a random sample, which is unbiased and would mostly check
+   films nobody cares about; (b) check only the influential rows, which cannot
+   detect a fault that is uniform across the list; (c) stratify: put the budget
+   where an error would hurt, and keep one unbiased slice as a control.
+3. **Decision** - (c), with the four slices chosen to match the findings:
+   **shortlisted** (an error here is an error in the answer),
+   **flagged_extreme** (the eight films from F11, *all* of them, because
+   sampling the risky rows is not a check), **pre_2000** (Yaw's window, where
+   money is least comparable - F10), and **random_control** (without it the
+   check only looks where problems are expected). The sample is seeded, so a
+   reviewer re-running it sees the same films and can tell a fixed fault from
+   a new draw.
+4. **Impact** - 15 films rather than the 12 the plan estimated, because taking
+   all eight flagged films costs more than sampling three. Coverage 13% of the
+   list, and 100% of the rows the recommendation leans on. `assert_spotcheck`
+   hard-fails if the control slice is ever missing, unless the pool was small
+   enough to be sampled entirely.
+5. **Cost if wrong** - a stratified sample cannot support a statement about
+   the error rate of the list *as a whole*; the control slice is three films,
+   which is too few to estimate anything. So the report claims fidelity on the
+   rows checked and does not extrapolate a rate. That is the honest trade: the
+   alternative is an unbiased estimate of a number nobody asked for, computed
+   by not checking the films that matter.
+
+---
+
+### DR-26: the notebook is an optional install - Risk rank: **high** (it decides whether the project installs at all)
+
+1. **Observation** - the clean-clone test failed: `pip install -r
+   requirements.txt` built nothing, because `jupyter` transitively requires
+   PyYAML, which has no Python 3.15 wheel (F19). The audit's earlier check had
+   passed because it resolved `jupyter` **alone**, where pip selects an older
+   jupyterlab that predates the dependency.
+2. **Options** - (a) pin jupyterlab and jupyter-server to the older versions
+   that avoid `jupyter-events`; (b) drop the notebook from the project
+   entirely; (c) move `jupyter` to an optional `requirements-notebook.txt` that
+   the pipeline does not need.
+3. **Decision** - (c). (a) would pin two transitive packages to versions pip
+   does not want, which breaks again the next time anything else moves. (b)
+   would discard the notebook narrative, which Q15 settled as part of the
+   deliverable.
+4. **Impact** - `pip install -r requirements.txt` now completes in **78
+   seconds, wheels only**, and installs 10 packages instead of about 100. The
+   notebook is one extra command, and `requirements-notebook.txt` says plainly
+   that it may fail on Python 3.15 and that the pipeline is unaffected if it
+   does. Verified end to end in a fresh clone: install, import with no
+   `PYTHONPATH`, 286 tests passing, and the no-token path giving instructions
+   rather than a traceback.
+5. **Cost if wrong** - a reader who wants the notebook has to run a second
+   command and may hit the PyYAML wall on this Python version. That is a
+   documented inconvenience for one optional artefact. The alternative was a
+   repository that could not be installed at all, which is the only failure in
+   this project that would have made every other part of it worthless.
+
+---
+
+### DR-27: the memo is generated, not written - Risk rank: medium
+
+1. **Observation** - the memo is the one artefact a non-programmer reads, and
+   the one most likely to drift: a figure gets revised in the analysis and the
+   sentence quoting it does not.
+2. **Options** - (a) write it by hand from the final numbers; (b) generate the
+   figures and hand-write the prose around them; (c) generate the whole
+   document, with the judgement encoded as rules over the measured results.
+3. **Decision** - (c). The recommendation follows from stated conditions -
+   franchise leads on median, floor and hit rate in both windows, therefore
+   recommend franchise-first; the spread advantage does not survive after 2000,
+   therefore say so; a headline measure flips, therefore the flip becomes the
+   first line instead of the recommendation. Change the data and the memo
+   changes with it.
+4. **Impact** - the memo cannot quote a figure the data no longer supports,
+   and re-running the pipeline republishes it. The caveats are not optional
+   either: tests assert that the mean-reversal disclosure (F14), the thin
+   standalone group (F7), the era problem (F10), the absence of any failure on
+   the list (F12) and the missing licensing prices all appear, and that no
+   dollar price is ever named. A future edit that quietly drops a caveat fails
+   the suite.
+5. **Cost if wrong** - generated prose is less fluent than written prose, and
+   a rule-based recommendation cannot exercise judgement the rules do not
+   encode. Mitigated by keeping the rules few and the conditions explicit, and
+   by the fact that a human still chooses what the rules are. The failure this
+   avoids is worse than stiff prose: a memo that reads beautifully and quotes
+   last week's number.
+
+---
+
+### DR-28: the one improvement is a release gate - Risk rank: n/a (the improvement)
+
+1. **Observation** - everything in this project protects the analysis from
+   being wrong. Nothing protected Adjoa from the analysis being wrong *and
+   looking fine*. She reruns it quarterly, on a laptop, sometimes live in the
+   meeting, and the pipeline is deliberately built to carry on rather than
+   crash (DR-04, DR-16) - so a truncated input list or a half-missing money
+   column would still produce a confident one-page recommendation.
+2. **Options** - a sensitivity panel (already built at stage 6); a
+   run-over-run diff (needs two quarters of history to be worth anything); a
+   bundle dead-weight score (a better answer, not a protection against a wrong
+   one); or a release gate.
+3. **Decision** - the gate. Four checks run before the memo is written, and
+   if any fails **no memo and no shortlist are produced** - the run stops and
+   prints what failed in language that says what to do next, including the one
+   setting that overrides it.
+4. **Impact** - it is the only check in the project whose failure mode is "the
+   board was misled" rather than "a stage crashed". The assertions throughout
+   the pipeline protect each step from the one before; this protects the
+   client-facing output from the whole pipeline. Justified in the client's
+   terms in `reports/improvement.md`.
+5. **Cost if wrong** - it can block a run Adjoa believes is sound. Handled by
+   keeping the checks blunt - each one, failing, makes the memo actively
+   misleading rather than merely imperfect - and by naming
+   `gate.enabled = false` in the failure message, so skipping it is a decision
+   somebody makes and can be asked about rather than something that happens
+   silently. A gate with twenty conditions is one that gets permanently
+   disabled the first time it fires over something cosmetic.
 
 ---
 

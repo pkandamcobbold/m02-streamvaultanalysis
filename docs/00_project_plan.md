@@ -21,8 +21,24 @@
 >   reads from cache — which is the normal case, and the case where quoting today's date
 >   would overstate how fresh the numbers are. Currently 2026-11-19.
 >
-> Still open: Q12 (time budget), Q14 (the four slices), and whether the "one improvement"
-> must be code. Each has a stated default in the runbook, so none blocks work.
+> - **Q12 (time budget)** — settled at stage 8. The boundary is stages 3–7, warm cache,
+>   one machine, single-threaded, acquisition excluded and reported beside it. Measured
+>   1.9s against the 10s limit in settings; projected 3.6s at 500 titles (4.5s if every
+>   stage is assumed linear). See DR-22 and DR-23.
+> - **Q14 (the four slices)** — settled at stage 9: `shortlisted`, `flagged_extreme`
+>   (all eight, not a sample), `pre_2000`, and `random_control`. Stratified rather than
+>   random, because a random 12 of 112 would miss every film the recommendation leans
+>   on. See DR-25.
+>
+> - **The "one improvement beyond the brief"** — settled at stage 10: it is code, a
+>   release gate that refuses to publish a memo when the accounting does not
+>   reconcile, the groups are too thin, too much money data is missing, or a live
+>   re-check moved the answer. Chosen over a sensitivity panel (already built), a
+>   run-over-run diff (needs two quarters of history) and a bundle dead-weight score
+>   (a better answer rather than a protection against a wrong one). Justified in the
+>   client's terms in `reports/improvement.md`. See DR-28.
+>
+> Nothing is now open. Every question in Part 10 has been settled and recorded.
 >
 > The step-by-step build order, including every manual setup task, is in
 > [02_build_runbook.md](02_build_runbook.md). This file stays the *why*; that one is the *how*.

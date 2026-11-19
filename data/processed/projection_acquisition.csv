@@ -1,0 +1,2 @@
+measured,calls,projected_seconds,basis
+20.26,117,86.6,"0.173s per call on the cold-cache run, times 500 films; one call per film because api.append_credits is true"

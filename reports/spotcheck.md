@@ -60,20 +60,39 @@ usually miss every film that does. So the sample is stratified:
 
 | Slice | Verdict | Fields | Films |
 |---|---|---|---|
-| `flagged_extreme` | `expected_drift` | 1 | 1 |
-| `flagged_extreme` | `identical` | 53 | 6 |
-| `pre_2000` | `identical` | 27 | 3 |
-| `random_control` | `identical` | 27 | 3 |
-| `shortlisted` | `identical` | 27 | 3 |
+| `flagged_extreme` | `expected_drift` | 9 | 6 |
+| `flagged_extreme` | `identical` | 45 | 6 |
+| `pre_2000` | `expected_drift` | 3 | 3 |
+| `pre_2000` | `identical` | 24 | 3 |
+| `random_control` | `expected_drift` | 2 | 2 |
+| `random_control` | `identical` | 25 | 3 |
+| `shortlisted` | `expected_drift` | 3 | 3 |
+| `shortlisted` | `identical` | 24 | 3 |
 
 ### Expected drift
 
 These fields move on their own, so a change in them is not a
-discrepancy. None of them enters a performance metric (DR-13).
+discrepancy. None of them enters a performance metric (ADR-014).
 
 | Film | Field | Analysis | Live |
 |---|---|---|---|
+| Star Wars | `vote_count` | 23191 | 23193.0 |
+| The Empire Strikes Back | `vote_count` | 19145 | 19146.0 |
+| Star Wars: Episode III - Revenge of the Sith | `vote_count` | 15527 | 15529.0 |
+| Raiders of the Lost Ark | `vote_count` | 14239 | 14241.0 |
 | Back to the Future | `vote_count` | 22791 | 22792.0 |
+| The Godfather | `vote_count` | 24014 | 24015.0 |
+| The Godfather | `vote_average` | 8.7 | 8.689 |
+| The Good, the Bad and the Ugly | `vote_count` | 10163 | 10165.0 |
+| The Good, the Bad and the Ugly | `vote_average` | 8.5 | 8.468 |
+| Jaws | `vote_count` | 12044 | 12046.0 |
+| Jaws | `vote_average` | 7.7 | 7.687 |
+| Pulp Fiction | `vote_count` | 31365 | 31368.0 |
+| Forrest Gump | `vote_count` | 30921 | 30924.0 |
+| Alien Resurrection | `vote_count` | 5882 | 5883.0 |
+| Return of the Jedi | `vote_count` | 17573 | 17574.0 |
+| The Dark Knight Rises | `vote_count` | 25344 | 25345.0 |
+| Schindler's List | `vote_count` | 18205 | 18206.0 |
 
 ## How a difference is classified
 

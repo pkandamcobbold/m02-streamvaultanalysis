@@ -1,15 +1,25 @@
-# StreamVault back-catalog analysis
+# StreamVault back-catalog licensing analysis
 
-Which older films are worth licensing: franchise bundles, or standalone hits? This
-project pulls public data on the candidate titles, checks it for problems, and
-produces a recommendation with a shortlist to negotiate from — the same way every
-time, so it can be re-run each quarter without anyone having to remember how.
+Which older films are worth licensing: franchise bundles, or standalone hits? The candidate list is
+127 TMDb ids and nothing else. This pipeline pulls the film data itself from a live public API,
+accounts for every id it was given, checks the data for problems, and produces a recommendation with
+a shortlist to negotiate from — the same way every time, so it can be re-run each quarter without
+anyone having to remember how.
+
+```text
+ data/input/id_list.csv ──┐
+ TMDb API /movie/{id} ────┤
+                          ▼
+   EXTRACT ──► VALIDATE ──► TRANSFORM ──► CHECKS ──► LOAD ──► reports/memo.md
+   extract.py  validate.py  transform.py  checks.py  load.py
+   └──────────── run in order, timed, logged, by run_pipeline.py ────────────┘
+```
 
 ---
 
 ## Setup
 
-You need Python 3.10 or newer and a free account on themoviedb.org.
+You need Python 3.12 or newer and a free account on themoviedb.org.
 
 **1. Get the code**
 
@@ -39,11 +49,10 @@ source .venv/Scripts/activate
 pip install -r requirements.txt
 ```
 
-That is everything the analysis needs: ten packages, about a minute. If you also
-want to open [`notebooks/analysis.ipynb`](notebooks/analysis.ipynb) — a guided
-tour of the whole analysis, which computes nothing of its own — there is one more
-command. It is separate on purpose, because a notebook viewer's dependencies
-should not be able to stop the analysis installing:
+That is everything the analysis needs: ten packages, about a minute. If you also want to open
+[`explore/analysis.ipynb`](explore/analysis.ipynb) — a guided tour of the whole analysis, which
+computes nothing of its own — there is one more command. It is separate on purpose, because a
+notebook viewer's dependencies should not be able to stop the analysis installing (ADR-027):
 
 ```bash
 pip install -r requirements-notebook.txt
@@ -51,16 +60,15 @@ pip install -r requirements-notebook.txt
 
 **3. Get your own access token**
 
-The data comes from The Movie Database, which asks each person to use their own
-free credential rather than a shared one.
+The data comes from The Movie Database, which asks each person to use their own free credential
+rather than a shared one.
 
-1. Create an account at <https://www.themoviedb.org/> and verify the email — the
-   API page stays locked until you do.
+1. Create an account at <https://www.themoviedb.org/> and verify the email — the API page stays
+   locked until you do.
 2. Profile icon → **Settings** → **API** in the left sidebar.
-3. Request a key: choose **Developer**, accept the terms, fill the short form.
-   Approval is instant.
-4. Copy the **API Read Access Token (v4 auth)** — the long value starting `eyJ`.
-   Not the shorter 32-character key below it.
+3. Request a key: choose **Developer**, accept the terms, fill the short form. Approval is instant.
+4. Copy the **API Read Access Token (v4 auth)** — the long value starting `eyJ`. Not the shorter
+   32-character key below it.
 
 **4. Put the token where the project can find it**
 
@@ -68,8 +76,8 @@ free credential rather than a shared one.
 cp .env.example .env
 ```
 
-Open `.env` and replace the placeholder with your token. No quotes, no spaces
-around the `=`. That file is ignored by git and never leaves your machine.
+Open `.env` and replace the placeholder with your token. No quotes, no spaces around the `=`. That
+file is ignored by git and never leaves your machine (ADR-001).
 
 ---
 
@@ -79,98 +87,127 @@ around the `=`. That file is ignored by git and never leaves your machine.
 python run_pipeline.py
 ```
 
-**The first run fetches the data** — about half a minute for the current list of
-117 ids, and it needs an internet connection. Every response is saved to
-`data/raw/`, so **every run after that reads from disk**: the second run takes
-about two seconds and makes no API calls at all. That is deliberate — a re-run
-during a meeting does not depend on the network, it does not need the token, and
-it does not hammer a service other people are sharing.
+**The first run fetches the data** — about half a minute for the current list of 117 ids, and it
+needs an internet connection. Every response is saved to `data/raw/`, so **every run after that
+reads from disk**: the second run takes about two seconds and makes no API calls at all. That is
+deliberate — a re-run during a meeting does not depend on the network, it does not need the token,
+and it does not hammer a service other people are sharing.
 
-If a run is interrupted, just start it again. It picks up where it stopped —
-including when it was interrupted *while writing* a file, which used to leave a
-half-written response that broke every later run.
+If a run is interrupted, just start it again. It picks up where it stopped — including when it was
+interrupted *while writing* a file, which used to leave a half-written response that broke every
+later run (ADR-008).
 
-To refresh the data deliberately — a new quarter, say:
+Other ways to run it:
 
 ```bash
 python run_pipeline.py --force
 ```
 
+```bash
+python run_pipeline.py --no-spotcheck
+```
+
+```bash
+python -m pytest
+```
+
+`--force` refreshes the data deliberately, for a new quarter. `--no-spotcheck` skips the one stage
+that must reach the network. The tests cover everything that does not need live data.
+
+**Exit codes.** `0` succeeded. `1` could not start — usually no token, and the message says what to
+do. `2` means the **release gate blocked publication**: the analysis ran and its results should not
+go in front of a board without someone looking first. That is not a crash; see ADR-029.
+
 ---
 
-## Where the output goes
+## Layout
+
+| Path | What it holds | Why it is separate |
+| --- | --- | --- |
+| `pipeline/` | Production code: one file per stage, plus `config.py` | This is what runs every quarter. Nothing else lives here |
+| `run_pipeline.py` | The orchestrator | The one command, and the only thing that times and records a run |
+| `tests/` | Tests on tiny hand-made data, one file per stage module | Prove the code is right before it touches a 127-title list |
+| `docs/adr/` | Architecture Decision Records, one file per decision | The why behind the code, versioned with it |
+| `docs/findings.md` | What we found in the data, traced to code, tests and decisions | Evidence behind every rule |
+| `docs/questions.md` | Questions for the client, and what we did when nobody answered | Business decisions belong to the business |
+| `docs/data_contract.md` | What we agree to receive, and what happens if it is broken | Both sides know the rules |
+| `explore/` | The investigation notebook: the narrative, importing the pipeline | Understanding the data is separate from production code |
+| `reports/` | What reaches the client: the memo, the improvement, the spot-check | Generated, so they cannot drift from the numbers |
+| `config/settings.toml` | Every threshold, window and limit | Adjoa changes a value here, never in the code |
+| `data/input/` | The candidate list, as given | Committed, never edited |
+| `data/raw/`, `data/interim/` | Cached API responses and the shaped tables | Rebuilt from code, so never committed (ADR-002) |
+| `data/processed/` | The ledger, the KPI tables, the timings, the run log | Committed: this is the evidence |
+
+The five stages, and what each one is responsible for:
+
+| Stage | Does | Leaves behind |
+| --- | --- | --- |
+| `extract` | Reads the id list as text, fetches details and credits with a timeout, retries and a rate limit, caches every response with a timestamp, shapes the nested JSON into one table per grain | `id_ledger.csv`, `fetch_log.csv`, `films/cast/crew/genres.csv` |
+| `validate` | Profiles every column, flags every value worth a look with a verdict and a reason, applies the cleaning rules as flags rather than deletions | `profile.csv`, `flags.csv`, `exclusions.csv`, `sensitivity.csv` |
+| `transform` | Collapses to film grain, proves every merge with `validate=` and an indicator, computes the KPIs for both time windows | `join_report.csv`, `id_accounting.csv`, `kpi_*.csv`, `shortlist_*.csv` |
+| `checks` | The release gate, the live spot-check against TMDb, the time budget and the 500-title projection | `gate.csv`, `spotcheck.csv`, `time_budget.csv`, `projection.csv` |
+| `load` | Writes the memo and the improvement note, and the ledger's final state | `reports/memo.md`, `reports/improvement.md` |
+
+---
+
+## Where to start reading
 
 | Location | What's in it |
 |----------|--------------|
-| `reports/memo.md` | **Start here.** One page: the recommendation, the shortlist, what we couldn't verify. Written for the room, not for engineers. |
-| `reports/improvement.md` | The one addition beyond the brief — a release gate — and why that one. |
-| `reports/data_diagnosis.md` | Every problem found in the source data, ranked by how much it affects the answer. |
-| `reports/decision_log.md` | Every judgement call, why it was made, and what it costs if it's wrong. |
-| `reports/spotcheck.md` | A live re-check of a sample of titles against the source, to catch our own errors. |
-| `data/processed/id_ledger.csv` | Every title on the candidate list and what happened to it. Nothing disappears silently. |
-| `data/processed/run_timings.csv` | How long each stage took, every time it has been run. Appended to, never overwritten. |
+| [`reports/memo.md`](reports/memo.md) | **Start here.** One page: the recommendation, the shortlist, what we couldn't verify. Written for the room, not for engineers. |
+| [`docs/findings.md`](docs/findings.md) | Every problem found in the data, ranked by how much it moves the answer, each traced to the code and test that handles it. |
+| [`docs/adr/`](docs/adr/README.md) | Every judgement call: what we chose, what we gave up, and what would make us change our mind. |
+| [`reports/improvement.md`](reports/improvement.md) | The one addition beyond the brief — a release gate — and why that one. |
+| [`reports/spotcheck.md`](reports/spotcheck.md) | A live re-check of a stratified sample against the source, to catch our own errors. |
+| [`data/processed/id_ledger.csv`](data/processed/id_ledger.csv) | Every title on the candidate list and what happened to it. Nothing disappears silently. |
+| `data/processed/run_log.jsonl` | One JSON record per run: counts, timings, whether the gate passed. Appended to, never overwritten. |
+| `data/processed/run_timings.csv` | How long each stage took, every time it has been run. What the time budget is computed from. |
 | `data/processed/join_report.csv` | Every merge: rows in, rows out, what matched. Proof that no join quietly multiplied or dropped a film. |
-| `data/processed/id_accounting.csv` | Every title on the list and whether it reached the analysis. The table the memo's "112 of 127" sentence is read off. |
-| `data/processed/profile.csv` | Every column: how much is present, how much is zero, and the shape of the distribution. |
-| `data/processed/flags.csv` | Every value worth a second look, each with a verdict (is it an error or a real extreme?) and a reason. |
-| `data/processed/exclusions.csv` | Every film left out of a metric, why, and the setting responsible — so any exclusion can be traced to a switch you can flip. |
 | `data/processed/sensitivity.csv` | The headline comparison recomputed under each alternative setting. Read this to see whether the answer depends on a judgement call. |
-| `data/processed/kpi_all_years.csv`, `kpi_modern.csv` | Franchise against standalone, one file per time window, with the film count beside every statistic. |
-| `data/processed/kpi_flip_check.csv` | Whether the answer changes between the two windows, measure by measure. |
-| `data/processed/shortlist_franchises.csv`, `shortlist_standalones.csv` | The picks, plus the runners-up they beat — so "why this one" has something to be compared against. |
-| `data/processed/time_budget.csv` | How long each stage took and what the stated boundary leaves out. |
-| `data/processed/projection.csv` | How long it will take at ~500 titles, from measured scaling rather than from multiplying. |
-| `data/processed/` | The KPI tables, timings and exclusions behind the memo. |
-| `data/raw/` | Untouched copies of what the API returned, each stamped with when it was fetched. |
+| `data/processed/kpi_flip_check.csv` | Whether the answer changes between the two time windows, measure by measure. |
 
 ---
 
 ## Changing how it works
 
-Every threshold, window and limit is in [`config/settings.toml`](config/settings.toml),
-with a comment explaining what it does. Change values there — not in the code.
-
-The ones most likely to need changing:
+Every threshold, window and limit is in [`config/settings.toml`](config/settings.toml), with a
+comment explaining what it does. Change values there — not in the code. A key that cannot change
+behaviour refuses to load rather than sitting there looking live (ADR-030).
 
 | Setting | Why you'd change it |
 |---------|---------------------|
 | `input.expected_id_count` | The candidate list grows. Next year it's expected to be ~500. |
 | `windows.modern.min_year` | The "recent films only" cutoff, currently 2000. |
-| `performance.hit_roi_threshold` | What counts as a hit. The answer is sensitive to this — see the decision log. |
+| `performance.hit_roi_threshold` | What counts as a hit. 92% of this list clears it, which is itself a finding — see ADR-015. |
 | `talent.min_films_for_reliable` | How many films someone needs before we'll call them a reliable signal. |
 | `shortlist.n_franchises` / `n_standalones` | How many names you want to negotiate from. |
+| `gate.*` | What the release gate refuses to publish past. |
 
 ---
 
 ## When it doesn't work
 
-**"No TMDb token found"** — step 4 of Setup hasn't been done, or `.env` has the
-placeholder text still in it. The message tells you exactly where to paste the
-token.
+**"No TMDb token found"** — step 4 of Setup hasn't been done, or `.env` still has the placeholder in
+it. The message tells you exactly where to paste the token.
 
-**It hangs, or says it can't reach the server** — no internet, or the API is
-down. If `data/raw/` already has files in it from a previous run, the analysis
-can still run on those; the memo will carry the older as-of date, which is why
-that date is printed on it.
+**It hangs, or says it can't reach the server** — no internet, or the API is down. If `data/raw/`
+already has files from a previous run, the analysis still runs on those; the memo will carry the
+older as-of date, which is why that date is printed on it.
 
-**"RECONCILIATION NOTE: the brief says 127 titles, the file has N"** — not a
-failure. The candidate list has changed size. Update `input.expected_id_count`
-in the settings file to the new number, and read the diagnosis report to see
-what the difference was.
+**"RECONCILIATION NOTE: the brief says 127 titles, the file has N"** — not a failure. The candidate
+list has changed size. Update `input.expected_id_count` and read the findings log to see what the
+difference was (ADR-005).
 
-**A number in the memo looks wrong** — check `reports/spotcheck.md` first; it
-compares a sample of our figures against the live source and classifies any
-differences. Then `data/processed/id_ledger.csv`, which accounts for every
-title on the list.
+**"The memo was not written, because these checks failed"** — not a crash. The analysis ran, and its
+results should not go in front of a board without someone looking first: the title count did not
+reconcile, or too few films survived, or too much of the money data is missing, or the live re-check
+changed the answer. The message names which. Read [`docs/findings.md`](docs/findings.md), then either
+fix the input or — if you have decided the run is sound anyway — set `gate.enabled = false` in
+`config/settings.toml`, run again, and say in the meeting that you did.
 
-**"The memo was not written, because these checks failed"** — not a crash. The
-analysis ran, and its results should not go in front of a board without someone
-looking first: the title count did not reconcile, or too few films survived, or
-too much of the money data is missing, or the live re-check changed the answer.
-The message names which. Read `reports/data_diagnosis.md`, then either fix the
-input or — if you have decided the run is sound anyway — set
-`gate.enabled = false` in `config/settings.toml`, run again, and say in the
-meeting that you did.
+**A number in the memo looks wrong** — check [`reports/spotcheck.md`](reports/spotcheck.md) first; it
+compares a sample of our figures against the live source and classifies any differences. Then
+`data/processed/id_ledger.csv`, which accounts for every title on the list.
 
 ---
 
@@ -178,28 +215,28 @@ meeting that you did.
 
 For anyone picking this up to change it:
 
-- [`docs/00_project_plan.md`](docs/00_project_plan.md) — the problem, the claims being
-  tested, and the judgement calls. The *why*.
-- [`docs/01_brief_and_guide.md`](docs/01_brief_and_guide.md) — the original brief,
-  verbatim, so the work can be audited against what was asked.
-- [`docs/02_build_runbook.md`](docs/02_build_runbook.md) — the build order, stage by
-  stage, including every manual setup step. The *how*.
-
-Logic lives in `src/streamvault/`, one module per pipeline stage.
-`notebooks/analysis.ipynb` tells the story by calling those modules — it holds no
-analysis of its own, so the numbers can never depend on which cells someone ran.
+- [`docs/adr/README.md`](docs/adr/README.md) — the decisions, in order, one file each. **Read this
+  before changing any rule**; each one says what it would take to change its mind.
+- [`docs/findings.md`](docs/findings.md) — what is actually wrong with the data, and where each
+  finding is handled.
+- [`docs/data_contract.md`](docs/data_contract.md) — what the pipeline relies on from the candidate
+  list and from TMDb, and what it does when a rule is broken.
+- [`docs/01_brief_and_guide.md`](docs/01_brief_and_guide.md) — the original brief, verbatim, so the
+  work can be audited against what was asked.
+- [`docs/00_project_plan.md`](docs/00_project_plan.md) and
+  [`docs/02_build_runbook.md`](docs/02_build_runbook.md) — the planning and the build order. Written
+  against the earlier ten-stage layout; ADR-032 maps those stages onto the five modules.
 
 ```bash
 python -m pytest
 ```
 
-Runs the tests, which cover the parts that don't need live data: parsing the
-candidate list, the fetcher's caching and retry behaviour, the cleaning rules,
-and the join assertions.
+298 tests, covering everything that does not need live data: parsing the candidate list, the
+fetcher's caching and retry behaviour, the grain assertions, the join proofs, the cleaning rules,
+the KPI definitions, the gate, and the memo's caveats.
 
-They do **not** prove that a fresh clone works. Pytest is configured to find the
-code in `src/` whether or not `pip install -r requirements.txt` succeeded, so a
-green suite says nothing about whether `python run_pipeline.py` runs for someone
-who has just cloned the repo. Only actually cloning it into a new folder and
-running it proves that, which is why that check is a step of its own in the
-runbook rather than something the tests can be trusted to cover.
+They do **not** prove that a fresh clone works. Pytest is configured to find the code whether or not
+`pip install -r requirements.txt` succeeded, so a green suite says nothing about whether
+`python run_pipeline.py` runs for someone who has just cloned the repo. Only actually cloning it into
+a new folder and running it proves that — which is how finding F19 was caught, and why that check is
+a step of its own rather than something the tests can be trusted to cover.

@@ -1,5 +1,11 @@
 # Decision log
 
+> **Superseded.** Every record here is now one file in [`../docs/adr/`](../docs/adr/README.md),
+> rewritten to the ADR template (context, decision, alternatives, consequences, revisit when).
+> DR-00 maps to ADR-001 and so on in order; the unnumbered loop record is ADR-031.
+> This file is kept only until the migration is reviewed, and may be deleted.
+
+
 > Every judgement call, in five parts: what we saw, what the real alternatives
 > were, what we chose, what each option does to the numbers, and what it costs
 > Kwame if the call was wrong.

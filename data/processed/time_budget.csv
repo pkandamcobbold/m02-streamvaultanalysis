@@ -1,10 +1,6 @@
 stage,seconds,share_of_analysis,in_budget,note
-1_ingest,0.01,,False,"outside the stated boundary, reported for completeness"
-2_acquire,0.234,,False,"excluded: network-bound and cached, so timing it measures TMDb and the connection, not this code"
-3_flatten,0.668,0.644,True,
-4_join,0.06,0.058,True,
-5_profile,0.064,0.062,True,
-6_clean,0.061,0.059,True,
-7_kpis,0.185,0.178,True,
-9_spotcheck,2.071,,False,"excluded: network-bound by design — it exists to compare against the live source, so it cannot run from cache"
-10_memo,0.019,,False,excluded: writes the reports rather than computing the analysis
+extract.read_ids,0.042,,False,"outside the stated boundary, reported for completeness"
+extract.acquire,3.865,,False,"excluded: network-bound and cached, so timing it measures TMDb and the connection, not this code"
+extract.shape,1.415,0.602,True,
+validate,0.269,0.114,True,
+transform,0.667,0.284,True,

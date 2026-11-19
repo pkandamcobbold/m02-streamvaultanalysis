@@ -1,5 +1,11 @@
 # Data diagnosis
 
+> **Superseded.** This content now lives in [`../docs/findings.md`](../docs/findings.md), as a
+> traced table (finding, verdict, decision, handled in, proved by, decided in) with the detail
+> below it, plus four findings this file never had: F21 to F24.
+> This file is kept only until the migration is reviewed, and may be deleted.
+
+
 > Problems found in the source data, how each was detected, what it does to the
 > recommendation, ranked by risk. Risk ranking is provisional until the KPIs exist
 > (stage 7) — a problem's rank is the size of its effect on the answer, and that

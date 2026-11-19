@@ -8,7 +8,7 @@
 #
 # Values marked TO SET AFTER PROFILING are placeholders. They get set once the
 # stage-5 profile shows what the data actually looks like, and each one gets a
-# sensitivity row in reports/decision_log.md showing what the recommendation
+# sensitivity row in docs/adr/ showing what the recommendation
 # looks like if it were set differently. Do not treat them as principled until
 # that has been done.
 
@@ -29,7 +29,7 @@ timeout_seconds = 10            # ceiling on every single call
 max_retries = 5
 backoff_factor = 0.5            # waits 0.5s, 1s, 2s, 4s, 8s
 min_seconds_between_calls = 0.08  # ~12 req/s, comfortably inside TMDb's limits
-append_credits = true           # DR-02: one call per film instead of two.
+append_credits = true           # ADR-003: one call per film instead of two.
                                 # Set false to run the briefed two-call path
                                 # and compare the timings.
 progress_every = 25             # print a progress line every N films
@@ -50,7 +50,7 @@ treat_zero_money_as_missing = true  # zero budget/revenue as a disguised null.
                                     # Set false to compute every money metric
                                     # the other way (zeros as real flops).
 # SET AFTER PROFILING (stage 5, 2026-11-19). Both values below are now
-# justified against the actual distribution rather than assumed — see DR-14.
+# justified against the actual distribution rather than assumed — see ADR-015.
 min_budget_for_roi = 1000000        # a guard, inactive this quarter: the
                                     # smallest budget on the list is 1,200,000,
                                     # so no film is excluded. Kept because next
@@ -91,7 +91,7 @@ flop_roi = 1.0                     # revenue below budget: real, and the thing
 # heavily recency-biased (Endgame 85.7, a 1966 classic 0.5). It is kept in the
 # tables as fetched, and excluded from every performance metric: using it would
 # measure how much a film is being looked at this week, and would make the
-# analysis unreproducible from the same cache a month later. See DR-13.
+# analysis unreproducible from the same cache a month later. See ADR-014.
 use_popularity_as_performance = false
 
 [talent]
@@ -111,7 +111,7 @@ show_runners_up = 3             # "why it made the cut" means something only
                                 # next to what did not
 
 [budget]
-analysis_seconds_limit = 10     # stages 3-7, cache warm, acquisition excluded
+analysis_seconds_limit = 10     # the shaping, validate and transform stages, cache warm, acquisition excluded
 projection_target_titles = 500
 
 # The improvement beyond the brief: a release gate. The pipeline refuses to

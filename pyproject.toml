@@ -4,20 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "streamvault"
-version = "0.1.0"
+version = "0.2.0"
 description = "Back-catalog licensing analysis for StreamVault: franchise bundles vs standalone hits."
-requires-python = ">=3.10"
+# The pins in requirements.txt need 3.12: numpy 2.5.5 requires >=3.12 and
+# pandas 3.1.1 requires >=3.11. Stating 3.10 here was finding F23.
+requires-python = ">=3.12"
 
 # Dependencies live in requirements.txt, pinned, because that is what the
 # clean-clone instructions tell Adjoa to install. Listing them loosely here
 # as well would create two sources of truth.
 
 [tool.setuptools.packages.find]
-where = ["src"]
+# Flat layout: one package, `pipeline`, at the repository root (ADR-032).
+where = ["."]
+include = ["pipeline*"]
 
 [tool.pytest.ini_options]
 # Lets `python -m pytest` find the package even if the editable install
 # has not been done yet.
-pythonpath = ["src"]
+pythonpath = ["."]
 testpaths = ["tests"]
 addopts = "-q"

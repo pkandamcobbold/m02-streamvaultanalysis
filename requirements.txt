@@ -25,7 +25,7 @@ pytest==9.2.0
 # does not need a notebook server: run_pipeline.py produces every artefact.
 # Keeping the notebook optional means the thing the brief asks to run from a
 # clean clone installs in seconds, wheels only, and cannot be broken by a
-# dependency of a viewer. See DR-26.
+# dependency of a viewer. See ADR-027.
 
 # The project itself, installed in editable mode, so `import streamvault`
 # works from run_pipeline.py, the notebook and the tests without any

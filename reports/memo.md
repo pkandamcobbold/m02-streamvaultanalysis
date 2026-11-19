@@ -142,6 +142,6 @@ back-catalog films in the first place.
 do not update on their own. Re-running the analysis refreshes both the figures
 and this date.
 
-A sample of 15 titles — including every one of the exceptional performers, and
-everything named above — was re-checked against the source after the analysis
-was finished. Every figure that matters matched.
+A sample of several titles — including every one of the exceptional
+performers, and everything named above — was re-checked against the source
+after the analysis was finished. Every figure that matters matched.

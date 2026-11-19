@@ -1,4 +1,4 @@
-# Optional: only needed to open notebooks/analysis.ipynb.
+# Optional: only needed to open explore/analysis.ipynb.
 #
 # The pipeline does not need any of this. `python run_pipeline.py` writes every
 # artefact and every report using requirements.txt alone, which is what the

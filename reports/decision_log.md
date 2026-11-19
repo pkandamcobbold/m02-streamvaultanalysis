@@ -8,10 +8,10 @@
 > will fill it. A decision record with an invented impact figure is worse than
 > one that admits the measurement is still to come.
 >
-> **Status: stages 1–3 complete.** DR-00 to DR-10 below. DR-07 and DR-08 came
+> **Status: stages 1–4 complete.** DR-00 to DR-11 below. DR-07 and DR-08 came
 > out of an audit of stages 1–2 rather than from building them, and are kept
 > because both were judgement calls with real alternatives. Cleaning and KPI
-> decisions (DR-11 onward) arrive with stages 6 and 7.
+> decisions (DR-12 onward) arrive with stages 6 and 7.
 
 ---
 
@@ -312,6 +312,46 @@
    count of *people* needs the deduplication — so both numbers have to be
    derivable from the same table, and only the per-credit grain allows that.
    A note is printed at every run so the 914 figure is never a surprise.
+
+---
+
+### DR-11: a co-directed film is credited to both directors — Risk rank: medium
+
+1. **Observation** — 9 of 112 films have more than one credited director, and
+   **TMDb returns co-directors in no fixed order**: `/movie/603` (*The Matrix*)
+   lists Lana then Lilly Wachowski, `/movie/605` (*The Matrix Revolutions*)
+   lists Lilly then Lana. The same is true of the Russo brothers on *Infinity
+   War* and *Endgame*. Collapsing with `.first()` therefore credits the same
+   partnership to different people on different films.
+2. **Options** — (a) `.first()` — one director per film, whichever row arrives
+   first; (b) pick the first *alphabetically* as "the" director; (c) a sorted
+   partnership label on the film table, plus a long table at one row per film
+   per director, so a shared film counts for each of them.
+3. **Decision** — (c). The film-level `director_names` is the sorted
+   partnership ("Lana Wachowski & Lilly Wachowski"), identical on all three
+   Matrix films; `n_directors` marks the 9; and every per-director statistic
+   is computed from `directors.csv`, never from the label.
+4. **Impact** — **measured, and it decides who exists in the talent analysis.**
+   With `talent.min_films_for_reliable = 3`:
+
+   | Collapse rule | Directors clearing 3 films |
+   |---|---|
+   | (a) `.first()` | **11** of 61 |
+   | (c) both credited *(chosen)* | **13** of 66 |
+
+   The two lost under (a) are **Lana Wachowski and Lilly Wachowski** — a
+   3-film partnership split into one film each, so neither clears the
+   threshold and a consistent directing team disappears from the analysis
+   entirely. Under (a) they are not reported as unreliable; they are not
+   reported at all.
+5. **Cost if wrong** — (c) credits each director with the full performance of
+   a film they shared, so a partnership's record is counted twice at the
+   person level. That is the right error to make: the alternative silently
+   deletes people, and CL4 ("talent is a reliable lever") cannot be tested
+   against a list that lost two of its most consistent names. Any
+   recommendation naming a co-director must say the films were shared, which
+   `n_directors` makes possible. A per-film statistic is unaffected either
+   way — only the per-person view changes.
 
 ---
 

@@ -5,14 +5,16 @@
 > (stage 7) — a problem's rank is the size of its effect on the answer, and that
 > cannot be known before there is an answer to move.
 >
-> **Status: stages 1–3 complete.** F1–F5 are from the candidate list itself,
+> **Status: stages 1–4 complete.** F1–F5 are from the candidate list itself,
 > before any API call. F6 is from the acquisition. F7–F8 are from the flattened
-> tables. Findings that need distributions rather than counts — implausible
+> tables, F9 from the join. Findings that need distributions rather than counts — implausible
 > money, unreliable ratings, real extremes versus errors — follow after stage 5.
 >
-> **Risk order as it stands: F7, then F3 and F6, then F1, F2, F4.** F7 is ranked
-> first because it is the only one that limits what the analysis can conclude
-> rather than how many films it runs on.
+> **Risk order as it stands: F7, then F3, F6 and F9, then F1, F2, F4.** F7 is
+> ranked first because it is the only one that limits what the analysis can
+> conclude rather than how many films it runs on. F9 is ranked with F3 and F6
+> because all three are cases where the obvious handling is wrong in a way that
+> leaves no trace in the output.
 >
 > Data as of **2026-11-19** (the `fetched_at` stamp on every envelope in
 > `data/raw/`; the pipeline reads that date rather than today's, so a memo
@@ -361,6 +363,85 @@ director, and all 112 have a billed lead (`billing_order == 0`).
 
 ---
 
+## F9 — TMDb returns co-directors in inconsistent order · risk: **medium** (resolved)
+
+**Detected:** stage 4, when collapsing the crew table to one row per film.
+
+9 of 112 films have more than one credited director, and the order TMDb returns them
+in is not stable across films:
+
+| Film | Order returned |
+|---|---|
+| *The Matrix* (603) | Lana Wachowski, Lilly Wachowski |
+| *The Matrix Reloaded* (604) | Lana Wachowski, Lilly Wachowski |
+| *The Matrix Revolutions* (605) | **Lilly** Wachowski, **Lana** Wachowski |
+| *Avengers: Infinity War* (299536) | Joe Russo, Anthony Russo |
+| *Avengers: Endgame* (299534) | **Anthony** Russo, **Joe** Russo |
+
+The other four are genuine co-directions (*Shrek*, *Shrek 2* with three directors,
+*The Lion King*, *Pirates: Dead Men Tell No Tales*).
+
+**Why it is a finding and not a quirk.** The obvious collapse — one director per
+film, take the first row — produces an attribution that is arbitrary *and
+inconsistent*, and the damage is not to a label but to who exists in the analysis:
+
+| Collapse rule | Directors with ≥3 films (`talent.min_films_for_reliable`) |
+|---|---|
+| first row per film | **11** of 61 |
+| both credited (chosen) | **13** of 66 |
+
+The two that vanish are **Lana and Lilly Wachowski**: their 3-film partnership splits
+into one film each, neither clears the threshold, and they are not reported as
+unreliable — they are not reported at all. A talent recommendation would be made from
+a list that silently lost one of its most consistent directing teams.
+
+**Effect on the recommendation:** none, now. The film-level label is the sorted
+partnership, identical across all three Matrix films, and per-director statistics come
+from `directors.csv` at one row per film per director, where a shared film counts for
+each of them. Recorded as DR-11.
+
+**Cost if wrong:** crediting both directors counts a shared film's performance twice at
+the person level, which must be disclosed whenever a co-director is named —
+`n_directors` makes that possible. That is the better error: the alternative deletes
+people from the analysis without saying so.
+
+---
+
+## Stage 4 output: the join, proven rather than assumed
+
+Every merge is made with `validate="one_to_one"` and `indicator=True`, and the counts
+are written to `data/processed/join_report.csv` rather than trusted:
+
+| Merge | Left rows | Right rows | Result | Matched | Left only | Right only |
+|---|---|---|---|---|---|---|
+| directors | 112 | 112 | 112 | 112 | 0 | 0 |
+| leads | 112 | 112 | 112 | 112 | 0 | 0 |
+| genres | 112 | 112 | 112 | 112 | 0 | 0 |
+
+No row multiplied, nothing was orphaned, and no film lost its row. `validate=` is what
+makes that a proof rather than an observation: it raises if either side is not unique
+on `tmdb_id`, which is the condition nobody can verify by looking at a table.
+
+And every source row is accounted for end to end, in
+`data/processed/id_accounting.csv`:
+
+| Ledger status | Source rows | Reached the analysis |
+|---|---|---|
+| fetched | 112 | **112** |
+| duplicate | 6 | 0 |
+| not_found_404 | 5 | 0 |
+| invalid_id | 3 | 0 |
+| duplicate_other_namespace | 1 | 0 |
+| **Total** | **127** | **112** |
+
+🧠 One correction worth recording, because it was caught by a test rather than by
+reading: the first version of this table asked "is this id in the analysis?" — which
+counts a *duplicate* row as having reached the analysis, since it carries the same id
+as the row that was kept. It would have reported 113 of 127 rows becoming films when
+only 112 films exist, and it would have been the memo's headline sentence.
+
+---
+
 ## The claim register: what has been tested so far
 
 The claims in `docs/00_project_plan.md` Part 4 are what the team believes. Findings
@@ -374,7 +455,7 @@ Every row says which stage settles it, so nothing sits in "pending" by accident.
 | **CL1** | "Franchise bundles are the safer buy" | Pending — stage 7, **and already constrained** | The groups are now sized: 87 franchise films against 16 standalone, 59 against 8 post-2000 (F7). Whatever stage 7 finds, this claim can be answered directionally and not precisely. Note too that F3 would have put a third copy of one franchise film into every KPI — the direction that would have *flattered* this claim. |
 | **CL2** | "We overpay for weak middle entries" | Pending — stage 7 | Precondition now met: 23 collections carry ≥2 films on the list, sized 2 to 8 (Harry Potter 8, Star Wars 6, Pirates 5, Mission: Impossible 5). Position-within-series is computable from `release_date`, which is present for all 112 films. |
 | **CL3** | "Cherry-picking standalone hits beats bundles" | Pending — stage 7 | Weakly answerable at best: "the top standalones" would be chosen from a pool of 16, and `shortlist.n_standalones = 5` means picking the top 5 of 16. That is cherry-picking from a thin list, and the claim's own logic makes the thinness matter. |
-| **CL4** | "Talent is a reliable lever" | Pending — stage 7 | Precondition met in full: credits present for all 112 films (cast counts 9–177), every film has a billed lead and at least one director. The constraint will be `talent.min_films_for_reliable = 3` against a 112-film pool, not missing data. |
+| **CL4** | "Talent is a reliable lever" | Pending — stage 7, **pool now known** | 66 directors across 122 director credits, of whom **13 have ≥3 films** on the list (Spielberg 8, Nolan 7, Jackson 6, then ten more) — so the claim is testable, on 13 names and not on one or two. Every film has a billed lead and at least one director. Note F9: two of those 13 exist only because co-directed films are credited to both directors. |
 | **CL5** | "Pre-2000 numbers can't be trusted" *(Yaw)* | Pending — stage 7, both windows | Both windows are viable: 41 films pre-2000, 71 from 2000 on, spanning 1966–2019. But Yaw's window is where F7 bites hardest — 8 standalone films — so the honest answer may be that his concern cannot be *settled* either way on this list. Two obstacles are already known: the 5 dead ids have no year, so F6's loss cannot be tested for era bias. |
 | **CL8** | "The trilogy failed / the passed bundle was a miss" | Out of scope by design | Note only. The method should be able to score any bundle; proving Kwame's history is not this project's job. |
 

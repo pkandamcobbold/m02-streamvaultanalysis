@@ -1,0 +1,4 @@
+merge,left_rows,right_rows,result_rows,matched,left_only,right_only
+directors,112,112,112,112,0,0
+leads,112,112,112,112,0,0
+genres,112,112,112,112,0,0

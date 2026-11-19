@@ -907,40 +907,91 @@ but looks authoritative. Resolve it explicitly (DR-10).
 
 ## The principle
 
-**A join you didn't validate is a guess.** The two failure modes are silent: a left join that drops films (you under-count and never notice), and a one-to-many join that duplicates a film's revenue once per director (you double-count the money and the KPI looks plausible).
+**A merge fails by succeeding.** Join against a table that is not unique on the key
+and the rows multiply, every median moves, and nothing raises — you get a table of the
+wrong length full of plausible numbers. `validate=` is the only thing that turns "I
+believe this key is unique" into a proof, because uniqueness is exactly what cannot be
+checked by looking at a table.
 
 ## Step 5.1 💻 `src/streamvault/join.py`
 
+Collapse each child table to film grain, then three left joins from `films`:
+
 ```python
-# GRAIN: one row per film. Directors collapsed to a list/count first so the
-# merge stays one-to-one and a co-directed film's revenue is counted once.
-directors = (
-    crew.loc[crew["job"] == "Director", ["tmdb_id", "person_id", "name"]]
-        .drop_duplicates()                      # same person credited twice
-)
-director_counts = (
-    directors.groupby("tmdb_id", as_index=False)
-             .agg(director_count=("person_id", "size"),
-                  director_names=("name", lambda names: " | ".join(sorted(names))))
-)
-
-films_with_directors = films.merge(
-    director_counts,
-    on="tmdb_id",
-    how="left",                 # a film with no director must survive
-    validate="one_to_one",      # proves the right side has one row per film
-    indicator=True,             # proves which films had no director at all
-)
-
-assert len(films_with_directors) == len(films), "join changed the film count"
-join_report = films_with_directors["_merge"].value_counts()
+merged = left.merge(right, on="tmdb_id", how="left",
+                    validate="one_to_one", indicator=f"_merge_{name}")
 ```
 
-The same pattern for the lead actor: filter `cast` to `billing_order == 0`, **then** `drop_duplicates("tmdb_id")`, then merge `one_to_one`. Don't merge the whole cast table into `films` and then aggregate — that's where the revenue duplication happens.
+- **`validate="one_to_one"`** raises if either side has a duplicate key.
+- **`indicator=` is named per merge and dropped immediately.** Left in place, the next
+  merge's indicator collides with it and pandas resolves the collision by renaming
+  rather than complaining.
+- **`how="left"`, never inner.** A film with no director must keep its row. An inner
+  join would delete it, and the deletion is invisible — the count is simply smaller
+  than the number of films fetched, and nothing says why.
+- **Assert the row count after every merge.** `len(merged) == len(left)`, every time.
 
-✅ **ARTEFACT** — the join report (`both` / `left_only` / `right_only` counts) for every merge, plus the `left_only` list: those are the films with no director or no cast, which is itself a diagnosis finding.
+✅ **ARTEFACT** — `data/processed/join_report.csv`, one row per merge:
 
-> **Learning checkpoint.** Why does `validate="one_to_many"` matter for directors? Because without it, a film with two directors produces two rows, and `films["revenue"].sum()` silently counts that film's revenue twice. The number stays plausible — which is exactly why it's dangerous.
+| Merge | Left | Right | Result | Matched | Left only | Right only |
+|---|---|---|---|---|---|---|
+| directors | 112 | 112 | 112 | 112 | 0 | 0 |
+| leads | 112 | 112 | 112 | 112 | 0 | 0 |
+| genres | 112 | 112 | 112 | 112 | 0 | 0 |
+
+## Step 5.2 🧠 DR-11: the director collapse is not a detail
+
+Look at the multi-director films before choosing how to collapse them:
+
+```bash
+.venv/Scripts/python.exe -c "import pandas as pd; c=pd.read_csv('data/interim/crew.csv'); d=c[c.job=='Director']; m=d.groupby('tmdb_id').size(); print(d[d.tmdb_id.isin(m[m>1].index)][['tmdb_id','person_name']].to_string())"
+```
+
+9 of 112 films are co-directed, and **TMDb returns co-directors in no fixed order** —
+*The Matrix* lists Lana then Lilly Wachowski, *The Matrix Revolutions* lists Lilly then
+Lana. So `.first()` credits the same partnership to different people on different films.
+
+Measured consequence, with `talent.min_films_for_reliable = 3`:
+
+| Collapse rule | Directors clearing 3 films |
+|---|---|
+| `.first()` | **11** of 61 |
+| both credited | **13** of 66 |
+
+The two lost are both Wachowskis: a 3-film partnership split into one film each, so
+neither clears the threshold. They are not reported as unreliable — they are not
+reported at all.
+
+So: a **sorted partnership label** on the film table (`"Lana Wachowski & Lilly
+Wachowski"`, identical on all three Matrix films), plus `directors.csv` at one row per
+film per director for every per-person statistic. The label is for reading a row; a
+string is not a group.
+
+🧠 Same reasoning rejects a "primary genre". TMDb does not document genre order as
+meaningful, so naming the first one primary invents a fact and then ranks films by it.
+`genre_names` is sorted, `n_genres` is counted, and any genre analysis groups the long
+table.
+
+## Step 5.3 ✅ Account for every id, end to end
+
+T4 says "account for every id". That means a table built from **both ends** of the
+pipeline and compared, not a number carried forward by hand:
+
+| Ledger status | Source rows | Reached the analysis |
+|---|---|---|
+| fetched | 112 | **112** |
+| duplicate | 6 | 0 |
+| not_found_404 | 5 | 0 |
+| invalid_id | 3 | 0 |
+| duplicate_other_namespace | 1 | 0 |
+| **Total** | **127** | **112** |
+
+🧠 **A trap worth knowing about, because a test caught it and reading did not.** The
+first version asked "is this id in the analysis table?" A **duplicate** row carries the
+same id as the row that was kept, so it answers yes — and the table claimed 113 of 127
+rows became films when only 112 films exist. A row reaches the analysis only if it is
+the row that *put the film there*. This is the sentence the memo is read off, so an
+error here is an error in the headline.
 
 ---
 

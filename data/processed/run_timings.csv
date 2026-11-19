@@ -11,3 +11,11 @@ run_at,stage,seconds,api_calls,cache_hits,rows,note
 2026-11-19T13:52:43+00:00,1_ingest,0.02,0,0,127,117 ids queued
 2026-11-19T13:52:43+00:00,2_acquire,0.438,0,117,117,append_credits=True
 2026-11-19T13:52:43+00:00,3_flatten,1.109,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T14:02:53+00:00,1_ingest,0.016,0,0,127,117 ids queued
+2026-11-19T14:02:53+00:00,2_acquire,0.372,0,117,117,append_credits=True
+2026-11-19T14:02:53+00:00,3_flatten,1.061,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T14:02:53+00:00,4_join,0.131,0,0,112,3 validated merges
+2026-11-19T14:05:17+00:00,1_ingest,0.019,0,0,127,117 ids queued
+2026-11-19T14:05:17+00:00,2_acquire,0.498,0,117,117,append_credits=True
+2026-11-19T14:05:17+00:00,3_flatten,1.532,0,0,112,"7827 cast, 24932 crew rows"
+2026-11-19T14:05:17+00:00,4_join,0.142,0,0,112,3 validated merges

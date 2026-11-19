@@ -1,0 +1,6 @@
+status,source_rows,reached_analysis
+fetched,112,112
+duplicate,6,0
+not_found_404,5,0
+invalid_id,3,0
+duplicate_other_namespace,1,0

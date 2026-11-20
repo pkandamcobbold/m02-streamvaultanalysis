@@ -40,13 +40,47 @@ POSITION_LAST = "last"
 # Inside a franchise: are the middle entries the weak ones?
 # ---------------------------------------------------------------------------
 
-def position_within_franchise(cleaned: pd.DataFrame, min_entries: int = 3) -> pd.DataFrame:
+
+def _franchises_born_in(scope: pd.DataFrame, min_year: int) -> pd.Index:
+    """The collections whose earliest entry falls in the window.
+
+    A franchise is in or out whole. Admitting a 1977 franchise on the strength
+    of its 2015 sequel is what makes an opener cell and a final-entry cell hold
+    different franchises, and that is the confound these windows exist to
+    remove.
+    """
+    earliest = scope.groupby("collection_id")["release_year"].min()
+    return earliest.loc[earliest.notna() & (earliest >= min_year)].index
+
+
+def position_within_franchise(
+    cleaned: pd.DataFrame,
+    min_entries: int = 3,
+    window_min_year: int | None = None,
+) -> pd.DataFrame:
     """CL2: compare first, middle and last entries inside each collection.
 
     `min_entries=3` because a two-film collection has no middle, and including
     it would put its second film in the "last" bucket and silently change what
     "last" means. Ranked by release date, which is the order a viewer met them
     in and the order a bundle is built in.
+
+    `window_min_year` keeps the franchises whose **opener** falls in the window
+    and ranks those whole, which is the only reading of "hold age still" that
+    survives being said out loud (S-07). The two obvious alternatives both
+    break the comparison:
+
+    * Filter the films to the window and then rank. A franchise straddling the
+      boundary is re-ranked, so its third film is counted as an opener — a
+      fresh distortion in the one comparison built to remove one.
+    * Rank first and filter after. Positions stay true, but the opener cell
+      then holds only franchises that began in the window while the final cell
+      also holds old franchises' last entries, so the cells are different
+      franchises and the gap between them is partly a gap between sets.
+
+    Keeping whole franchises costs sample — a franchise that began in 1977 is
+    out of the window entirely, however modern its later entries — and buys
+    the one thing the claim needs: every cell holds the same franchises.
     """
     scope = cleaned.loc[
         cleaned["collection_id"].notna() & cleaned["in_money_metrics"].fillna(False)
@@ -54,6 +88,13 @@ def position_within_franchise(cleaned: pd.DataFrame, min_entries: int = 3) -> pd
     if scope.empty:
         return pd.DataFrame(columns=["position", "films", "collections",
                                      "median_roi", "floor_roi", "median_revenue"])
+
+    if window_min_year is not None:
+        scope = scope.loc[
+            scope["collection_id"].isin(_franchises_born_in(scope, window_min_year))].copy()
+        if scope.empty:
+            return pd.DataFrame(columns=["position", "films", "collections",
+                                         "median_roi", "floor_roi", "median_revenue"])
 
     scope["entries_on_list"] = scope.groupby("collection_id")["tmdb_id"].transform("size")
     scope = scope.loc[scope["entries_on_list"] >= min_entries].copy()
@@ -80,6 +121,65 @@ def position_within_franchise(cleaned: pd.DataFrame, min_entries: int = 3) -> pd
     table = table.sort_values("position", key=lambda s: s.map(order), ignore_index=True)
     return table.round(3)
 
+
+def paired_position_ratio(
+    cleaned: pd.DataFrame,
+    min_entries: int = 3,
+    window_min_year: int | None = None,
+) -> pd.DataFrame:
+    """Each franchise as its own control: its final entry's return over its opener's.
+
+    The first/middle/last table compares cells of films, so a cell's figure
+    moves when the mix of franchises in it moves. This one never compares
+    across franchises at all — every number is one collection's last entry
+    against its own opener, so cast, genre, audience and studio cancel out.
+    It is the version to quote when someone asks whether the effect is real
+    rather than how big it is.
+
+    A median ratio above 1 means later instalments return *more*. The share
+    below 1 is the honest companion: a median of 1.27 on 11 franchises with 4
+    of them declining is a tendency, not a law, and the table says so.
+    """
+    scope = cleaned.loc[
+        cleaned["collection_id"].notna() & cleaned["in_money_metrics"].fillna(False)
+    ].copy()
+    columns = ["basis", "franchises", "median_last_over_first",
+               "share_declining", "median_opener_year"]
+    if scope.empty:
+        return pd.DataFrame(columns=columns)
+
+    if window_min_year is not None:
+        scope = scope.loc[
+            scope["collection_id"].isin(_franchises_born_in(scope, window_min_year))].copy()
+
+    scope = scope.loc[
+        scope.groupby("collection_id")["tmdb_id"].transform("size") >= min_entries]
+    if scope.empty:
+        return pd.DataFrame(columns=columns)
+
+    ordered = scope.sort_values(["collection_id", "release_date"])
+    by_collection = ordered.groupby("collection_id")
+    paired = pd.DataFrame({
+        "first_roi": by_collection["roi"].first().astype("float64"),
+        "last_roi": by_collection["roi"].last().astype("float64"),
+        "opener_year": by_collection["release_year"].first().astype("Float64"),
+    })
+    # An opener at or below zero return cannot carry a ratio, so it is dropped
+    # rather than quietly producing an infinity.
+    paired = paired.loc[paired["first_roi"] > 0]
+    if paired.empty:
+        return pd.DataFrame(columns=columns)
+
+    ratios = paired["last_roi"] / paired["first_roi"]
+    basis = ("franchises that began in or after "
+             f"{window_min_year}" if window_min_year is not None else "all franchises")
+    return pd.DataFrame([{
+        "basis": basis,
+        "franchises": int(len(ratios)),
+        "median_last_over_first": round(float(ratios.median()), 3),
+        "share_declining": round(float((ratios < 1).mean()), 3),
+        "median_opener_year": int(paired["opener_year"].median()),
+    }], columns=columns)
 
 def gap_to_best_entry(cleaned: pd.DataFrame, min_entries: int = 2) -> pd.DataFrame:
     """How far below its collection's best entry does a typical entry sit?

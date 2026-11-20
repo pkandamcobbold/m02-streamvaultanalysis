@@ -201,7 +201,7 @@ current shape rather than argued for in decision records, because none of them c
 | [`reports/data_diagnosis.md`](reports/data_diagnosis.md) | The eleven problems that move the recommendation, **numbered in risk order**, each traced to the code and test that handles it, plus the full account of where all 127 titles went. |
 | [`decisions/`](decisions/README.md) | How the system is built: 18 decisions, one file each, with what we gave up and what would change our mind. |
 | [`reports/decision_notes.md`](reports/decision_notes.md) | The analysis judgements: what counts as a franchise, why medians not means, how the era problem is handled. **Read M1, M4, M5, M6** if you read four. |
-| [`docs/self_audit.md`](docs/self_audit.md) | What we checked and did not find (S-01–S-03), and the six defects in this project rather than the data (S-04–S-09), three still open. |
+| [`docs/self_audit.md`](docs/self_audit.md) | What we checked and did not find (S-01–S-03), and the seven defects in this project rather than the data (S-04–S-10), three still open. |
 | [`reports/improvement.md`](reports/improvement.md) | The one addition beyond the brief — a release gate — and why that one. |
 | [`reports/spotcheck.md`](reports/spotcheck.md) | A live re-check of a stratified sample against the source, to catch our own errors. |
 | [`data/processed/id_ledger.csv`](data/processed/id_ledger.csv) | Every title on the candidate list and what happened to it. Nothing disappears silently. |
@@ -210,6 +210,8 @@ current shape rather than argued for in decision records, because none of them c
 | `data/processed/join_report.csv` | Every merge: rows in, rows out, what matched. Proof that no join quietly multiplied or dropped a film. |
 | `data/processed/sensitivity.csv` | The headline comparison recomputed under each alternative setting. Read this to see whether the answer depends on a judgement call. |
 | `data/processed/kpi_flip_check.csv` | Whether the answer changes between the two time windows, measure by measure. |
+| `data/processed/kpi_uncertainty.csv` | How much of the headline gap survives resampling, measure by measure — with `kpi_uncertainty_by_franchise.csv`, which resamples whole franchises instead of individual films. Read this before quoting the gap. |
+| `data/processed/kpi_position_paired.csv` | Each franchise's final entry against its own opener. The version of the position question that no change in the mix of franchises can move. |
 
 ---
 
@@ -262,7 +264,7 @@ For anyone picking this up to change it:
 
 - [`decisions/README.md`](decisions/README.md) — how the system is built, in order, one file each.
   **Read this before changing any rule**; each one says what it would take to change its mind.
-- [`reports/decision_notes.md`](reports/decision_notes.md) — what the numbers mean, M1 to M13. **Read this before
+- [`reports/decision_notes.md`](reports/decision_notes.md) — what the numbers mean, M1 to M14. **Read this before
   changing any statistic**: M6 is the one where the conventional choice reverses the answer.
 - [`reports/data_diagnosis.md`](reports/data_diagnosis.md) — what is actually wrong with the data, and
   where each finding is handled. Eleven findings, numbered in risk order.

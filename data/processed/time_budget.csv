@@ -1,7 +1,7 @@
 stage,seconds,share_of_analysis,in_budget,note
 extract.read_ids,0.011,,False,"outside the stated boundary, reported for completeness"
-extract.acquire,0.278,,False,"excluded: network-bound and cached, so timing it measures TMDb and the connection, not this code"
-extract.shape,0.926,0.636,True,
-validate,0.175,0.12,True,
-transform,0.356,0.244,True,
-checks.spotcheck,3.089,,False,"outside the stated boundary, reported for completeness"
+extract.acquire,0.21,,False,"excluded: network-bound and cached, so timing it measures TMDb and the connection, not this code"
+extract.shape,0.663,0.389,True,
+validate,0.115,0.067,True,
+transform,0.926,0.543,True,
+checks.spotcheck,3.213,,False,"outside the stated boundary, reported for completeness"

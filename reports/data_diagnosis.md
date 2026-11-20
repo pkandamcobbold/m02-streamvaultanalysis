@@ -10,18 +10,21 @@ change what Kwame should do with the $14M or how much he should trust the answer
 Six of them are high severity, and the first three are not faults in the data at all. They are
 limits on what this list can tell anyone. The candidate list contains no film that lost money, so
 the central argument about franchises being the safer buy cannot be tested here. The gap between
-the two groups is small enough that resampling cannot establish which way it points on the median.
-And the ordinary choice of statistic — the average — reverses the recommendation.
+the two groups is small enough that once films in the same franchise stop counting as independent
+results, no single measure of it survives resampling. And the ordinary choice of statistic — the
+average — reverses the recommendation.
 
 The other three high-severity findings are about comparability. Most of the list belongs to a franchise, money from the 1970s cannot be compared with money from the 2010s, and every exceptional
 return on the list is an old film, so the usual habit of trimming outliers would quietly delete a
 fifth of the pre-2000 evidence and none of the modern.
 
-Five medium-severity findings follow. Two qualify the recommendation. Three are traps in the source
-data where the obvious handling is wrong and leaves no trace in the output.
+Five medium-severity findings follow. Two qualify the recommendation — one of them removes a
+discount argument the team expected to use. Three are traps in the source data where the obvious
+handling is wrong and leaves no trace in the output.
 
-I would still recommend franchise bundles over standalone titles, but on the hit rate and the weaker end rather
-than on the typical return. F-02 is why.
+I would still recommend franchise bundles over standalone titles — on the agreement between four
+measures, all of which point the same way, rather than on any one of them. No single gap clears
+zero on this sample. F-02 is why, and it is the first thing I would expect to be asked about.
 
 ## Reconciliation
 
@@ -73,32 +76,51 @@ line of the source file and a reason on every row that did not make it.
 
 ---
 
-### F-02: The headline gap is not distinguishable from sampling noise — Severity: High
+### F-02: No single measure of the headline gap survives resampling — Severity: High
 
 - **What it is:** The comparison the memo leads with is a typical return of 5.53 for franchise films
   against 5.00 for standalone titles. That difference is too small for this sample to establish.
-- **How I detected it:** I resampled the cleaned table 20,000 times and looked at the spread of the
-  gap. I also resampled whole franchises rather than individual films, because films in the same franchise
-  are not independent observations.
+- **How I detected it:** I resampled the cleaned table and looked at the spread of the gap on every
+  measure the memo could lead with. Then I did it again resampling whole franchises rather than
+  individual films, because films in the same franchise are not independent observations and
+  treating 87 of them as 87 results overstates the evidence.
 - **Scale:** The whole comparison. 87 franchise films and 25 standalones, and the 87 come from only 23 collections.
 
-  | Measure | 95% interval on the gap | Share of resamples with franchise ahead |
-  |---|---|---|
-  | Typical return (median) | −6.34 to +3.08 | 0.81 |
-  | Weaker end (lower quartile) | −0.68 to +2.58 | 0.93 |
-  | Share clearing break-even | −0.000 to +0.326 | 0.97 |
+  Resampling individual films, 10,000 draws:
 
-- **Effect on the client's number:** The direction I report is the more likely one on every measure,
-  but only the hit rate has an interval that excludes zero. The memo currently says the direction is
-  solid and the size imprecise. That is the wrong way round: the size is small, and it is the
-  direction that this sample cannot settle on the typical return.
-- **What I did about it:** Nothing yet in the code. The recommendation should lead on the share
-  clearing break-even, 95% against 80%, and on the weaker end, because those are the measures that
-  survive resampling.
-- **Residual risk:** This is the finding most likely to be raised in the room, and the answer to
-  "is 5.5 against 5.0 on 25 films a real difference?" is "not on that measure". The recommendation
-  does not collapse, but it has to be stated on the measures that hold. Until an uncertainty step is
-  in the pipeline, that framing depends on someone remembering this finding.
+  | Measure | Gap | 95% interval | Franchise ahead | Excludes zero |
+  |---|---|---|---|---|
+  | Typical return (median) | +0.53 | −6.29 to +3.08 | 0.81 | no |
+  | Weaker end (lower quartile) | +1.27 | −0.69 to +2.57 | 0.93 | no |
+  | Share clearing break-even | +0.15 | +0.006 to +0.33 | 0.98 | **yes** |
+  | Spread (narrower is better) | −7.33 | −12.20 to +1.88 | 0.89 | no |
+
+  Resampling the 23 whole franchises instead, 2,000 draws — the honest unit, because films in one
+  franchise share a cast, a director, an audience and a marketing budget:
+
+  | Measure | Gap | 95% interval | Franchise ahead | Excludes zero |
+  |---|---|---|---|---|
+  | Typical return | +0.53 | −6.24 to +3.18 | 0.79 | no |
+  | Weaker end | +1.27 | −0.63 to +2.61 | 0.94 | no |
+  | Share clearing break-even | +0.15 | −0.001 to +0.32 | 0.97 | no |
+  | Spread | −7.33 | −17.72 to +1.92 | 0.89 | no |
+
+- **Effect on the client's number:** Once sequels stop being counted as independent results,
+  **no single measure's gap excludes zero** — the break-even share, the one that held per film,
+  crosses it by a thousandth. The honest statement is therefore not "franchise films return more"
+  but "franchise films are the more likely bet on all four measures, and on this list no one
+  measure settles it alone". That is a weaker claim than the memo made in its first draft and a
+  defensible one, and it is the agreement across measures — four out of four, 78% to 97% of draws —
+  that carries the recommendation, not any single interval.
+- **What I did about it:** `pipeline/transform/uncertainty.py` computes both, publishes
+  `kpi_uncertainty.csv` and `kpi_uncertainty_by_franchise.csv`, and prints which measures survive
+  and which are lost to clustering. The memo's limitations section states the result in those
+  terms. The seed is in `settings.toml`, so a reviewer who re-runs gets the same intervals and can
+  tell a real change from a new draw (M14).
+- **Residual risk:** This is still the finding most likely to be raised in the room, and the answer
+  to "is 5.5 against 5.0 a real difference?" is "not on 25 standalones, no". What survives is the
+  direction and its consistency. A reader who wants a single number with a tight interval will not
+  get one from this sample, and the memo does not offer one.
 
 ---
 
@@ -224,30 +246,68 @@ line of the source file and a reason on every row that did not make it.
 
 ---
 
-### F-08: Two-thirds of the "weak middle entries" effect is really about age — Severity: Medium
+### F-08: The position effect belongs to old franchises, and reverses in new ones — Severity: Medium
 
-- **What it is:** Half of Kwame's team believes StreamVault overpays for the weak middle films of a franchise. Pooled across all years the data appears to agree, and the decline looks steep. Most of it
-  is not about position in the franchise at all.
-- **How I detected it:** I noticed that opening films in this list are much older than closing ones
-  — first entries have a median release year of 2000 and half are pre-2000, while last entries
+- **What it is:** Half of Kwame's team believes StreamVault overpays for the weak middle films of a
+  franchise. Pooled across all years the data appears to agree, and the decline looks steep. Split
+  the franchises by the era they *began* in and the effect reverses: old franchises decline hard,
+  franchises that started this century do not decline at all.
+- **How I detected it:** I noticed the opening films on this list are much older than the closing
+  ones — first entries have a median release year of 2000 and half are pre-2000, while last entries
   median 2008.5 and only 14% are pre-2000 — and old films look more profitable for the reasons in
-  F-05. So I read the effect within one era instead.
-- **Scale:** 22 collections, 85 films. Pooled, returns fall 7.76 / 5.41 / 4.44 from first to middle to
-  last, a 43% decline. Within one era it is 5.30 / 5.05 / 4.55, a 14% decline, across groups of 11,
-  27 and 19 films.
-- **Effect on the client's number:** The team is half right and wrong about which half. Later
-  entries do return less, but by roughly a seventh rather than by half, and the **middle** films are
-  not the weak ones — they sit almost level with the openers. It is the final instalments that slip.
-  That is useful at the negotiating table as a discount argument, and not a reason to refuse a set.
-- **What I did about it:** I report both the pooled and the within-era figures and name the
-  confound, and I quote the within-era numbers in the recommendation. Reporting the pooled figures
-  alone would have told the team they were right, by three times the real margin — the most
-  flattering and least useful outcome.
-- **Residual risk:** The within-era groups are 11, 27 and 19 films, so the 14% is approximate and I
-  give it as such. The pre-2000 breakdown has only three closing entries, which is too few to report
-  at all. And the within-era figures are currently computed by hand rather than by the pipeline, so
-  a rerun cannot confirm them. That one is on my side of the line and is tracked in the self-audit
-  as S-07.
+  F-05. So I read position inside an era instead of pooling, which turned out to be three different
+  questions rather than one (below).
+- **Scale:** 22 collections, 85 films pooled. Split by the era the franchise began in, the list
+  divides almost exactly in half: 11 franchises born pre-2000, 11 born since.
+
+  | | opener | middle | final | first → last |
+  |---|---|---|---|---|
+  | Pooled, all years | 7.76 | 5.41 | 4.44 | **−43%** |
+  | Franchises born pre-2000 | 13.37 | 5.41 | 3.97 | **−70%** |
+  | Franchises born 2000 or later | 5.30 | 5.39 | 6.08 | **+15%** |
+
+  And taking each franchise against *itself*, which no change in the mix of franchises can move:
+  of the 11 old franchises, **every single one** declines (median final entry 0.24× its own
+  opener); of the 11 modern ones, 4 decline and the median final entry returns **1.27×** its own
+  opener.
+- **Effect on the client's number:** The team's belief is not supported for anything they would
+  actually be buying. The decline is real but it belongs to franchises that began in the 1980s and
+  1990s, whose openers have had twenty years of re-release, licensing and catalogue income against
+  a fixed 1985 budget (F-05). Among franchises that began this century, later entries return
+  **more** than their openers. So position in a franchise is **not** a discount argument for recent
+  titles, and anyone using it as one is reading the age of the films. The middles are not the weak
+  ones either.
+- **What I did about it:** The pipeline computes and publishes all of it —
+  `kpi_position_in_franchise.csv` (pooled), `kpi_position_in_franchise_modern.csv` (franchises born
+  in the window) and `kpi_position_paired.csv` (each franchise against itself) — and the memo reads
+  the within-era table and reports the sign it finds rather than a sign I assumed. Reporting the
+  pooled figures alone would have handed the team a negotiating argument that does not apply to
+  their candidates.
+- **Residual risk:** 11 franchises on each side is thin, which is why the finding is stated as a
+  direction with the paired check behind it rather than as a figure to negotiate with. The window
+  keeps or drops a franchise **whole**, on the year of its opener; a franchise that began in 1977
+  is therefore out of the modern window entirely, however recent its sequels. That costs sample and
+  it is the price of having every cell hold the same franchises.
+- **One honest footnote, because the figure moves with the definition.** "Position inside one era"
+  can be read three ways, and they disagree:
+
+  | Reading | first → last | Why I did not use it |
+  |---|---|---|
+  | Filter the films to 2000+, then rank | −7% | A franchise straddling 2000 is re-ranked, so its third film is counted as an opener |
+  | Rank, then filter the films to 2000+ | +14% | Positions stay true, but the opener cell holds 11 franchises and the final cell 19 — different franchises, so part of the gap is a gap between sets |
+  | **Keep franchises born 2000+, whole** | **−15%** | **Used.** Positions are true *and* every cell holds the same 11 franchises |
+
+  Only the third compares like with like, and the paired check agrees with it. The middle reading
+  is the one that produces the "about a seventh less" figure this finding carried for two drafts
+  (see the note below), which is why the definition is written down here and not left to whoever
+  re-runs this next quarter.
+- **Corrected 2026-11-20.** For two drafts this finding said the decline shrank from 43% to about
+  14% and that the middles held up while final entries slipped — a figure worked out by hand. The
+  pipeline now computes it (S-07). The hand arithmetic was sound; the *definition* behind it was
+  the middle reading in the table above, the one that compares different franchises in each cell.
+  Under the reading that holds the franchises fixed the effect does not shrink, it reverses. The
+  direction of the original decision — never read position without holding age still — was right
+  and is what made the error findable.
 
 ---
 

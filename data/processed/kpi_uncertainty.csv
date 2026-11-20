@@ -1,0 +1,5 @@
+measure,better_is,franchise,standalone,gap,ci_low,ci_high,share_franchise_ahead,excludes_zero,basis
+typical return,higher,5.526,5.0,0.526,-6.286,3.084,0.812,False,"10,000 resamples of individual films"
+weaker end,higher,3.906,2.641,1.265,-0.69,2.574,0.931,False,"10,000 resamples of individual films"
+share clearing break-even,higher,0.954,0.8,0.154,0.006,0.331,0.976,True,"10,000 resamples of individual films"
+spread,lower,4.388,11.714,-7.326,-12.196,1.878,0.892,False,"10,000 resamples of individual films"

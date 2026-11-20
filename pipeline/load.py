@@ -91,6 +91,67 @@ def rewrap(text: str, width: int = 78) -> str:
     return "\n".join(out)
 
 
+
+
+def _spelled(count: int) -> str:
+    """Small counts are spelled out in this memo, as they are in the brief."""
+    words = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}
+    return words.get(count, str(count))
+
+
+def _how_solid(facts: dict[str, Any]) -> list[str]:
+    """The one paragraph that says how much of the lead a sceptic should believe.
+
+    Franchise films are ahead on every measure, and a reader is entitled to ask
+    whether 25 standalone films can establish that. The answer is in
+    `kpi_uncertainty_by_franchise.csv` and it is a qualified yes: no single
+    measure's gap clears zero once films in one franchise count as one bet, and
+    all four measures point the same way in the large majority of resamples. So
+    the paragraph reports the agreement, not a gap with a tight interval around
+    it, and it is built from the table rather than written out — a sentence like
+    this is exactly the kind that goes stale silently (S-08).
+    """
+    table = facts.get("uncertainty_by_franchise")
+    if table is None or table.empty:
+        table = facts.get("uncertainty")
+    if table is None or table.empty:
+        return []
+
+    indexed = table.set_index("measure")
+    if "typical return" not in indexed.index:
+        return []
+
+    row = indexed.loc["typical return"]
+    low, high = float(row["ci_low"]), float(row["ci_high"])
+    ahead = table["share_franchise_ahead"].astype("float64")
+    settled = table.loc[table["excludes_zero"].fillna(False), "measure"].tolist()
+
+    # The honest sentence differs depending on what survived, so it is chosen
+    # from the table and not assumed. Today nothing clears zero; next quarter
+    # something may, and the memo must not keep saying it does not.
+    if settled:
+        verdict = (
+            "the gap on " + ", ".join(settled) + " is large enough for this list to "
+            "establish on its own"
+        )
+    else:
+        verdict = (
+            "no single measure's lead is large enough for this list to establish on "
+            "its own"
+        )
+
+    return [
+        f"**How solid is that lead?** Resampling the list, the gap on typical return "
+        f"could plausibly sit anywhere from {low:+.1f} to {high:+.1f} times back, and "
+        f"once films in the same franchise count as one bet rather than several, "
+        f"{verdict}. What does hold is the agreement: franchise films come out ahead "
+        f"on all {_spelled(len(table))} measures in {ahead.min():.0%} to "
+        f"{ahead.max():.0%} of "
+        "resamples. The recommendation rests on that, not on the half-turn gap.",
+        "",
+    ]
+
+
 def build_memo(facts: dict[str, Any], settings: Any) -> str:
     """The client memo: the house template, on one page.
 
@@ -190,6 +251,9 @@ def build_memo(facts: dict[str, Any], settings: Any) -> str:
             "Franchise films lead on all three measures, in both windows. The weaker "
             "end matters most for a purchase like this.",
             "",
+        ]
+        lines += _how_solid(facts)
+        lines += [
             "**One caution, because it will be raised:** if you compare *averages* "
             "instead of typical films, standalones come out ahead — the work of three "
             "exceptional films from the 1960s, 70s and 90s, and nothing on offer today "
@@ -209,16 +273,85 @@ def build_memo(facts: dict[str, Any], settings: Any) -> str:
         ]
 
     positions = facts["positions"]
+    modern = facts.get("positions_modern")
     if not positions.empty and len(positions) >= 3:
-        if {"first", "last"} <= set(positions.set_index("position").index):
-            lines += [
-                "**Later instalments return less, but by about a seventh, not the half "
-                "the raw figures suggest** — most of the gap is that opening films here "
-                "are simply older. Useful as a discount argument. The belief that the "
-                "*middle* films are the weak ones is not supported: the middles hold "
-                "up, the last ones slip.",
-                "",
-            ]
+        pooled = positions.set_index("position")
+        if {"first", "last"} <= set(pooled.index):
+            # Both declines are computed, not asserted: the pooled one is what a
+            # reader would work out from the raw figures, and the within-era one
+            # is what survives taking the age of the films into account (S-07).
+            def decline(table: Any) -> float | None:
+                if table is None or table.empty:
+                    return None
+                indexed = table.set_index("position")
+                if not {"first", "last"} <= set(indexed.index):
+                    return None
+                first = float(indexed.loc["first", "median_roi"])
+                return None if first <= 0 else (
+                    1 - float(indexed.loc["last", "median_roi"]) / first)
+
+            raw, like_for_like = decline(positions), decline(modern)
+            # The paired check asks the same question without comparing across
+            # franchises at all, so it is the sentence that answers "is this
+            # just which franchises landed in which column?"
+            paired_clause = ""
+            paired_table = facts.get("positions_paired")
+            if paired_table is not None and not paired_table.empty:
+                windowed = paired_table.loc[
+                    paired_table["basis"].str.contains("began in", na=False)]
+                if not windowed.empty:
+                    row = windowed.iloc[-1]
+                    ratio = float(row["median_last_over_first"])
+                    paired_clause = (
+                        f", and taking each of those {int(row['franchises'])} franchises "
+                        f"against itself the final entry returns {ratio - 1:+.0%} on its "
+                        "own opener"
+                    )
+            middles_hold = False
+            if modern is not None and not modern.empty:
+                m = modern.set_index("position")
+                if {"middle", "last"} <= set(m.index):
+                    middles_hold = float(m.loc["middle", "median_roi"]) > float(
+                        m.loc["last", "median_roi"])
+
+            if like_for_like is not None and raw is not None:
+                # The sign matters and is not assumed. The raw figures show a
+                # steep decline; comparing franchises of the same age it may
+                # vanish or reverse, and the memo has to say which it found.
+                if like_for_like > 0.05:
+                    verdict = (
+                        f"**Later instalments do return less, but by about "
+                        f"{like_for_like:.0%}, not the {raw:.0%} the raw figures "
+                        "suggest** — most of the apparent gap is that opening films "
+                        "here are simply older. Worth something as a discount argument."
+                    )
+                else:
+                    verdict = (
+                        "**Later instalments are not worth less — once you compare "
+                        f"franchises of the same age.** The raw figures show a {raw:.0%} "
+                        "drop from an opener to a final entry, and that is an age "
+                        "effect: the openers on this list are much older. Among "
+                        "franchises that began in 2000 or later, final entries return "
+                        f"{abs(like_for_like):.0%} *more* than openers{paired_clause}. "
+                        "So position in a franchise is not a discount argument for "
+                        "recent titles, and anyone using it as one is reading the age "
+                        "of the films."
+                    )
+                lines += [
+                    verdict
+                    + (" The belief that the *middle* films are the weak ones is not "
+                       "supported either." if not middles_hold else
+                       " The belief that the *middle* films are the weak ones is not "
+                       "supported: the middles hold up."),
+                    "",
+                ]
+            else:
+                lines += [
+                    "**Later instalments return less than openers**, though much of the "
+                    "apparent gap is that opening films here are simply older. The "
+                    "belief that the *middle* films are the weak ones is not supported.",
+                    "",
+                ]
 
     # --- What I built -----------------------------------------------------
     lines += [
@@ -331,6 +464,50 @@ def build_memo(facts: dict[str, Any], settings: Any) -> str:
     # --- What I could not stand behind ------------------------------------
     thin_all = int(standalone_all["films"]) if standalone_all is not None else 0
     thin_modern = int(standalone_modern["films"]) if standalone_modern is not None else 0
+
+    # F-02. Which measures survive resampling is computed, not asserted, so this
+    # caveat cannot drift from the intervals in the artefacts. Resampling whole
+    # franchises is the honest unit — films in one franchise share a cast, a
+    # director and an audience — so where the two disagree, this quotes the
+    # stricter one and says so.
+    bundles = facts.get("bundles")
+    franchise_count = (
+        int(bundles["is_buyable_bundle"].sum())
+        if bundles is not None and not bundles.empty
+        and "is_buyable_bundle" in bundles.columns else None
+    )
+    per_film = facts.get("uncertainty")
+    per_franchise = facts.get("uncertainty_by_franchise")
+
+    def surviving(table: Any) -> list[str] | None:
+        if table is None or table.empty or "excludes_zero" not in table.columns:
+            return None
+        return table.loc[table["excludes_zero"].fillna(False), "measure"].tolist()
+
+    held_film, held_franchise = surviving(per_film), surviving(per_franchise)
+    if held_franchise is not None and not held_franchise:
+        survival = (
+            "Resampled, no single measure's gap is large enough for this many films to "
+            "establish on its own once films in the same franchise are treated as what "
+            "they are — not independent results. The direction is the more likely one on "
+            "every measure, and that is the honest strength of it."
+        )
+    elif held_franchise:
+        survival = (
+            "Resampled, the gap holds on " + " and ".join(held_franchise)
+            + ", and not on the others. Those are the measures this recommendation "
+            "rests on."
+        )
+    elif held_film:
+        survival = (
+            "Resampled, the gap holds on " + " and ".join(held_film)
+            + ", and not on the others."
+        )
+    else:
+        survival = (
+            "Those figures move noticeably if a single film is added or removed, so the "
+            "direction of the recommendation is firmer than the size of the gap."
+        )
     lines += [
         "## What I could not stand behind",
         "",
@@ -340,9 +517,10 @@ def build_memo(facts: dict[str, Any], settings: Any) -> str:
         "cinema takings stand in for streaming value rather than measuring it.",
         "2. **Nothing on this list ever lost money**, so the argument that franchise films "
         "protect you on the downside cannot be tested here either way.",
-        f"3. **The standalone group is thin** — {thin_all} films, {thin_modern} since 2000. "
-        "The direction holds on the weaker end and the break-even share; on typical "
-        "return alone this many films cannot settle it.",
+        f"3. **The standalone group is thin** — {thin_all} films, {thin_modern} since "
+        f"2000"
+        + (f", drawn from {franchise_count} franchises on the other side" if franchise_count else "")
+        + f". {survival}",
         "4. **Old and new money are not the same money** — old films keep earning "
         "against a fixed cost, so they look more profitable than they were. Hence two "
         "windows, never compared across.",

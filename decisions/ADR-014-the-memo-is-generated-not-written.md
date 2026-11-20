@@ -54,13 +54,19 @@ recommendation as the first line. Change the data and the rules produce a differ
   quarter's number. There is no mechanism that would catch that, which is why this is a rule rather
   than a habit.
 - **What would make me revisit this:** The open item below being closed, or a quarter where one of
-  those three hard-coded claims turns out to be false — whichever comes first.
+  the remaining hard-coded claims turns out to be false — whichever comes first. One of the three
+  already did turn out to be false, which is why the item is still open rather than accepted.
 
-**Open item.** Three quantitative claims in the generated memo are hard-coded English rather than
-computed: "three exceptional films from the 1960s, 70s and 90s", "roughly a seventh less than an
-opener" (see M7) and "nearly four in five candidates". Each is true this quarter and could be false
-next quarter while the pipeline reports success — which is precisely the drift this record claims to
-prevent. Tracked as S-08.
+**Open item.** Two quantitative claims in the generated memo are hard-coded English rather than
+computed: "three exceptional films from the 1960s, 70s and 90s" and "nearly four in five
+candidates". Each is true this quarter and could be false next quarter while the pipeline reports
+success — which is precisely the drift this record claims to prevent. Tracked as S-08.
+
+There were three. The position figure was computed on 2026-11-20, and the exercise justified this
+record outright: the prose said later instalments return about a seventh less, and the computed
+answer under the only reading that compares like with like is that they return *more* (M7, F-08).
+The memo had been carrying a discount argument that the data does not support, and no test could
+have caught it while the sentence was English.
 
 **The recommendation lives in the memo's subject line.** The house template fixes the section
 order — found, built, recommend, could not stand behind — so the recommendation cannot be the body's

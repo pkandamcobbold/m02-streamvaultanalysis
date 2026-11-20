@@ -6,7 +6,7 @@
 >
 > - the 18 about **how the system is built** are one file each in
 >   [`../decisions/`](../decisions/README.md), numbered 001 to 018;
-> - the 13 about **what the numbers mean** are M1 to M13 in [`decision_notes.md`](decision_notes.md);
+> - the 14 about **what the numbers mean** are M1 to M14 in [`decision_notes.md`](decision_notes.md);
 > - the float-id rule became a clause in [`../docs/data_contract.md`](../docs/data_contract.md),
 >   and the row-loop record became the closing note of `decision_notes.md`.
 >
@@ -660,6 +660,13 @@
    three "last" entries and is deliberately not reported as a finding. Had (a)
    been reported alone, the team would have been told they were right and by
    three times the real margin - the most flattering and least useful outcome.
+6. **Superseded 2026-11-20** - the impact figures in point 4 were worked out by
+   hand and are kept here as the record of what was decided at the time. The
+   pipeline now computes this, and the 14% turns out to depend on a reading of
+   "within one era" that puts different franchises in the opener cell and the
+   final cell. Holding each franchise whole, the effect reverses: franchises
+   that began in 2000 or later return *more* on their final entries. The
+   decision in point 3 stands; its stated impact does not. See M7 and F-08.
 
 ---
 

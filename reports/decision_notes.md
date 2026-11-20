@@ -24,6 +24,7 @@ those live in [`../decisions/`](../decisions/README.md).
 |---|---|---|
 | **M6** | Judge by the typical film, not the average | **Reverses the recommendation** — averages would have me advise cherry-picking standalone hits, on the strength of three films from 1975, 1966 and 1994 |
 | **M1** | Three franchise groups, not two | Turns the central comparison from 87 against 25 into 96 against 16, by counting films as bundles when there is no bundle to buy |
+| **M14** | State the recommendation on what survives resampling | Lets the memo claim a gap that no measure establishes once sequels stop counting as independent results |
 | **M4** | Never compare money across the 2000 line | Pooling the eras flatters the franchise side specifically, because 20 of the 41 older films are franchise entries |
 | **M5** | Flag the extremes, never trim them | Trimming deletes 8 of 41 older films and none of the 71 recent ones — hurting the window Finance already distrusts, while looking like routine cleaning |
 | **M9** | Keep the break-even bar where it is | Moving it until the groups separate is fitting the measure to the answer I wanted |
@@ -66,7 +67,7 @@ list contains a film that lost money, because today 92% of the list clears it.
 
 ### M1 — Three franchise groups, not two
 
-**Risk: 2 of 13.** This is the split the whole analysis rests on.
+**Risk: 2 of 14.** This is the split the whole analysis rests on.
 
 **What I saw.** 96 of the 112 films belong to a collection. But 9 of those are the only film of
 their collection on Kwame's list — and a collection with one film on offer is not a bundle anyone
@@ -105,7 +106,7 @@ assembling the list by picking single entries out of franchises — which is its
 
 ### M2 — One row per credit, not per person
 
-**Risk: 13 of 13.** Changes no number; decides whether two later numbers can both be right.
+**Risk: 14 of 14.** Changes no number; decides whether two later numbers can both be right.
 
 **What I saw.** 914 of 24,932 crew rows are the same person doing two jobs on one film — a
 writer-director, a producer-director. And 9 of the 112 films have more than one credited director.
@@ -132,7 +133,7 @@ already supports it.
 
 ### M3 — A co-directed film counts for both directors
 
-**Risk: 7 of 13.** It decides who exists in the talent analysis.
+**Risk: 8 of 14.** It decides who exists in the talent analysis.
 
 **What I saw.** The source returns co-directors in no fixed order. *The Matrix* lists Lana then
 Lilly Wachowski; *The Matrix Revolutions* lists Lilly then Lana. The Russo brothers are the same
@@ -170,7 +171,7 @@ reliability threshold on its own.
 
 ### M4 — Never compare money across the 2000 line
 
-**Risk: 3 of 13.**
+**Risk: 4 of 14.**
 
 **What I saw.** Budgets and takings are in the money of each film's own year, with nothing adjusting
 them. Median budget is 5.0 times higher after 2000 while median takings are only 2.3 times higher,
@@ -203,7 +204,7 @@ measuring 1970s costs against 2020s receipts.
 
 ### M5 — Flag the extremes, never trim them
 
-**Risk: 4 of 13.**
+**Risk: 5 of 14.**
 
 **What I saw.** Eight films returned more than 20 times their budget, topping out at 70.5 times for
 *Star Wars*. **All eight are from 1966 to 1994.** Not one recent film comes close (F-06).
@@ -233,7 +234,7 @@ and this argument changes. Re-check that before reusing it.
 
 ### M6 — Judge by the typical film, not the average
 
-**Risk: 1 of 13.** This is the decision that decides the answer.
+**Risk: 1 of 14.** This is the decision that decides the answer.
 
 **What I saw.** The two statistics disagree about the recommendation. On averages, standalones
 return 10.48 against 7.94 for franchises. On typical films, franchises return 5.53 against 5.00.
@@ -268,7 +269,7 @@ extremes evenly across the groups, the average stops being the misleading one.
 
 ### M7 — Read position-in-franchise within one era
 
-**Risk: 6 of 13.**
+**Risk: 7 of 14.**
 
 **What I saw.** Pooled across all years, returns fall steadily with position in a franchise: 7.76
 for openers, 5.41 for middles, 4.44 for final entries. But openers here are much older — half are
@@ -280,21 +281,38 @@ name the confound.
 
 **What I chose.** Both, with the within-era figures quoted in the recommendation.
 
-**What it does to the numbers.** The decline shrinks from **43% to 14%**, so about two-thirds of the
-apparent effect was age rather than position. And the order changes: within one era, middles (5.05)
-sit *above* final entries (4.55). So the team's specific belief is **not supported**, even though the
-general direction is (F-08). Reporting the pooled figures alone would have told them they were
-right, by three times the real margin — the most flattering and least useful outcome available.
+**What it does to the numbers.** It reverses the effect, which is more than I expected when I made
+the call. The window keeps or drops a franchise whole, on the year of its opener, so that every
+cell holds the same franchises:
 
-**If I am wrong.** The within-era groups are 11, 27 and 19 films, so the 14% is approximate and is
-given as such. The pre-2000 breakdown has only three final entries, too few to report at all.
+| | opener | middle | final | first → last |
+|---|---|---|---|---|
+| Pooled, all years | 7.76 | 5.41 | 4.44 | −43% |
+| Franchises born pre-2000 | 13.37 | 5.41 | 3.97 | −70% |
+| **Franchises born 2000 or later** | **5.30** | **5.39** | **6.08** | **+15%** |
 
-**Open item.** The pipeline publishes only the pooled figures. The within-era numbers the memo
-quotes were worked out by hand, so a rerun cannot confirm them — and the artefact on disk is the
-version this record says not to quote. Tracked as S-07.
+The decline is real and it belongs entirely to the old franchises — all 11 of them decline, median
+final entry 0.24× its own opener — because their openers have had twenty years of catalogue income
+against a 1985 budget (M4). Among the 11 franchises that began this century, 4 decline and the
+median final entry returns 1.27× its own opener. So the team's belief is not supported for the
+titles they would be buying, and reporting the pooled figures alone would have handed them a
+discount argument that does not apply.
 
-**At 500 titles.** Close the open item first. Until the within-era breakdown is computed, this
-finding cannot be re-derived next quarter.
+**If I am wrong.** 11 franchises on each side is thin, so this is stated as a direction with the
+paired within-franchise check behind it, not as a figure to negotiate with. The whole-franchise
+window also costs sample: a franchise that began in 1977 is out of the modern window entirely,
+however recent its sequels.
+
+**At 500 titles.** More franchises on each side makes this more reliable, not less. The comparison
+to re-run is the same one, and the definition has to travel with it: read position inside an era,
+and keep each franchise whole when you do.
+
+**This record was corrected on 2026-11-20.** It previously said the decline shrank from 43% to 14%,
+on a figure worked out by hand. The hand arithmetic was right for one reading of "inside one era" —
+rank the films, then keep the post-2000 ones — but that reading puts 11 franchises in the opener
+cell and 19 in the final cell, so part of what it measures is the difference between those sets.
+Holding the franchises fixed, the effect reverses. F-08 sets out all three readings and what each
+gives, because the figure moves with the definition and the definition is the decision.
 
 ---
 
@@ -302,7 +320,7 @@ finding cannot be re-derived next quarter.
 
 ### M8 — Never use the popularity score to measure performance
 
-**Risk: 12 of 13.**
+**Risk: 13 of 14.**
 
 **What I saw.** The source's popularity score runs from 0.46 to 85.70 on this list, and the top
 three are *Avengers: Endgame*, *Interstellar* and *The Dark Knight*. It is a rolling engagement
@@ -332,7 +350,7 @@ under the analysis, and that is a different project.
 
 ### M9 — Keep the break-even bar where it is
 
-**Risk: 5 of 13.**
+**Risk: 6 of 14.**
 
 **What I saw.** The bar was set at 2.5 times budget during planning, as a rough theatrical
 break-even, and marked "set this properly after profiling". Profiling showed **92% of the list
@@ -372,7 +390,7 @@ thumb.
 
 ### M10 — Recompute "above average" inside each window
 
-**Risk: 8 of 13.**
+**Risk: 9 of 14.**
 
 **What I saw.** Two of the three hit definitions are relative — above the middle, and in the top
 quarter — so they are defined against a pool. The analysis reports two windows. Working them out
@@ -405,7 +423,7 @@ rather than the code gaining an exception.
 
 ### M11 — Test every measure for a flip, not just one
 
-**Risk: 9 of 13.**
+**Risk: 10 of 14.**
 
 **What I saw.** The brief asks whether the recommendation changes in the post-2000 window. My
 planned check compared one number per window. But the claim being tested — that franchise bundles
@@ -437,7 +455,7 @@ is a different memo — and the rule that promotes it to the first line is alrea
 
 ### M12 — Say what each shortlist pick actually is
 
-**Risk: 11 of 13.**
+**Risk: 12 of 14.**
 
 **What I saw.** Under the default grouping, lone collection members count as standalone (M1). So the
 top five "standalone" picks include **Jaws** and **The Lion King** — both of which belong to a
@@ -468,7 +486,7 @@ that needs revisiting, not the label.
 
 ### M13 — Choose the spot-check sample, don't draw it at random
 
-**Risk: 10 of 13.**
+**Risk: 11 of 14.**
 
 **What I saw.** The brief asks for a live spot-check across four slices without naming them, with a
 budget of three films each. A straight random draw of 12 from 112 would very likely contain **none**
@@ -513,3 +531,43 @@ table; classifying each film's money quality, which produces the eligibility and
 feed every number; building the exclusions table; and filling the ledger's per-film columns. None of
 them computes a statistic, and at 500 titles each is linear and finishes in well under a second. The
 honest claim is "no statistic is computed by iteration" — not "nothing iterates".
+
+---
+
+### M14 — State the recommendation on what survives resampling
+
+**Risk: 3 of 14.** It decides what the central comparison is allowed to claim.
+
+**What I saw.** The headline is a typical return of 5.53 for 87 franchise films against 5.00 for 25
+standalones. Reported on its own that reads as settled, and it is not: two small groups with wide
+spreads cannot establish a gap of half a turn. The brief asks for a recommendation Kwame can defend
+in a room, and the first question in that room is "is that difference real?".
+
+**The options.** Report the point estimates and let the reader assume — which is what the first
+draft did, and it survives review only if nobody asks. Run a significance test, which answers a
+question nobody at the table is asking. Or resample, publish the interval beside every headline
+measure, and say which measures hold.
+
+**What I chose.** The third, with one addition that changes the answer: resample **whole
+franchises** as well as individual films. The 87 franchise films come from 23 collections, and
+sequels share a cast, a director, an audience and a marketing budget, so counting them as 87
+independent results overstates the evidence. Intervals rather than p-values, because Kwame is
+deciding where to put $14M: "the gap could plausibly be anywhere from −6.2 to +3.2" tells him what
+he needs and "p = 0.19" does not. The seed is in `settings.toml`, so a reviewer who re-runs sees the
+same intervals and can tell a real change from a new draw.
+
+**What it does to the numbers.** It moves no point estimate and it cost the memo its strongest
+sentence. Resampling films, only the share clearing break-even excludes zero (+0.006 to +0.33).
+Resampling the 23 whole franchises, **nothing does** — that one crosses zero by a thousandth. So
+the memo no longer says franchise films return more. It says they are the more likely bet on all
+four measures, on 78% to 97% of draws, and that no one measure settles it alone. That is a smaller
+argument than the first draft made and it is one I can defend (F-02).
+
+**If I am wrong.** The failure mode here is the unusual one: this may be too conservative. A
+cluster bootstrap on 23 collections is itself a small-sample procedure and its intervals are wide
+partly for arithmetic reasons. With 60 franchises the same gap may well clear zero. What I will not
+do is quote the per-film interval because it is the flattering one.
+
+**At 500 titles.** This gets better and cheaper at once — more clusters tighten the interval, and
+"does the gap survive?" may start answering yes. The step is vectorised and runs in half a second on
+112 films, so it scales with the table rather than with the number of draws.

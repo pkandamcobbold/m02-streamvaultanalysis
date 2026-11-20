@@ -1,0 +1,5 @@
+measure,better_is,franchise,standalone,gap,ci_low,ci_high,share_franchise_ahead,excludes_zero,basis
+typical return,higher,5.526,5.0,0.526,-6.238,3.179,0.785,False,"2,000 resamples of 23 whole franchises"
+weaker end,higher,3.906,2.641,1.265,-0.634,2.61,0.938,False,"2,000 resamples of 23 whole franchises"
+share clearing break-even,higher,0.954,0.8,0.154,-0.001,0.324,0.974,False,"2,000 resamples of 23 whole franchises"
+spread,lower,4.388,11.714,-7.326,-17.72,1.918,0.886,False,"2,000 resamples of 23 whole franchises"

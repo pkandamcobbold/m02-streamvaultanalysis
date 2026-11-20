@@ -93,6 +93,19 @@ to treat (S-01). That is reported as dormant rather than quietly left in place: 
 setting that appears to be doing cleaning work while having no effect is a trap for
 whoever reads this next quarter.
 
+**This is not the same robustness as F-02, and the two must not be confused.** This table varies
+the *choices* and holds the data fixed: whatever cleaning rule is applied, franchise films come out
+ahead, so the direction does not rest on a judgement call of mine. F-02 varies the *sample* and
+holds the choices fixed: resample the 23 franchises and no single measure's gap clears zero, so the
+direction is not established by any one measure either. Both are true. A reader who takes this
+table as evidence that the gap is real has read it as the wrong kind of robustness — it says the
+answer is not an artefact of how I cleaned the data, which is a different and smaller claim.
+
+Note the sentence above about the memo stating the direction "with confidence". That was written
+when this project had sensitivity analysis and no resampling, and the memo no longer says it that
+way: it leads on the agreement between four measures rather than on any one of them (M14). The
+paragraph is left standing because it is what this table, on its own, does support.
+
 **Cost if wrong:** low. Every row of this table is reproducible from
 `data/processed/sensitivity.csv` by flipping the named setting, so a sceptical reader
 does not have to take the range on trust.
@@ -321,13 +334,15 @@ rather than by anything failing.
 
 ---
 
-### S-07 — The within-era position figures are hand-computed · risk: **medium** (open)
+### S-07 — The within-era position figures were hand-computed · risk: **medium** (closed)
 
 **Detected:** by auditing the published artefact against the memo. M7 decided that the
 position-in-franchise effect must be read inside one era, and that the pooled figures overstate it
-roughly threefold. The memo quotes the within-era result ("roughly a seventh less than an opener",
-middles above lasts). The pipeline's `kpi_position_in_franchise.csv` holds only the **pooled**
-figures — 7.76 / 5.41 / 4.44 — which is the version M7 says not to quote.
+roughly threefold. The memo quoted the within-era result as prose ("roughly a seventh less than an
+opener", middles above lasts), while the pipeline's `kpi_position_in_franchise.csv` held only the
+**pooled** figures — 7.76 / 5.41 / 4.44 — the version M7 says not to quote. So the number in the
+client document and the number in the artefact were different numbers, and neither the tests nor
+the gate could see it.
 
 **Rows:** one artefact, three figures, and one paragraph of the memo.
 
@@ -337,19 +352,38 @@ numbers become stale, and nothing in the pipeline will contradict them — the a
 show the pooled figures and the memo will still print the old within-era sentence.
 
 **Cost if wrong:** a negotiator uses "a seventh less" as a discount argument at the table, on a
-figure no rerun can confirm. The fix is to compute the within-era breakdown in `transform.py` and
-publish it beside the pooled table, so the memo quotes a number the artefact carries.
+figure no rerun can confirm.
+
+**Closed 2026-11-20**, and it mattered more than I expected. `transform` now computes the
+breakdown — `position_within_franchise(cleaned, window_min_year=...)` — and publishes
+`kpi_position_in_franchise_modern.csv` and `kpi_position_paired.csv`; the memo reads them and
+reports the sign it finds rather than a sign I wrote into the prose.
+
+What computing it exposed was not an arithmetic error. The hand figure was right for the reading it
+was taken under; the trouble was that nobody had written the reading down, and "position inside one
+era" turns out to mean three different things that give −7%, +14% and −15%. Only one of them keeps
+both halves of the comparison intact — true positions *and* the same franchises in every cell — and
+under that one the effect reverses: franchises that began this century return **more** on their
+final entries than their openers. The memo had been offering a discount argument that does not
+apply to the candidates.
+
+That is the general lesson of this item, and it is sharper than "hand figures go stale". A figure
+no rerun can confirm also carries no definition, and the definition was where the answer actually
+lived. F-08 now publishes all three readings and says which one is used and why; M7 carries the
+same, since the choice of reading is the decision, not an implementation detail.
 
 ---
 
-### S-08 — Three figures in the generated memo are hard-coded prose · risk: **medium** (open)
+### S-08 — Two figures in the generated memo are hard-coded prose · risk: **medium** (open)
 
 **Detected:** by reading the memo generator against its own docstring, which claims the memo
 "cannot quote a figure the data no longer supports".
 
-**Rows:** three sentences — "the work of three exceptional films from the 1960s, 70s and 90s",
-"roughly a seventh less than an opener" (see S-07), and "nearly four in five candidates belong to
-one".
+**Rows:** two sentences — "the work of three exceptional films from the 1960s, 70s and 90s" and
+"nearly four in five candidates belong to one". It was three. The position figure, "roughly a
+seventh less than an opener", is computed as of 2026-11-20 and is no longer prose — and closing
+that one turned up a wrong claim in the memo (S-07), which is the argument for closing the other
+two.
 
 **Effect on the recommendation:** none today. Each is true of this quarter's data.
 
@@ -389,7 +423,7 @@ documents.
 contain — the recommendation, the shortlist, both time windows, the deal note, what could not be
 verified, and the as-of date.
 
-**Scale:** 1,063 words, roughly a page and a half.
+**Scale:** 1,230 words, roughly a page and a half.
 
 **What I did about it.** Three compression passes, which took it from 1,381 words to 965. The
 structural changes did the work: the two time windows became one table with four columns instead of
@@ -397,7 +431,12 @@ two stacked blocks, each shortlist pick became one line carrying the number that
 every limitation became one sentence. The last pass gained 3%, which is where prose trimming stops
 paying.
 
-It then grew by 98 words, deliberately. A cross-check against the brief found two of Kwame's asks unanswered in the memo — the lead actors behind the talent lever, and what would change the recommendation. Answering a named requirement beats meeting a length rule, so both went in.
+It then grew twice, deliberately, by 98 words and then by 67. A cross-check against the brief found
+two of Kwame's asks unanswered in the memo — the lead actors behind the talent lever, and what
+would change the recommendation. The second addition is the paragraph saying how much of the
+headline lead survives resampling, which had been sitting in the limitations where a reader goes
+last and a sceptic goes first (M14). Answering a named requirement, or attaching a caveat to the
+claim it qualifies, beats meeting a length rule.
 
 **Effect on the recommendation:** none. Every element the brief names is present and every caveat is
 tested.
@@ -512,13 +551,13 @@ it destroyed this table twice before the column was changed to integers.
 | Old number | Is now | Where it lives |
 |---|---|---|
 | 12 | **F-01** | diagnosis — no film on the list ever lost money |
-| 24 | **F-02** | diagnosis — the headline gap is not distinguishable from noise |
+| 24 | **F-02** | diagnosis — no single measure of the headline gap survives resampling |
 | 14 | **F-03** | diagnosis — the mean and the median disagree about who wins |
 | 7 | **F-04** | diagnosis — the standalone group is 16 films |
 | 10 | **F-05** | diagnosis — pre- and post-2000 money are not the same unit |
 | 11 | **F-06** | diagnosis — every exceptional return is an old film |
 | 15 | **F-07** | diagnosis — the consistency advantage does not survive post-2000 |
-| 16 | **F-08** | diagnosis — two-thirds of the middle-entry effect is age |
+| 16 | **F-08** | diagnosis — the position effect is old franchises, and reverses in new ones |
 | 3 | **F-09** | diagnosis — the IMDb identifier, already on the list |
 | 6 | **F-10** | diagnosis — five ids with no film behind them |
 | 9 | **F-11** | diagnosis — co-directors returned in inconsistent order |

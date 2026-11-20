@@ -16,7 +16,7 @@ install).
 [`../reports/decision_notes.md`](../reports/decision_notes.md).** The test it sets is: *can you say
 what the recommendation looks like under the rejected alternative?* Most records here cannot — the
 recommendation is identical whichever way the credential is sent — so they are not decision notes,
-and filing them as such would bury the thirteen that are.
+and filing them as such would bury the fourteen that are.
 
 Four records here do pass that test and are indexed in the deliverable as well as listed below:
 [005](ADR-005-imdb-id-excluded-as-cross-namespace-duplicate.md) (the alternative puts three copies

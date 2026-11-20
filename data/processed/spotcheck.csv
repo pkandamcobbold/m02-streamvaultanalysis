@@ -69,8 +69,8 @@ tmdb_id,title,slice,field,analysed_value,live_value,verdict,note
 578,Jaws,flagged_extreme,collection_id,2366,2366.0,identical,
 578,Jaws,flagged_extreme,title,Jaws,Jaws,identical,
 578,Jaws,flagged_extreme,popularity,12.3494,13.0921,expected_drift,expected: recomputed daily by TMDb from recent activity
-578,Jaws,flagged_extreme,vote_count,12044,12047.0,expected_drift,expected: rises continuously as people vote
-578,Jaws,flagged_extreme,vote_average,7.7,7.687,expected_drift,expected: moves slightly as vote_count rises
+578,Jaws,flagged_extreme,vote_count,12044,12048.0,expected_drift,expected: rises continuously as people vote
+578,Jaws,flagged_extreme,vote_average,7.7,7.7,identical,
 680,Pulp Fiction,flagged_extreme,budget,8000000,8000000.0,identical,
 680,Pulp Fiction,flagged_extreme,revenue,213928762,213928762.0,identical,
 680,Pulp Fiction,flagged_extreme,runtime,154,154.0,identical,
@@ -132,5 +132,5 @@ tmdb_id,title,slice,field,analysed_value,live_value,verdict,note
 424,Schindler's List,random_control,collection_id,,,identical,
 424,Schindler's List,random_control,title,Schindler's List,Schindler's List,identical,
 424,Schindler's List,random_control,popularity,22.8137,24.1634,expected_drift,expected: recomputed daily by TMDb from recent activity
-424,Schindler's List,random_control,vote_count,18205,18210.0,expected_drift,expected: rises continuously as people vote
-424,Schindler's List,random_control,vote_average,8.57,8.6,expected_drift,expected: moves slightly as vote_count rises
+424,Schindler's List,random_control,vote_count,18205,18211.0,expected_drift,expected: rises continuously as people vote
+424,Schindler's List,random_control,vote_average,8.57,8.57,identical,

@@ -60,12 +60,12 @@ usually miss every film that does. So the sample is stratified:
 
 | Slice | Verdict | Fields | Films |
 |---|---|---|---|
-| `flagged_extreme` | `expected_drift` | 15 | 6 |
-| `flagged_extreme` | `identical` | 39 | 6 |
+| `flagged_extreme` | `expected_drift` | 14 | 6 |
+| `flagged_extreme` | `identical` | 40 | 6 |
 | `pre_2000` | `expected_drift` | 7 | 3 |
 | `pre_2000` | `identical` | 20 | 3 |
-| `random_control` | `expected_drift` | 7 | 3 |
-| `random_control` | `identical` | 20 | 3 |
+| `random_control` | `expected_drift` | 6 | 3 |
+| `random_control` | `identical` | 21 | 3 |
 | `shortlisted` | `expected_drift` | 8 | 3 |
 | `shortlisted` | `identical` | 19 | 3 |
 
@@ -95,8 +95,7 @@ discrepancy. None of them enters a performance metric (M8).
 | The Good, the Bad and the Ugly | `vote_count` | 10163 | 10166.0 |
 | The Good, the Bad and the Ugly | `vote_average` | 8.5 | 8.468 |
 | Jaws | `popularity` | 12.3494 | 13.0921 |
-| Jaws | `vote_count` | 12044 | 12047.0 |
-| Jaws | `vote_average` | 7.7 | 7.687 |
+| Jaws | `vote_count` | 12044 | 12048.0 |
 | Pulp Fiction | `popularity` | 29.9996 | 31.2382 |
 | Pulp Fiction | `vote_count` | 31365 | 31373.0 |
 | Forrest Gump | `popularity` | 29.2116 | 30.5765 |
@@ -111,8 +110,7 @@ discrepancy. None of them enters a performance metric (M8).
 | The Bourne Identity | `popularity` | 10.8776 | 11.609 |
 | The Bourne Identity | `vote_count` | 10582 | 10584.0 |
 | Schindler's List | `popularity` | 22.8137 | 24.1634 |
-| Schindler's List | `vote_count` | 18205 | 18210.0 |
-| Schindler's List | `vote_average` | 8.57 | 8.6 |
+| Schindler's List | `vote_count` | 18205 | 18211.0 |
 
 ## How a difference is classified
 

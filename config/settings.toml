@@ -135,3 +135,14 @@ random_seed = 20251031          # seeded so the sample is reproducible
 always_include_flagged = true   # force recovered ids and disguised nulls into
                                 # the sample: a check that avoids the risky
                                 # rows is not a check
+
+# How much of the headline gap survives resampling (F-02). The comparison rests
+# on 87 franchise films against 25 standalones, which is small enough that the
+# difference needs an interval beside it rather than a point estimate.
+[uncertainty]
+bootstrap_samples = 10000        # 10k is stable to ~0.01 on these intervals;
+                                 # 1k is visibly noisy, 100k buys nothing
+cluster_bootstrap_samples = 2000 # the whole-franchise version keeps a loop,
+                                 # because its draws differ in length
+random_seed = 20251031           # seeded, so a reviewer re-running sees the same
+                                 # intervals and can tell a real change from a draw

@@ -20,6 +20,13 @@ attached review.
 Franchise films lead on all three measures, in both windows. The weaker end
 matters most for a purchase like this.
 
+**How solid is that lead?** Resampling the list, the gap on typical return
+could plausibly sit anywhere from -6.2 to +3.2 times back, and once films in
+the same franchise count as one bet rather than several, no single measure's
+lead is large enough for this list to establish on its own. What does hold is
+the agreement: franchise films come out ahead on all four measures in 78% to
+97% of resamples. The recommendation rests on that, not on the half-turn gap.
+
 **One caution, because it will be raised:** if you compare *averages* instead
 of typical films, standalones come out ahead — the work of three exceptional
 films from the 1960s, 70s and 90s, and nothing on offer today behaves like
@@ -31,10 +38,15 @@ margin is small and rests on only 12 standalone films, so we would not say
 standalones have become *safer* — but if anyone argues recent franchise films
 are the steadier bet, it is not supported.
 
-**Later instalments return less, but by about a seventh, not the half the raw
-figures suggest** — most of the gap is that opening films here are simply
-older. Useful as a discount argument. The belief that the *middle* films are
-the weak ones is not supported: the middles hold up, the last ones slip.
+**Later instalments are not worth less — once you compare franchises of the
+same age.** The raw figures show a 43% drop from an opener to a final entry,
+and that is an age effect: the openers on this list are much older. Among
+franchises that began in 2000 or later, final entries return 15% *more* than
+openers, and taking each of those 11 franchises against itself the final entry
+returns +27% on its own opener. So position in a franchise is not a discount
+argument for recent titles, and anyone using it as one is reading the age of
+the films. The belief that the *middle* films are the weak ones is not
+supported either.
 
 ## What I built
 
@@ -90,7 +102,7 @@ In order of how much it should change your confidence.
 
 1. **We cannot tell you how these films behave on a streaming service** — cinema takings stand in for streaming value rather than measuring it.
 2. **Nothing on this list ever lost money**, so the argument that franchise films protect you on the downside cannot be tested here either way.
-3. **The standalone group is thin** — 25 films, 12 since 2000. The direction holds on the weaker end and the break-even share; on typical return alone this many films cannot settle it.
+3. **The standalone group is thin** — 25 films, 12 since 2000, drawn from 23 franchises on the other side. Resampled, no single measure's gap is large enough for this many films to establish on its own once films in the same franchise are treated as what they are — not independent results. The direction is the more likely one on every measure, and that is the honest strength of it.
 4. **Old and new money are not the same money** — old films keep earning against a fixed cost, so they look more profitable than they were. Hence two windows, never compared across.
 5. **The candidate list was already filtered toward franchise films** — nearly four in five candidates belong to one, so this says which of *these* titles to buy, not what the market holds.
 6. **We have no licensing prices**, so this ranks what to pursue and cannot price it.

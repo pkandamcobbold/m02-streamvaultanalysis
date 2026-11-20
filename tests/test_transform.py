@@ -964,3 +964,273 @@ def test_the_sensitivity_keeps_only_names_reliable_under_one_view(settings_kpis)
     )
     widened = talent_sensitivity(cast, frame, settings_kpis)
     assert set(widened["person_name"]) == {"Reliable"}
+
+# ==========================================================================
+# F-02: how much of the gap survives resampling
+# ==========================================================================
+
+@pytest.fixture
+def settings_uncertainty(settings_kpis):
+    """The KPI settings plus a small, seeded resample count, so tests are quick."""
+    settings_kpis.raw["uncertainty"] = {
+        "bootstrap_samples": 400,
+        "cluster_bootstrap_samples": 200,
+        "random_seed": 7,
+    }
+    return settings_kpis
+
+
+def uncertainty_frame(franchise_rois, standalone_rois, settings, collections=None):
+    """Two groups with chosen returns. `collections` assigns franchise films to collections."""
+    collections = collections or [10] * len(franchise_rois)
+    rows = [
+        film_kpis(i + 1, roi, 2005, "franchise", collections[i])
+        for i, roi in enumerate(franchise_rois)
+    ] + [
+        film_kpis(100 + i, roi, 2005, "standalone")
+        for i, roi in enumerate(standalone_rois)
+    ]
+    return cleaned_frame_kpis(rows, settings)
+
+
+def test_the_published_figure_is_the_statistic_on_the_real_data(settings_uncertainty):
+    """The interval is around a figure, and the figure has to be the true one."""
+    from pipeline.transform import GROUP_STRICT, bootstrap_comparison
+
+    frame = uncertainty_frame([10.0, 11.0, 12.0, 13.0], [1.0, 2.0, 3.0, 4.0],
+                              settings_uncertainty)
+    money = frame.loc[frame["in_money_metrics"].fillna(False)]
+    expected = float(
+        money.loc[money[GROUP_STRICT] == "franchise", "roi"].astype("float64").median())
+
+    table = bootstrap_comparison(frame, settings_uncertainty).set_index("measure")
+    assert table.loc["typical return", "franchise"] == pytest.approx(expected, abs=0.001)
+    assert table.loc["typical return", "gap"] == pytest.approx(
+        table.loc["typical return", "franchise"] - table.loc["typical return", "standalone"],
+        abs=0.001)
+
+
+def test_the_same_seed_gives_the_same_interval(settings_uncertainty):
+    """A reviewer re-running this must be able to tell a real change from a new draw."""
+    from pipeline.transform import bootstrap_comparison
+
+    frame = uncertainty_frame([10.0, 11.0, 12.0, 13.0], [1.0, 2.0, 3.0, 4.0],
+                              settings_uncertainty)
+    first = bootstrap_comparison(frame, settings_uncertainty)
+    second = bootstrap_comparison(frame, settings_uncertainty)
+    pd.testing.assert_frame_equal(first, second)
+
+
+def test_a_wide_gap_excludes_zero_and_an_absent_one_does_not(settings_uncertainty):
+    """The whole point: the interval has to be able to say no."""
+    from pipeline.transform import bootstrap_comparison
+
+    separated = bootstrap_comparison(
+        uncertainty_frame([20.0, 21.0, 22.0, 23.0], [1.0, 1.1, 1.2, 1.3],
+                          settings_uncertainty),
+        settings_uncertainty).set_index("measure")
+    identical = bootstrap_comparison(
+        uncertainty_frame([3.0, 4.0, 5.0, 6.0], [3.0, 4.0, 5.0, 6.0],
+                          settings_uncertainty),
+        settings_uncertainty).set_index("measure")
+
+    assert bool(separated.loc["typical return", "excludes_zero"]) is True
+    assert bool(identical.loc["typical return", "excludes_zero"]) is False
+    assert identical.loc["typical return", "gap"] == pytest.approx(0.0, abs=0.001)
+
+
+def test_for_spread_the_tighter_group_is_the_one_ahead(settings_uncertainty):
+    """`better_is: lower` — without the flip, a tighter franchise reads as losing."""
+    from pipeline.transform import bootstrap_comparison
+
+    table = bootstrap_comparison(
+        uncertainty_frame([5.0, 5.1, 5.2, 5.3], [1.0, 2.0, 20.0, 40.0],
+                          settings_uncertainty),
+        settings_uncertainty).set_index("measure")
+
+    assert table.loc["spread", "better_is"] == "lower"
+    assert table.loc["spread", "gap"] < 0            # franchise spread is smaller
+    assert table.loc["spread", "share_franchise_ahead"] > 0.5   # and that is ahead
+
+
+def test_a_group_too_thin_to_resample_returns_the_empty_table(settings_uncertainty):
+    """Publishing must not crash on a thin group, and must not invent an interval."""
+    from pipeline.transform import UNCERTAINTY_COLUMNS, bootstrap_comparison
+
+    table = bootstrap_comparison(
+        uncertainty_frame([5.0, 6.0, 7.0], [4.0], settings_uncertainty),
+        settings_uncertainty)
+    assert table.empty
+    assert list(table.columns) == UNCERTAINTY_COLUMNS
+
+
+def test_one_franchise_cannot_be_resampled_as_franchises(settings_uncertainty):
+    """87 films from one collection is one observation, and the table says so."""
+    from pipeline.transform import cluster_bootstrap
+
+    frame = uncertainty_frame([10.0, 11.0, 12.0, 13.0], [1.0, 2.0, 3.0, 4.0],
+                              settings_uncertainty, collections=[10, 10, 10, 10])
+    assert cluster_bootstrap(frame, settings_uncertainty).empty
+
+
+def test_resampling_whole_franchises_never_narrows_the_interval(settings_uncertainty):
+    """Sequels are not independent, so the per-film interval is the flattering one."""
+    from pipeline.transform import bootstrap_comparison, cluster_bootstrap
+
+    # Two collections, one high-returning and one low: exactly the case where
+    # treating the films as independent overstates the evidence.
+    frame = uncertainty_frame([20.0, 21.0, 22.0, 1.0, 1.1, 1.2],
+                              [3.0, 4.0, 5.0, 6.0], settings_uncertainty,
+                              collections=[10, 10, 10, 11, 11, 11])
+    per_film = bootstrap_comparison(frame, settings_uncertainty).set_index("measure")
+    per_franchise = cluster_bootstrap(frame, settings_uncertainty).set_index("measure")
+
+    assert per_franchise.loc["typical return", "franchise"] == pytest.approx(
+        per_film.loc["typical return", "franchise"], abs=0.001)
+    assert "2 whole franchises" in per_franchise.loc["typical return", "basis"]
+    width = lambda t: t.loc["typical return", "ci_high"] - t.loc["typical return", "ci_low"]
+    assert width(per_franchise) >= width(per_film)
+
+
+def test_only_the_measures_whose_interval_excludes_zero_may_be_led_with(
+        settings_uncertainty):
+    from pipeline.transform import bootstrap_comparison, measures_that_survive
+
+    table = bootstrap_comparison(
+        uncertainty_frame([20.0, 21.0, 22.0, 23.0], [1.0, 1.1, 1.2, 1.3],
+                          settings_uncertainty),
+        settings_uncertainty)
+    survive = measures_that_survive(table)
+    excluding = set(table.loc[table["excludes_zero"], "measure"])
+    assert set(survive) == excluding
+    assert measures_that_survive(table.iloc[0:0]) == []
+
+
+def test_a_measure_lost_to_clustering_is_announced(settings_uncertainty):
+    """A finding that only holds while sequels count as independent must be said aloud."""
+    from pipeline.transform import announce_uncertainty
+
+    per_film = pd.DataFrame({"measure": ["typical return"], "excludes_zero": [True]})
+    per_franchise = pd.DataFrame({"measure": ["typical return"], "excludes_zero": [False]})
+    said = " ".join(announce_uncertainty(per_film, per_franchise))
+    assert "typical return" in said
+    assert "not independent" in said
+
+    held = " ".join(announce_uncertainty(per_film, per_film))
+    assert "does not rest on" in held
+
+
+def test_no_intervals_at_all_is_reported_rather_than_passed_over(settings_uncertainty):
+    from pipeline.transform import announce_uncertainty
+
+    said = announce_uncertainty(pd.DataFrame(), pd.DataFrame())
+    assert len(said) == 1 and "too few films" in said[0]
+
+
+# ==========================================================================
+# S-07: reading position inside an era without breaking the comparison
+# ==========================================================================
+
+def franchise_frame_positions(rows, settings):
+    """rows of (collection_id, release_year, roi) — one film each."""
+    return cleaned_frame_kpis([
+        film_kpis(i + 1, roi, year, "franchise", collection,
+                  release_date=f"{year}-06-01")
+        for i, (collection, year, roi) in enumerate(rows)
+    ], settings)
+
+
+def test_the_window_keeps_or_drops_a_franchise_whole(settings_kpis):
+    """The fix for S-07: a franchise that began in 1990 is out, sequels and all.
+
+    Admitting it on the strength of its modern entries is what put different
+    franchises in the opener cell and the final cell, and the gap between
+    those cells is then partly a gap between sets.
+    """
+    from pipeline.transform import position_within_franchise
+
+    frame = franchise_frame_positions([
+        # Began pre-2000 with two modern sequels: out of the window entirely.
+        (10, 1990, 9.0), (10, 2004, 4.0), (10, 2008, 3.0),
+        # Began in 2001: in.
+        (11, 2001, 5.0), (11, 2005, 6.0), (11, 2009, 7.0),
+    ], settings_kpis)
+
+    pooled = position_within_franchise(frame)
+    modern = position_within_franchise(frame, window_min_year=2000)
+
+    assert set(pooled["collections"]) == {2}
+    assert set(modern["collections"]) == {1}
+    # Every cell holds the same franchise, so the comparison is like for like.
+    assert list(modern["films"]) == [1, 1, 1]
+    # And the figures are that franchise's own, not the old franchise's sequels.
+    assert float(modern.set_index("position").loc["first", "median_roi"]) == 5.0
+    assert float(modern.set_index("position").loc["last", "median_roi"]) == 7.0
+
+
+def test_the_window_never_relabels_a_sequel_as_an_opener(settings_kpis):
+    """Filtering the films first would make the 2004 entry an opener. It must not."""
+    from pipeline.transform import position_within_franchise
+
+    frame = franchise_frame_positions([
+        (10, 1990, 9.0), (10, 2004, 4.0), (10, 2008, 3.0),
+    ], settings_kpis)
+
+    modern = position_within_franchise(frame, window_min_year=2000)
+    assert modern.empty
+    # The straddling franchise is still read in full when no window is asked for.
+    assert not position_within_franchise(frame).empty
+
+
+def test_a_window_with_no_franchise_born_in_it_returns_the_empty_table(settings_kpis):
+    from pipeline.transform import position_within_franchise
+
+    frame = franchise_frame_positions([
+        (10, 1990, 9.0), (10, 1994, 4.0), (10, 1998, 3.0),
+    ], settings_kpis)
+    table = position_within_franchise(frame, window_min_year=2000)
+    assert table.empty
+    assert "median_roi" in table.columns
+
+
+def test_the_paired_check_reads_each_franchise_against_itself(settings_kpis):
+    """The statistic that cannot be moved by which franchise lands in which cell."""
+    from pipeline.transform import paired_position_ratio
+
+    frame = franchise_frame_positions([
+        (10, 2001, 2.0), (10, 2004, 3.0), (10, 2007, 4.0),   # last / first = 2.0
+        (11, 2002, 8.0), (11, 2005, 7.0), (11, 2008, 4.0),   # last / first = 0.5
+        (12, 2003, 5.0), (12, 2006, 6.0), (12, 2009, 5.0),   # last / first = 1.0
+    ], settings_kpis)
+
+    row = paired_position_ratio(frame, window_min_year=2000).iloc[0]
+    assert int(row["franchises"]) == 3
+    assert float(row["median_last_over_first"]) == pytest.approx(1.0, abs=0.001)
+    assert float(row["share_declining"]) == pytest.approx(1 / 3, abs=0.001)
+    assert int(row["median_opener_year"]) == 2002
+    assert "2000" in row["basis"]
+
+
+def test_the_paired_check_skips_a_franchise_whose_opener_cannot_carry_a_ratio(
+        settings_kpis):
+    """A zero-return opener would otherwise produce an infinity and a silent lie."""
+    from pipeline.transform import paired_position_ratio
+
+    frame = franchise_frame_positions([
+        (10, 2001, 0.0), (10, 2004, 3.0), (10, 2007, 4.0),
+        (11, 2002, 4.0), (11, 2005, 7.0), (11, 2008, 8.0),
+    ], settings_kpis)
+
+    row = paired_position_ratio(frame, window_min_year=2000).iloc[0]
+    assert int(row["franchises"]) == 1
+    assert float(row["median_last_over_first"]) == pytest.approx(2.0, abs=0.001)
+
+
+def test_a_two_film_franchise_has_no_middle_and_is_left_out_of_both(settings_kpis):
+    from pipeline.transform import paired_position_ratio, position_within_franchise
+
+    frame = franchise_frame_positions([
+        (10, 2001, 2.0), (10, 2004, 3.0),
+    ], settings_kpis)
+    assert position_within_franchise(frame, window_min_year=2000).empty
+    assert paired_position_ratio(frame, window_min_year=2000).empty

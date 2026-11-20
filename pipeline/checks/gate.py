@@ -129,6 +129,10 @@ def gather(
     spotcheck_films: int,
     eras: pd.DataFrame,
     talent_leads: pd.DataFrame | None = None,
+    positions_modern: pd.DataFrame | None = None,
+    positions_paired: pd.DataFrame | None = None,
+    uncertainty: pd.DataFrame | None = None,
+    uncertainty_by_franchise: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
     """Everything the memo quotes, in one dictionary, computed once."""
     source_rows = int(accounting["source_rows"].sum()) if not accounting.empty else 0
@@ -181,6 +185,10 @@ def gather(
         "positions": positions,
         "talent": talent,
         "talent_leads": talent_leads,
+        "positions_modern": positions_modern,
+        "positions_paired": positions_paired,
+        "uncertainty": uncertainty,
+        "uncertainty_by_franchise": uncertainty_by_franchise,
         "shortlist": shortlist,
         "eras": eras,
         "spotcheck_moved": bool(spotcheck_movement["moved"])

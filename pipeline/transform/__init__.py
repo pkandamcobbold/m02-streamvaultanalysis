@@ -29,6 +29,7 @@ from pipeline.transform.bundles import (
     POSITION_MIDDLE,
     bundle_table,
     gap_to_best_entry,
+    paired_position_ratio,
     position_within_franchise,
     shortlist,
 )
@@ -55,6 +56,13 @@ from pipeline.transform.kpis import (
     compare_groups,
     flip_check,
     primary_hit_column,
+)
+from pipeline.transform.uncertainty import (
+    UNCERTAINTY_COLUMNS,
+    announce_uncertainty,
+    bootstrap_comparison,
+    cluster_bootstrap,
+    measures_that_survive,
 )
 from pipeline.transform.talent import (
     billed_as_credits,
@@ -86,7 +94,30 @@ def measure(
 
     bundles = bundle_table(cleaned, settings)
     positions = position_within_franchise(cleaned)
+    # S-07: the within-era breakdown the memo quotes, computed rather than
+    # worked out by hand. Position is confounded with age — openers here are
+    # much older — so the pooled table above overstates the effect and M7 says
+    # not to quote it. Both are published; the memo reads this one.
+    modern_year = settings.windows.get("modern", {}).get("min_year")
+    positions_modern = (
+        position_within_franchise(cleaned, window_min_year=modern_year)
+        if modern_year is not None else pd.DataFrame()
+    )
+    # The same question asked a way that cannot be moved by which franchises
+    # land in which cell: every franchise against itself.
+    paired = pd.concat(
+        [paired_position_ratio(cleaned)]
+        + ([paired_position_ratio(cleaned, window_min_year=modern_year)]
+           if modern_year is not None else []),
+        ignore_index=True,
+    )
     gaps = gap_to_best_entry(cleaned)
+
+    # F-02: how much of the gap survives resampling, per film and per franchise
+    uncertainty = bootstrap_comparison(cleaned, settings)
+    clustered = cluster_bootstrap(cleaned, settings)
+    for line in announce_uncertainty(uncertainty, clustered):
+        print(f"[transform] {line}")
     director_talent = talent_table(directors, cleaned, settings, "director")
     lead_talent = talent_table(leads_as_credits(cleaned), cleaned, settings, "lead_actor")
     picks = shortlist(cleaned, bundles, settings)
@@ -104,6 +135,15 @@ def measure(
     flips.to_csv(processed / "kpi_flip_check.csv", index=False)
     bundles.to_csv(processed / "kpi_bundles.csv", index=False)
     positions.to_csv(processed / "kpi_position_in_franchise.csv", index=False)
+    if not positions_modern.empty:
+        positions_modern.to_csv(
+            processed / "kpi_position_in_franchise_modern.csv", index=False)
+    if not paired.empty:
+        paired.to_csv(processed / "kpi_position_paired.csv", index=False)
+    if not uncertainty.empty:
+        uncertainty.to_csv(processed / "kpi_uncertainty.csv", index=False)
+    if not clustered.empty:
+        clustered.to_csv(processed / "kpi_uncertainty_by_franchise.csv", index=False)
     gaps.to_csv(processed / "kpi_bundle_gaps.csv", index=False)
     director_talent.to_csv(processed / "kpi_talent_directors.csv", index=False)
     lead_talent.to_csv(processed / "kpi_talent_leads.csv", index=False)
@@ -130,6 +170,10 @@ def measure(
         "flips": flips,
         "bundles": bundles,
         "positions": positions,
+        "positions_modern": positions_modern,
+        "positions_paired": paired,
+        "uncertainty": uncertainty,
+        "uncertainty_by_franchise": clustered,
         "bundle_gaps": gaps,
         "talent_directors": director_talent,
         "talent_leads": lead_talent,

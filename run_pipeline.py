@@ -339,6 +339,7 @@ def run_once(settings: Any, run_at: str, force: bool, spotcheck: bool) -> dict[s
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Parse the arguments and run the pipeline once. Returns the exit code."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--force", action="store_true",

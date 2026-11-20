@@ -222,7 +222,14 @@ def gather(
         "uncertainty_by_franchise": uncertainty_by_franchise,
         "shortlist": shortlist,
         "eras": eras,
+        # None, not False, when the spot-check did not run. False means "it ran
+        # and nothing moved"; None means "nobody looked". Collapsing them here
+        # is how the gate came to report a skipped check as passed even after
+        # the gate itself had been taught the difference — the fix was correct
+        # and unreachable, because this line manufactured a False before the
+        # gate ever saw it. Caught by an audit, not by a test: the test set the
+        # fact by hand and never exercised the code that produces it.
         "spotcheck_moved": bool(spotcheck_movement["moved"])
-        if spotcheck_movement else False,
+        if spotcheck_movement else None,
         "spotcheck_films": int(spotcheck_films),
     }

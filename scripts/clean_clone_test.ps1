@@ -44,6 +44,29 @@ $ErrorActionPreference = "Stop"
 $script:Failures = @()
 $Clone = Join-Path $env:TEMP "streamvault-clean-clone-test"
 
+function Invoke-Native {
+    <#
+        Runs a native command and returns its exit code, with both streams
+        captured rather than piped.
+
+        PowerShell turns a native command's stderr into ErrorRecords, so under
+        $ErrorActionPreference = "Stop" any tool that writes an advisory note
+        there - pip's upgrade notice, for one - throws and fails a step that
+        actually succeeded. That is a false FAIL, which is worse than a missing
+        check: it trains the reader to ignore the script.
+    #>
+    param([string]$FilePath, [string[]]$Arguments, [switch]$Show)
+    $out = Join-Path $env:TEMP "cct-stdout.txt"
+    $err = Join-Path $env:TEMP "cct-stderr.txt"
+    $proc = Start-Process -FilePath $FilePath -ArgumentList $Arguments `
+        -NoNewWindow -Wait -PassThru `
+        -RedirectStandardOutput $out -RedirectStandardError $err
+    $script:LastNativeOutput = (Get-Content $out -Raw) + (Get-Content $err -Raw)
+    if ($Show) { Write-Host $script:LastNativeOutput }
+    Remove-Item $out, $err -ErrorAction SilentlyContinue
+    return $proc.ExitCode
+}
+
 function Step {
     param([string]$Name, [scriptblock]$Body)
     Write-Host ""
@@ -89,20 +112,29 @@ Step "The clone carries no secret and no cache" {
 }
 
 Step "Install from requirements.txt alone" {
-    python -m venv .venv
-    if ($LASTEXITCODE -ne 0) { throw "venv creation failed" }
-    & ".\.venv\Scripts\python.exe" -m pip install --quiet -r requirements.txt
-    if ($LASTEXITCODE -ne 0) { throw "pip install failed -  this is the check that caught S-05" }
+    if ((Invoke-Native "python" @("-m", "venv", ".venv")) -ne 0) {
+        throw "venv creation failed"
+    }
+    $code = Invoke-Native ".\.venv\Scripts\python.exe" `
+        @("-m", "pip", "install", "--quiet", "-r", "requirements.txt")
+    if ($code -ne 0) {
+        throw "pip install failed with exit $code, the check that caught S-05`n$script:LastNativeOutput"
+    }
 }
 
 Step "Import with no PYTHONPATH and no sys.path edit" {
-    & ".\.venv\Scripts\python.exe" -c "import pipeline; print(pipeline.__name__)" | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "import pipeline failed -  the editable install did not take" }
+    # The statement is quoted inside the argument, because Start-Process splits
+    # each -ArgumentList element on whitespace: an unquoted "import pipeline"
+    # reaches python as two arguments and fails with a SyntaxError on "-c import".
+    $code = Invoke-Native ".\.venv\Scripts\python.exe" @("-c", '"import pipeline"')
+    if ($code -ne 0) {
+        throw "import pipeline failed, so the editable install did not take`n$script:LastNativeOutput"
+    }
 }
 
 Step "The suite passes in the clone" {
-    & ".\.venv\Scripts\python.exe" -m pytest -q
-    if ($LASTEXITCODE -ne 0) { throw "tests failed in the clone" }
+    $code = Invoke-Native ".\.venv\Scripts\python.exe" @("-m", "pytest", "-q") -Show
+    if ($code -ne 0) { throw "tests failed in the clone" }
 }
 
 Step "Without a token it stops with an instruction, not a traceback" {
@@ -141,9 +173,9 @@ if (-not $EnvFile) {
     $RunStarted = Get-Date
 
     Step "Run the pipeline end to end" {
-        & ".\.venv\Scripts\python.exe" run_pipeline.py
-        if ($LASTEXITCODE -eq 2) { throw "the release gate blocked publication (exit 2)" }
-        if ($LASTEXITCODE -ne 0) { throw "pipeline exited $LASTEXITCODE" }
+        $code = Invoke-Native ".\.venv\Scripts\python.exe" @("run_pipeline.py")
+        if ($code -eq 2) { throw "the release gate blocked publication (exit 2)" }
+        if ($code -ne 0) { throw "pipeline exited $code`n$script:LastNativeOutput" }
     }
 
     Step "Both time windows were answered" {

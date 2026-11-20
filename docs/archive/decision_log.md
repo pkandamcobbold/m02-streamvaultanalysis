@@ -4,15 +4,18 @@
 > template (context, decision, alternatives, consequences, revisit when), and split by what
 > kind of decision it is:
 >
-> - the 18 about **how the system is built** are one file each in
->   [`../decisions/`](../decisions/README.md), numbered 001 to 018;
-> - the 14 about **what the numbers mean** are M1 to M14 in [`decision_notes.md`](decision_notes.md);
-> - the float-id rule became a clause in [`../docs/data_contract.md`](../docs/data_contract.md),
+> - the ones about **how the system is built** are in
+>   [`../decisions/`](../../decisions/README.md). They were 18 files when this note was
+>   written; sixteen of them were merged into seven themed records on 2026-11-20 and
+>   renumbered 001 to 007, with an old-to-new table in that folder's README;
+> - the 14 about **what the numbers mean** are M1 to M14 in [`decision_notes.md`](../../reports/decision_notes.md);
+> - the float-id rule became a clause in [`../docs/data_contract.md`](../data_contract.md),
 >   and the row-loop record became the closing note of `decision_notes.md`.
 >
 > **Do not map the DR numbers here onto the ADR numbers there** — the correspondence was
-> one-to-one only briefly, and the ADRs were renumbered on 2026-11-19 once the analytical
-> records moved out. Find a record by its title, not by its old number.
+> one-to-one only briefly. The ADRs were renumbered on 2026-11-19 once the analytical
+> records moved out, and again on 2026-11-20 when sixteen were merged into seven. Find a
+> record by its title, not by its old number.
 >
 > This file is kept only until the migration is reviewed, and may be deleted.
 

@@ -166,6 +166,7 @@ def cache_path(raw_dir: Path, tmdb_id: int | str, endpoint: str) -> Path:
 
 
 def request_path_for(tmdb_id: int | str, endpoint: str) -> str:
+    """The API path for one (id, endpoint). Raises on an endpoint we do not know."""
     if endpoint in (ENDPOINT_DETAILS, ENDPOINT_DETAILS_CREDITS):
         return f"/movie/{tmdb_id}"
     if endpoint == ENDPOINT_CREDITS:
@@ -454,6 +455,7 @@ def fetch_film(
 # ---------------------------------------------------------------------------
 
 def context_from_settings(settings: Settings) -> FetchContext:
+    """Resolve the fetch settings once, so no stage reads them again."""
     api = settings["api"]
     return FetchContext(
         base_url=api["base_url"],
@@ -741,6 +743,7 @@ def resolve_foreign_ids(
 
 
 def save_fetch_log(log: pd.DataFrame, path: Path) -> None:
+    """Write the fetch log. Read it back with load_fetch_log, never bare."""
     path.parent.mkdir(parents=True, exist_ok=True)
     log.to_csv(path, index=False)
 

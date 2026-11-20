@@ -556,7 +556,9 @@ def build_memo(facts: dict[str, Any], settings: Any) -> str:
         ),
         "",
     ]
-    return "\n".join(header) + "\n" + rewrap("\n".join(lines))
+    # Trailing newline: a text file without one is a small discourtesy to every
+    # tool that reads it line by line, and this is the file a client opens.
+    return "\n".join(header) + "\n" + rewrap("\n".join(lines)).rstrip("\n") + "\n"
 
 
 def build_improvement(facts: dict[str, Any], gate_results: pd.DataFrame) -> str:

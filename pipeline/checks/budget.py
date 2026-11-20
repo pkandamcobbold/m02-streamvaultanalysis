@@ -185,7 +185,7 @@ def measure_scaling(
         started = time.perf_counter()
         analysis, _ = transform.build_analysis_table(films, cast, crew, genres)
         directors = transform.directors_long(crew)
-        
+
         started = time.perf_counter()
         validate.profile_table(analysis)
         validate.find_flags(analysis, settings)
@@ -196,7 +196,7 @@ def measure_scaling(
         cleaned = validate.clean(analysis, settings)
         validate.build_exclusions(cleaned, settings)
         validate.sensitivity_table(analysis, settings)
-        
+
         started = time.perf_counter()
         strict = transform.by_window(cleaned, settings, transform.GROUP_STRICT)
         transform.flip_check(strict, transform.GROUP_STRICT)

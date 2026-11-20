@@ -17,13 +17,13 @@
 > Status: planning only. No code yet.
 >
 > **The Q-numbers in Part 10 are this document's own**, from before the client question
-> register existed. They do not match [`questions.md`](questions.md), which numbers the
+> register existed. They do not match [`questions.md`](../questions.md), which numbers the
 > questions as they were actually asked (this file's Q16 is its Q12, for instance). Where the
 > two disagree, `questions.md` is the record.
 > Purpose: understand the problem, list every requirement, decide what to test, and agree the order of work before writing anything.
 
 > **Addendum, 18 Nov.** The brief and pipeline guide have since been checked against this
-> plan and saved verbatim in [01_brief_and_guide.md](01_brief_and_guide.md). The plan holds —
+> plan and saved verbatim in [01_brief_and_guide.md](../01_brief_and_guide.md). The plan holds —
 > nothing in the source material contradicts it. Three things are now settled, superseding
 > Part 10 where they differ:
 >

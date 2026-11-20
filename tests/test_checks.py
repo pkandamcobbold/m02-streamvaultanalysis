@@ -880,3 +880,42 @@ def test_every_gate_row_carries_one_of_the_three_statuses(memo_settings):
         assert set(results["status"]) <= {"pass", "fail", "not_checked"}
         # `passed` is derived from `status`, never set independently.
         assert (results["passed"] == (results["status"] == "pass")).all()
+
+
+def test_gather_reports_a_skipped_spotcheck_as_unknown_not_as_unmoved(memo_settings):
+    """The test above sets `spotcheck_moved` by hand, so it never exercised the
+    code that produces it — and that code coerced a skipped check to False.
+    The gate had been taught the difference between "ran and nothing moved" and
+    "nobody looked", and the fix was unreachable because this fact arrived as
+    False either way. An audit caught it, not the suite.
+
+    So this goes through gather(), the way the pipeline does.
+    """
+    ran = make_facts(memo_settings, spotcheck_movement={"moved": False}, spotcheck_films=15)
+    assert ran["spotcheck_moved"] is False, "a completed check must report False"
+
+    skipped = make_facts(memo_settings, spotcheck_movement=None, spotcheck_films=0)
+    assert skipped["spotcheck_moved"] is None, "a skipped check must not report False"
+
+    row = gate(memo_settings, skipped)
+    row = row.loc[row["check"].str.contains("re-check")].iloc[0]
+    assert row["status"] == "not_checked"
+    assert bool(row["passed"]) is False
+
+
+def test_the_gate_artefact_and_the_memo_cannot_disagree(memo_settings):
+    """They did. The memo said the figures were not re-checked while gate.csv
+    said the re-check passed, in the same run.
+    """
+    from pipeline.load import build_memo
+
+    skipped = make_facts(memo_settings, spotcheck_movement=None, spotcheck_films=0)
+    results = gate(memo_settings, skipped)
+    memo = " ".join(build_memo(skipped, memo_settings).split())
+
+    says_not_checked = "were not re-checked against the live source" in memo
+    gate_says_passed = bool(
+        results.loc[results["check"].str.contains("re-check"), "passed"].iloc[0]
+    )
+    assert says_not_checked, "the memo must disclose that the check did not run"
+    assert not gate_says_passed, "the gate must not call it passed when the memo says it did not run"

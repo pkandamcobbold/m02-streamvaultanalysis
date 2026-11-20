@@ -1,0 +1,37 @@
+# Line endings, declared rather than left to each machine's git config.
+#
+# Without this file, what lands in a checkout depends on the cloner's
+# core.autocrlf. This repository was built on Windows with autocrlf on, so the
+# working tree is CRLF while a Linux clone would be LF — and two committed
+# files had ended up with *both* inside them, because pandas writes CRLF on
+# Windows while the run-log appender writes LF deliberately (it writes bytes to
+# an O_APPEND descriptor, so it cannot use platform translation).
+#
+# `text=auto eol=lf` means: git decides what is text, normalises it to LF in
+# the repository, and checks it out as LF everywhere. Python, markdown and CSV
+# are all fine with LF on Windows. The one exception is below.
+* text=auto eol=lf
+
+# PowerShell must stay CRLF. Windows PowerShell 5.1 reads a .ps1 as ANSI unless
+# it has a UTF-8 BOM, and is unreliable with bare LF; the clean-clone script is
+# BOM-prefixed and ASCII-only for the same reason.
+*.ps1 text eol=crlf
+
+# Explicitly text, so a diff is readable and normalisation applies.
+*.py    text
+*.md    text
+*.toml  text
+*.txt   text
+*.csv   text
+*.jsonl text
+*.ipynb text
+*.cfg   text
+.gitignore      text
+.gitattributes  text
+.env.example    text
+
+# Binary, so git never tries to normalise or diff them as text.
+*.png binary
+*.jpg binary
+*.pdf binary
+*.xlsx binary

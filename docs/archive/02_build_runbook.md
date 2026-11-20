@@ -15,7 +15,7 @@
 # Build runbook — beginning to end
 
 > Companion to [00_project_plan.md](00_project_plan.md) (the *what* and *why*) and
-> [01_brief_and_guide.md](01_brief_and_guide.md) (the source material).
+> [01_brief_and_guide.md](../01_brief_and_guide.md) (the source material).
 > This file is the *how*, in order, including the things only you can do by hand.
 
 ## How to read this
@@ -172,7 +172,7 @@ touch data/raw/.gitkeep data/interim/.gitkeep data/processed/.gitkeep
 
 ## Step 1.3 💻 `.gitignore` — first file, before anything else
 
-See [`.gitignore`](../.gitignore) in the repo root for the version in use. The part worth understanding:
+See [`.gitignore`](../../.gitignore) in the repo root for the version in use. The part worth understanding:
 
 ```gitignore
 .env
@@ -219,7 +219,7 @@ TMDB_BEARER_TOKEN=paste_your_v4_read_access_token_here
 
 ## Step 1.5 💻 `requirements.txt` and `pyproject.toml`
 
-See [`requirements.txt`](../requirements.txt) and [`pyproject.toml`](../pyproject.toml) in the repo root.
+See [`requirements.txt`](../../requirements.txt) and [`pyproject.toml`](../../pyproject.toml) in the repo root.
 
 Pinned exactly, not `>=`. Adjoa reruns this in a year; an unpinned pandas major version is how a pipeline that worked in October fails in March.
 
@@ -271,7 +271,7 @@ That should print the `.gitignore` line that catches it. Silence means it is *no
 
 ## Step 1.8 💻 `config/settings.toml` — every knob Adjoa might turn
 
-See [`config/settings.toml`](../config/settings.toml). The point of the file: Adjoa changes a threshold without editing code, and every number that drives the answer is visible in one place.
+See [`config/settings.toml`](../../config/settings.toml). The point of the file: Adjoa changes a threshold without editing code, and every number that drives the answer is visible in one place.
 
 Every value in it is a 🧠. Don't invent the thresholds now and pretend they were principled — `hit_roi_threshold` and `min_budget_for_roi` are marked `TO SET AFTER PROFILING` for a reason, and both get a sensitivity row in the decision log once they're set.
 
@@ -279,7 +279,7 @@ Note which settings exist specifically so the *rejected* alternative stays runna
 
 ## Step 1.9 💻 `README.md` — write it for Adjoa, now, not later
 
-See [`README.md`](../README.md). Written now rather than at the end, and kept true as the pipeline grows — it carries a visible status note saying `run_pipeline.py` doesn't exist yet, which goes away when the clean-clone test passes. A README that claims something that isn't true yet is worse than no README.
+See [`README.md`](../../README.md). Written now rather than at the end, and kept true as the pipeline grows — it carries a visible status note saying `run_pipeline.py` doesn't exist yet, which goes away when the clean-clone test passes. A README that claims something that isn't true yet is worse than no README.
 
 The five things it has to do:
 

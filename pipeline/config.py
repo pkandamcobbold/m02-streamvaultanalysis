@@ -106,6 +106,7 @@ def validate_settings(settings: "Settings") -> None:
 
 
 def load_settings(path: Path | None = None) -> Settings:
+    """Read settings.toml and validate it. Raises if a setting cannot work."""
     settings_path = path or DEFAULT_SETTINGS
     if not settings_path.exists():
         raise FileNotFoundError(
@@ -198,6 +199,7 @@ def multiple(value: Any) -> str:
 
 
 def share(value: Any) -> str:
+    """0.954 -> "95%". One place, so the gate and the memo cannot disagree."""
     if value is None or pd.isna(value):
         return "no figure"
     return f"{100 * float(value):.0f}%"

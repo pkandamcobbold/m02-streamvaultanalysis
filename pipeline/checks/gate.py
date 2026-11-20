@@ -1,4 +1,4 @@
-"""The release gate: the one improvement beyond the brief (ADR-015).
+"""The release gate: the one improvement beyond the brief (ADR-006).
 
 Four blunt checks run before the memo is written: every source row accounted
 for, enough films to compare groups, money data complete enough to decide on,
@@ -40,7 +40,7 @@ class GateFailed(RuntimeError):
 
 
 # ===========================================================================
-# The release gate — the one improvement beyond the brief (ADR-015)
+# The release gate — the one improvement beyond the brief (ADR-006)
 # (was src/streamvault/memo.py)
 # ===========================================================================
 

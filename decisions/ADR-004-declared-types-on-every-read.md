@@ -1,8 +1,9 @@
-# ADR-008: Read every saved table back with its types declared, never inferred
+# ADR-004: Read every saved table back with its types declared, never inferred
 
 - **Status:** Accepted
 - **Date:** 2026-11-18
 - **Decision owner:** Paapa Andam-Cobbold
+- **Renumbered from:** ADR-008, 2026-11-20. Not merged: it is about the file boundary and belongs to no other theme without strain
 
 ## Context
 

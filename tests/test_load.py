@@ -7,7 +7,7 @@ can tell.
 
 So these tests check that the caveats cannot be dropped, that the jargon stays
 out, and that a flip reaches the first line rather than a footnote. A future
-edit that quietly removes a limitation fails the suite (ADR-014).
+edit that quietly removes a limitation fails the suite (ADR-006).
 """
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ def subject_line(memo: str) -> str:
     The house template fixes the section order — found, built, recommend, could
     not stand behind — so the recommendation cannot be the body's first line and
     still obey it. It goes in the subject instead, which is the first thing read
-    and what a memo's subject is for (ADR-014).
+    and what a memo's subject is for (ADR-006).
     """
     for line in memo.splitlines():
         if line.startswith("**Subject:**"):

@@ -62,8 +62,8 @@ usually miss every film that does. So the sample is stratified:
 |---|---|---|---|
 | `flagged_extreme` | `expected_drift` | 14 | 6 |
 | `flagged_extreme` | `identical` | 40 | 6 |
-| `pre_2000` | `expected_drift` | 8 | 3 |
-| `pre_2000` | `identical` | 19 | 3 |
+| `pre_2000` | `expected_drift` | 9 | 3 |
+| `pre_2000` | `identical` | 18 | 3 |
 | `random_control` | `expected_drift` | 6 | 3 |
 | `random_control` | `identical` | 21 | 3 |
 | `shortlisted` | `expected_drift` | 8 | 3 |
@@ -99,7 +99,8 @@ discrepancy. None of them enters a performance metric (M8).
 | Pulp Fiction | `popularity` | 29.9996 | 31.2382 |
 | Pulp Fiction | `vote_count` | 31365 | 31374.0 |
 | Forrest Gump | `popularity` | 29.2116 | 30.5765 |
-| Forrest Gump | `vote_count` | 30921 | 30929.0 |
+| Forrest Gump | `vote_count` | 30921 | 30931.0 |
+| Forrest Gump | `vote_average` | 8.462 | 8.461 |
 | Alien Resurrection | `popularity` | 7.7111 | 7.7675 |
 | Alien Resurrection | `vote_count` | 5882 | 5885.0 |
 | Alien Resurrection | `vote_average` | 6.172 | 6.171 |

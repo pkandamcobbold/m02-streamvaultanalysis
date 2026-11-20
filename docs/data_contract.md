@@ -26,14 +26,14 @@ and what breaks if it moves.
 | One file at `data/input/id_list.csv`, committed and never edited | The run stops with the path it looked for | `pipeline/extract/` |
 | CSV, UTF-8, one column of TMDb movie ids | A second column is read as a finding and ignored; only the first is used | `pipeline/extract/` |
 | One header row | A header value appearing anywhere in the file is classified as `header_row` and excluded from the reconciliation base, not counted as data | `pipeline/extract/` |
-| The row count matches `input.expected_id_count` in settings | A reconciliation note is printed and recorded; the run continues against what the file holds. **Not** an assertion — next year's list is expected to be ~500 titles (ADR-004) | `pipeline/extract/` |
+| The row count matches `input.expected_id_count` in settings | A reconciliation note is printed and recorded; the run continues against what the file holds. **Not** an assertion — next year's list is expected to be ~500 titles (ADR-003) | `pipeline/extract/` |
 | The file is valid UTF-8 | Falls back to latin-1 and records the fallback as a finding, because mangled characters are a fact about the source | `pipeline/extract/` |
 
 ### Values
 
 The file is read as **text with no type inference**. `dtype=str`, `na_filter=False`,
 `keep_default_na=False`: a blank stays blank and never becomes a null that forces the column to
-float, which is how `550` becomes `550.0` and 404s three stages later (ADR-008).
+float, which is how `550` becomes `550.0` and 404s three stages later (ADR-004).
 
 | Rule | Seen in the data | If a row breaks it | Where |
 | --- | --- | --- | --- |
@@ -41,7 +41,7 @@ float, which is how `550` becomes `550.0` and 404s three stages later (ADR-008).
 | Every id appears once | 6 rows repeat an earlier id | First occurrence kept; later ones get status `duplicate` and a reason naming the row they repeat. Never fetched | `pipeline/extract/` |
 | No placeholders | `-1` at row 30, `N/A` at row 111 | Status `invalid_id`, reason names the placeholder. Checked **before** the digits pattern, so a bare `0` is reported as a placeholder rather than fetched as an id | `pipeline/extract/` |
 | No blank rows | 1 blank row | Status `invalid_id`, reason "blank row". Counted, never dropped | `pipeline/extract/` |
-| Ids are TMDb ids, not another namespace | 1 IMDb id, `tt0468569`, at row 95 (F-09) | Resolved live via `/find`. If it resolves to an id already on the list: status `duplicate_other_namespace`, excluded, because recovering it would count one film three times. If it resolves to an id *not* on the list: recovered, fetched, and forced into the spot-check (ADR-005) | `pipeline/extract/` |
+| Ids are TMDb ids, not another namespace | 1 IMDb id, `tt0468569`, at row 95 (F-09) | Resolved live via `/find`. If it resolves to an id already on the list: status `duplicate_other_namespace`, excluded, because recovering it would count one film three times. If it resolves to an id *not* on the list: recovered, fetched, and forced into the spot-check (ADR-003) | `pipeline/extract/` |
 | No float-formatted ids | None this quarter | A digits-dot-zeros value is recovered as the integer and the recovery is recorded. Anything else stays unusable: there is no honest way to choose between `550.7` as 550 or 551. The branch exists because the fault is one keystroke away and next quarter's file comes from the same three desks | `pipeline/extract/ids.py` |
 | No invisible characters | Byte-order mark, CRLF endings, a quoted value, a non-breaking space | Normalised at read; recorded as a characteristic of the file | `pipeline/extract/` |
 
@@ -57,10 +57,10 @@ to the data-row count exactly, and that is asserted before a single API call is 
 
 | Rule | If it is broken | Where |
 | --- | --- | --- |
-| `GET /movie/{id}?append_to_response=credits` returns details and credits in one response | `api.append_credits = false` runs the two-call path the brief names, against a different cache filename so a cached response can never lack what was asked for (ADR-003) | `pipeline/extract/` |
+| `GET /movie/{id}?append_to_response=credits` returns details and credits in one response | `api.append_credits = false` runs the two-call path the brief names, against a different cache filename so a cached response can never lack what was asked for (ADR-001) | `pipeline/extract/` |
 | Every call carries a timeout | Hard-asserted by a test; a call without one would hang Adjoa's run with no message | `pipeline/extract/` |
 | 429 and 5xx are transient | Retried 5 times with exponential backoff, honouring `Retry-After` | `pipeline/extract/` |
-| 404 is permanent | **Not** retried. Recorded on the ledger as `not_found_404` and cached like any other response, so reruns do not ask again (ADR-006) | `pipeline/extract/` |
+| 404 is permanent | **Not** retried. Recorded on the ledger as `not_found_404` and cached like any other response, so reruns do not ask again (ADR-003) | `pipeline/extract/` |
 | Anything else after retries | Status `fetch_failed`, reported as a note naming the ids. Not evidence of anything; rerun before relying on the counts | `pipeline/extract/` |
 | Calls are paced at `api.min_seconds_between_calls` | A floor on the gap between calls, measured on a monotonic clock so a clock adjustment cannot release a burst | `pipeline/extract/` |
 | The credential never appears in a URL | A v4 bearer token in a header. Asserted by a test over every request URL and every cached envelope (ADR-001) | `pipeline/extract/` |
@@ -74,7 +74,7 @@ Every cached response is wrapped in an envelope recording the HTTP status, the r
 | --- | --- | --- | --- | --- | --- |
 | `id` | whole number | Matches the id we requested | All 112 match | A mismatch is reported as a merged or redirected entry, and checked against the rest of the list | `pipeline/transform/` |
 | `title` | text | Always present | As expected | Identifies the film in the memo; a change is a **material** spot-check difference | `pipeline/checks/` |
-| `budget` | whole dollars | Present and non-zero for a released feature | **All 112 non-zero** (S-01) — the classic disguised null is absent | Zero or missing: the film leaves the money metrics with a reason, and stays in every other metric (ADR-009). Below `profile.min_plausible_budget`: flagged as a figure probably entered in millions | `pipeline/validate/` |
+| `budget` | whole dollars | Present and non-zero for a released feature | **All 112 non-zero** (S-01) — the classic disguised null is absent | Zero or missing: the film leaves the money metrics with a reason, and stays in every other metric (ADR-003). Below `profile.min_plausible_budget`: flagged as a figure probably entered in millions | `pipeline/validate/` |
 | `revenue` | whole dollars | Present and non-zero for a released feature | All 112 non-zero (S-01). 8 films return more than 20× budget, all pre-2000 (F-06) | Same as budget. An extreme is **flagged with a verdict, never clipped** — clipping would delete 20% of the pre-2000 films and none of the modern ones (M5) | `pipeline/validate/` |
 | `release_date` | `YYYY-MM-DD` | Parses to a year | All 112 parse | A film with no parseable year falls out of any bounded window. `windows.all_years` deliberately has **no** lower bound rather than a bound of 0, so such a film is not silently excluded from both | `pipeline/transform/` |
 | `belongs_to_collection` | object or null | Null, or an object with an `id` and a `name` | 96 of 112 belong to a collection; 9 are the only member of theirs on the list (F-04) | A name with no id is a **hard failure**: the franchise split is the whole analysis. Decides the franchise/standalone split, so a change is a material spot-check difference | `pipeline/transform/` |
@@ -89,7 +89,7 @@ Every cached response is wrapped in an envelope recording the HTTP status, the r
 
 | Field | Why not |
 | --- | --- |
-| `popularity` | Recomputed daily from recent activity and heavily recency-biased: 85.7 for a 2019 blockbuster against 0.46 for a 1966 classic. Using it would rank against the back catalog this project exists to evaluate, and would make the analysis irreproducible from the same cache a month later. Kept in the tables as fetched, excluded from every metric, and setting `profile.use_popularity_as_performance = true` **refuses to load** (M8, ADR-016) |
+| `popularity` | Recomputed daily from recent activity and heavily recency-biased: 85.7 for a 2019 blockbuster against 0.46 for a 1966 classic. Using it would rank against the back catalog this project exists to evaluate, and would make the analysis irreproducible from the same cache a month later. Kept in the tables as fetched, excluded from every metric, and setting `profile.use_popularity_as_performance = true` **refuses to load** (M8, ADR-007) |
 | `adult`, `video` | Read and available; no rule depends on them this quarter |
 | `dispatched_at`-style extras | Any field TMDb adds is ignored. Any field it stops sending becomes an empty column rather than a crash three stages later |
 
@@ -109,8 +109,8 @@ Every cached response is wrapped in an envelope recording the HTTP status, the r
 | At least `gate.min_films_for_a_recommendation` films analysed (40) | Same. Below this the groups are too thin to rank, and the honest output is a description | `pipeline/checks/` |
 | At most `gate.max_missing_money_share` of films without usable money (20%) | Same. Above that, a ranking by return is a ranking of whichever films happened to have figures | `pipeline/checks/` |
 | A live re-check does not change the recommendation | Same, while `gate.block_if_spotcheck_moves` is true | `pipeline/checks/` |
-| The analysis stages finish inside `budget.analysis_seconds_limit` (10s, warm cache, acquisition excluded) | Reported loudly, not blocked: the limit is a target we set, not a rule anyone gave us (ADR-010) | `pipeline/checks/` |
+| The analysis stages finish inside `budget.analysis_seconds_limit` (10s, warm cache, acquisition excluded) | Reported loudly, not blocked: the limit is a target we set, not a rule anyone gave us (ADR-005) | `pipeline/checks/` |
 
 The gate can be turned off with `gate.enabled = false`. That is deliberate: skipping it should be a
 decision somebody makes and can be asked about in the meeting, not something that happens by
-accident (ADR-015).
+accident (ADR-006).

@@ -29,7 +29,7 @@ timeout_seconds = 10            # ceiling on every single call
 max_retries = 5
 backoff_factor = 0.5            # waits 0.5s, 1s, 2s, 4s, 8s
 min_seconds_between_calls = 0.08  # ~12 req/s, comfortably inside TMDb's limits
-append_credits = true           # ADR-003: one call per film instead of two.
+append_credits = true           # ADR-001: one call per film instead of two.
                                 # Set false to run the briefed two-call path
                                 # and compare the timings.
 progress_every = 25             # print a progress line every N films

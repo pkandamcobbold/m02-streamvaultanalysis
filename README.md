@@ -64,7 +64,7 @@ pip install -r requirements.txt
 That is everything the analysis needs: ten packages, about a minute. If you also want to open
 [`explore/analysis.ipynb`](explore/analysis.ipynb) — a guided tour of the whole analysis, which
 computes nothing of its own — there is one more command. It is separate on purpose, because a
-notebook viewer's dependencies should not be able to stop the analysis installing (ADR-013):
+notebook viewer's dependencies should not be able to stop the analysis installing (ADR-007):
 
 ```bash
 pip install -r requirements-notebook.txt
@@ -107,7 +107,7 @@ and it does not hammer a service other people are sharing.
 
 If a run is interrupted, just start it again. It picks up where it stopped — including when it was
 interrupted *while writing* a file, which used to leave a half-written response that broke every
-later run (ADR-007).
+later run (ADR-002).
 
 Other ways to run it:
 
@@ -128,7 +128,7 @@ that must reach the network. The tests cover everything that does not need live 
 
 **Exit codes.** `0` succeeded. `1` could not start — usually no token, and the message says what to
 do. `2` means the **release gate blocked publication**: the analysis ran and its results should not
-go in front of a board without someone looking first. That is not a crash; see ADR-015.
+go in front of a board without someone looking first. That is not a crash; see ADR-006.
 
 ---
 
@@ -231,7 +231,7 @@ current shape rather than argued for in decision records, because none of them c
 
 Every threshold, window and limit is in [`config/settings.toml`](config/settings.toml), with a
 comment explaining what it does. Change values there — not in the code. A key that cannot change
-behaviour refuses to load rather than sitting there looking live (ADR-016).
+behaviour refuses to load rather than sitting there looking live (ADR-007).
 
 | Setting | Why you'd change it |
 |---------|---------------------|
@@ -255,7 +255,7 @@ older as-of date, which is why that date is printed on it.
 
 **"RECONCILIATION NOTE: the brief says 127 titles, the file has N"** — not a failure. The candidate
 list has changed size. Update `input.expected_id_count` and read the findings log to see what the
-difference was (ADR-004).
+difference was (ADR-003).
 
 **"The memo was not written, because these checks failed"** — not a crash. The analysis ran, and its
 results should not go in front of a board without someone looking first: the title count did not

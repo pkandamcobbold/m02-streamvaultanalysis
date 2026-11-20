@@ -7,7 +7,7 @@ with no usable budget is excluded from the return figures and still counts in
 the film count, the rating analysis and the franchise split. A single global
 "clean" table would force one answer to "is this film in?", when the honest
 answer is "in for some things, out for others" — and would quietly shrink the
-denominators the memo quotes (ADR-009).
+denominators the memo quotes (ADR-003).
 
 **2. Every rule reads its threshold from settings.** Not for configurability's
 own sake, but so the rejected alternative is *runnable*:

@@ -769,7 +769,7 @@ def test_the_summary_groups_by_slice_and_verdict(settings_spotcheck):
     assert VERDICT_MATERIAL in set(summary["verdict"])
 
 # ==========================================================================
-# The release gate (ADR-015)
+# The release gate (ADR-006)
 # ==========================================================================
 
 def test_the_gate_passes_a_sound_run(memo_settings):

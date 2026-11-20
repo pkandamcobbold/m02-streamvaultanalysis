@@ -37,15 +37,17 @@ those live in [`../decisions/`](../decisions/README.md).
 | **M8** | Never use the popularity score to measure performance | Ranks a back catalogue by this week's attention, and makes the analysis irreproducible |
 | **M2** | One row per credit, not per person | Makes either the count of credits or the count of people wrong, with no way to get both |
 
-Four records in [`../decisions/`](../decisions/README.md) pass the same test and belong to this
-deliverable too. They are written up there in full rather than repeated here:
+Four more decisions pass the same test, and all four live in one record:
+[**ADR-003**](../decisions/ADR-003-account-for-every-id.md), which holds the argument that every row
+of the input gets a verdict and a reason. They are written up there in full rather than repeated
+here:
 
-| | Decision | What the alternative would have done |
-|---|---|---|
-| **ADR-005** | Resolve the foreign id, then exclude it as a duplicate | Puts **three copies of one film** into every figure, all on the franchise side of the comparison |
-| **ADR-009** | A film leaves a metric, never the analysis | Gives every metric a different denominator, so the memo's "112 films" stops being true halfway down the page |
-| **ADR-004** | Treat the brief's title count as a claim, not an assertion | Crashes Adjoa's run for being correct about a bigger list |
-| **ADR-006** | A missing film is a permanent answer | Wastes calls retrying, and leaves the pattern in the dead ids unexamined |
+| Decision | What the alternative would have done |
+|---|---|
+| Resolve the foreign id, then exclude it as a duplicate | Puts **three copies of one film** into every figure, all on the franchise side of the comparison |
+| A film leaves a metric, never the analysis | Gives every metric a different denominator, so the memo's "112 films" stops being true halfway down the page |
+| Treat the brief's title count as a claim, not an assertion | Crashes Adjoa's run for being correct about a bigger list |
+| A missing film is a permanent answer | Wastes calls retrying, and leaves the pattern in the dead ids unexamined |
 
 **Two things about how this is written.** The records below are grouped by theme, not by that
 ranking: M4 to M7 are four views of one problem, and in rank order you lose the thread of the
@@ -330,7 +332,7 @@ score, recomputed daily from recent views, votes and watchlist adds.
 future viewing. Use it only to break ties. Or keep it in the tables and use it in nothing.
 
 **What I chose.** The last. A setting makes the choice visible rather than implied by absence, and
-turning it on refuses to load, because there is deliberately no code path for it (ADR-016).
+turning it on refuses to load, because there is deliberately no code path for it (ADR-007).
 
 **What it does to the numbers.** Nothing, and that is the point. Two reasons, and the second
 matters more. It is **biased toward recent films**: a 2019 blockbuster outscores a 1966 classic by

@@ -87,8 +87,8 @@ tmdb_id,title,slice,field,analysed_value,live_value,verdict,note
 13,Forrest Gump,pre_2000,collection_id,,,identical,
 13,Forrest Gump,pre_2000,title,Forrest Gump,Forrest Gump,identical,
 13,Forrest Gump,pre_2000,popularity,29.2116,30.5765,expected_drift,expected: recomputed daily by TMDb from recent activity
-13,Forrest Gump,pre_2000,vote_count,30921,30929.0,expected_drift,expected: rises continuously as people vote
-13,Forrest Gump,pre_2000,vote_average,8.462,8.462,identical,
+13,Forrest Gump,pre_2000,vote_count,30921,30931.0,expected_drift,expected: rises continuously as people vote
+13,Forrest Gump,pre_2000,vote_average,8.462,8.461,expected_drift,expected: moves slightly as vote_count rises
 8078,Alien Resurrection,pre_2000,budget,70000000,70000000.0,identical,
 8078,Alien Resurrection,pre_2000,revenue,162000000,162000000.0,identical,
 8078,Alien Resurrection,pre_2000,runtime,109,109.0,identical,

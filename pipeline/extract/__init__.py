@@ -116,7 +116,7 @@ def extract(
 
     The three parts are timed separately and returned under `timings`, because
     the time budget's boundary runs straight through this stage: shaping the
-    cached payloads is inside it, and the acquisition is not (ADR-010).
+    cached payloads is inside it, and the acquisition is not (ADR-005).
     """
     timings: dict[str, float] = {}
 

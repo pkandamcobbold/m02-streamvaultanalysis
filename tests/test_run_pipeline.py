@@ -3,7 +3,7 @@
 The point of the timings file on disk is that a number quoted in an ADR can be
 checked against something. So what matters here is that appending never loses
 an earlier run, and that reading back does not turn the counts into floats —
-the same fault the id ledger is guarded against (ADR-008, ADR-011).
+the same fault the id ledger is guarded against (ADR-004, ADR-005).
 """
 from __future__ import annotations
 

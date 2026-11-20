@@ -17,7 +17,7 @@ The lead-only view is reported beside a top-3-billed view, because a performer
 billed second is still a draw: widening the net takes the reliable names from 19
 to 44, and 25 of those are invisible to a lead-only view. That is a finding, and
 it was unreachable until the setting that controls it was actually wired up
-(ADR-016).
+(ADR-007).
 """
 from __future__ import annotations
 

@@ -149,13 +149,13 @@ def load_token() -> str:
 # a duplicate as having reached it, and the accounting would claim 113 of 127
 # rows became films when only 112 films exist. Lives here because both the
 # transform stage (accounting) and the validate stage (the ledger's money
-# column) need one answer to "which row owns the film?". See ADR-008.
+# column) need one answer to "which row owns the film?". See ADR-004.
 ANALYSED_STATUSES = frozenset({"fetched"})
 
 # The durable per-stage timing artefact: written by run_pipeline.py, read by
 # the checks stage to compute the time budget and the 500-title projection.
 # A figure quoted in a report and held nowhere else is a memory, not a
-# measurement. See ADR-010 and ADR-011.
+# measurement. See ADR-005.
 TIMING_COLUMNS = [
     "run_at", "stage", "seconds", "api_calls", "cache_hits", "rows", "note",
 ]

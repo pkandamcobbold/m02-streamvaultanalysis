@@ -1,6 +1,6 @@
 """Stage 5 — load: write the tables and the client-facing output.
 
-**The memo is generated, not written** (ADR-014). A hand-written memo is a claim
+**The memo is generated, not written** (ADR-006). A hand-written memo is a claim
 about the analysis; a generated one is the analysis speaking. Re-running the
 pipeline rewrites it, so it cannot quote a figure the data no longer supports —
 and if next quarter's numbers flip, the memo flips with them.
@@ -18,7 +18,7 @@ the room. No tool names, no jargon, no acronyms: returns are "times its budget
 back", missing data is "we have no figure for".
 
 This stage never decides whether to publish. The checks stage has already
-raised before anything here runs (ADR-015).
+raised before anything here runs (ADR-006).
 """
 from __future__ import annotations
 

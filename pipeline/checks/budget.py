@@ -15,7 +15,7 @@ and a scaling exponent is fitted per stage. `k` near 1 means linear, below 1
 means fixed costs dominate at this size, above 1 means it degrades as the list
 grows — and only the third kind threatens the budget.
 
-See ADR-010 and ADR-011.
+See ADR-005.
 """
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ def latest_timing_run(path) -> pd.DataFrame:
 # (was src/streamvault/budget.py)
 # ===========================================================================
 
-# Stages inside the budget. Acquisition is deliberately not here; see ADR-010.
+# Stages inside the budget. Acquisition is deliberately not here; see ADR-005.
 ANALYSIS_STAGES = ("extract.shape", "validate", "transform")
 
 

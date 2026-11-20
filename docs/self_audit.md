@@ -387,7 +387,7 @@ two.
 
 **Effect on the recommendation:** none today. Each is true of this quarter's data.
 
-**Cost if wrong:** this is precisely the drift ADR-014 exists to prevent, reintroduced by hand. If
+**Cost if wrong:** this is precisely the drift ADR-006 exists to prevent, reintroduced by hand. If
 next quarter has four exceptional films, or the franchise share falls to three in five, the memo
 will state the old figure with full confidence and the pipeline will report success. Everything
 else in the memo is computed; a reader has no way to tell which sentences are which. The fix is to

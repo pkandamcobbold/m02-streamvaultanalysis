@@ -19,7 +19,7 @@ Two things this file owns that the stages do not:
   and the 500-title projection from. Appended to, never overwritten: a figure
   quoted in a report and held nowhere else is a memory, not a measurement.
 * **The failure contract.** A blocked gate exits 2, not 1, and says so. The
-  analysis ran; its output should not be published. See ADR-015.
+  analysis ran; its output should not be published. See ADR-006.
 """
 from __future__ import annotations
 

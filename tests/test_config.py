@@ -1,7 +1,7 @@
 """Tests for pipeline/config.py: the settings loader and the plain-language helpers.
 
 Two things are pinned here. **A settings key must change behaviour or refuse to
-load** (ADR-016): five keys were once declared and read by nobody, and two of
+load** (ADR-007): five keys were once declared and read by nobody, and two of
 them were cited in decision records as the mechanism that made a judgement
 reversible. And the figures a human reads are rendered in one place, because
 the gate's failure messages and the memo must not disagree about what "20%"

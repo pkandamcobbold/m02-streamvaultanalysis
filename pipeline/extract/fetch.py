@@ -11,8 +11,8 @@ film 80 restarts at 81 with no state beyond the files themselves; and **nothing
 is lost**, because a 404 is an answer recorded in three places rather than an
 exception.
 
-See ADR-001 (the token), ADR-002 (the uncommitted cache), ADR-003 (one call per
-film), ADR-005 (foreign ids), ADR-006 (404s), ADR-007 (atomic writes) and
+See ADR-001 (the token and the one-call fetch), ADR-002 (the uncommitted cache
+and its atomic writes), ADR-003 (foreign ids and 404s) and
 and the note on row loops at the end of reports/decision_notes.md, for why a loop is
 correct here.
 """

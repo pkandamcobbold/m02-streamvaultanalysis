@@ -12,8 +12,9 @@ is lost**, because a 404 is an answer recorded in three places rather than an
 exception.
 
 See ADR-001 (the token), ADR-002 (the uncommitted cache), ADR-003 (one call per
-film), ADR-006 (foreign ids), ADR-007 (404s), ADR-008 (atomic writes) and
-ADR-031 (why a loop is correct here).
+film), ADR-005 (foreign ids), ADR-006 (404s), ADR-007 (atomic writes) and
+and the note on row loops at the end of docs/method.md, for why a loop is
+correct here.
 """
 from __future__ import annotations
 
@@ -305,7 +306,7 @@ def find_by_external_id(
     source: str = "imdb_id",
     force: bool = False,
 ) -> tuple[dict[str, Any], bool]:
-    """Resolve a foreign id to a TMDb one. This is F3's resolution procedure.
+    """Resolve a foreign id to a TMDb one. This is F-09's resolution procedure.
 
     Row 95 of the candidate list holds an IMDb id in a TMDb column. The
     obvious fix — resolve it and add the film — may be wrong: if it resolves
@@ -639,7 +640,7 @@ def resolve_foreign_ids(
 ) -> tuple[pd.DataFrame, list[str]]:
     """Resolve rows holding an IMDb id, and decide what each one means.
 
-    This is F3's procedure, written as code rather than left to whoever runs
+    This is F-09's procedure, written as code rather than left to whoever runs
     the pipeline next quarter. Three outcomes, and the middle one is the whole
     reason this is not a one-line fix:
 

@@ -22,7 +22,7 @@ and every flag carries a verdict:
 
 Nothing here excludes a film. `clean.py` acts on the verdicts, so the decision
 to drop a film from a metric is always traceable to a sentence, never to a
-quantile. See ADR-016.
+quantile. See M5.
 """
 from __future__ import annotations
 

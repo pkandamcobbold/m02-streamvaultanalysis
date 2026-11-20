@@ -75,7 +75,7 @@ def validate_settings(settings: "Settings") -> None:
     judgement reversible when flipping it did nothing.
 
     So anything not implemented fails loudly here rather than being read by
-    nobody. `use_popularity_as_performance` is the case in point: ADR-014 decided
+    nobody. `use_popularity_as_performance` is the case in point: M8 decided
     popularity must never enter a performance metric, because it is recomputed
     daily and recency-biased, so there is no code path for `true` and setting it
     is an error rather than a request.
@@ -89,8 +89,8 @@ def validate_settings(settings: "Settings") -> None:
             "toward recent films (Avengers: Endgame 85.7 against a 1966 classic "
             "at 0.5), so using it would rank against the back catalog this "
             "project exists to evaluate, and would make the analysis "
-            "irreproducible from the same cache a month later. See ADR-014 in "
-            "docs/adr/.\n"
+            "irreproducible from the same cache a month later. See M8 in "
+            "decisions/.\n"
             "Set it back to false. If you genuinely want a demand signal, it "
             "needs a source whose values do not move under the analysis."
         )
@@ -149,13 +149,13 @@ def load_token() -> str:
 # a duplicate as having reached it, and the accounting would claim 113 of 127
 # rows became films when only 112 films exist. Lives here because both the
 # transform stage (accounting) and the validate stage (the ledger's money
-# column) need one answer to "which row owns the film?". See ADR-009.
+# column) need one answer to "which row owns the film?". See ADR-008.
 ANALYSED_STATUSES = frozenset({"fetched"})
 
 # The durable per-stage timing artefact: written by run_pipeline.py, read by
 # the checks stage to compute the time budget and the 500-title projection.
 # A figure quoted in a report and held nowhere else is a memory, not a
-# measurement. See ADR-023 and ADR-024.
+# measurement. See ADR-010 and ADR-011.
 TIMING_COLUMNS = [
     "run_at", "stage", "seconds", "api_calls", "cache_hits", "rows", "note",
 ]

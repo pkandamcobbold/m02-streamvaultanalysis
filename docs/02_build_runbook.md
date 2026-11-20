@@ -749,13 +749,13 @@ the real one.)
 
 🧠 **The second time this project has been caught by its own check.** The first
 was `grep -nv "^[0-9]*$"`, which reported a blank line as fine because `[0-9]*`
-matches zero digits (F4). Both failures are the same shape: the check was written
+matches zero digits (F-04). Both failures are the same shape: the check was written
 by thinking about what the answer should be, not about what else could produce that
 answer. Write the check, then feed it a case you know the answer to.
 
 ## Step 3.4 🧑 Settle row 95 with a live `/find` call
 
-This is F3, and it is worth doing before the full fetch because the answer changes
+This is F-09, and it is worth doing before the full fetch because the answer changes
 what gets fetched. `resolve_foreign_ids` does it for every IMDb-shaped row it finds,
 so it also covers next quarter's file.
 
@@ -883,12 +883,12 @@ can ask questions of. Ask them now, before building anything on top:
 
 This produced the two findings that matter most so far, neither of them a data fault:
 
-- **F7: the standalone group is 16 films** — 87 franchise against 16 standalone, and
+- **F-04: the standalone group is 16 films** — 87 franchise against 16 standalone, and
   post-2000, 59 against **8**. The brief's central comparison has a thin side, and a
   median over 8 films is the least stable number in the project. Ranked the highest
   risk in the diagnosis: no amount of cleaning fixes it, and it changes what can
   honestly be concluded rather than how many films are involved.
-- **F8: no disguised money nulls at all** — zero films with `budget == 0` or
+- **S-01: no disguised money nulls at all** — zero films with `budget == 0` or
   `revenue == 0`, none missing a runtime or release date, all 112 `Released`, none
   `adult`. The fault most expected in a list merged from three sources is simply
   absent. Recorded anyway: a check that finds nothing is worth as much as one that
@@ -1038,21 +1038,21 @@ duplicate title-and-year, every rating on 4,000+ votes, every runtime between 81
 🧠 Say so explicitly rather than moving on. A check that found nothing is worth as
 much as one that found something **only if you can show it ran** — and this project
 has already been caught twice by checks that reported nothing because the check itself
-was wrong (F4's `[0-9]*`, the `Bearer` grep in Step 3.3).
+was wrong (F-04's `[0-9]*`, the `Bearer` grep in Step 3.3).
 
 Then the three findings, none of which is a data fault, and all of which outrank every
 fault found so far:
 
-- **F10: nominal money is not one unit across the window boundary.** Budgets are 5.0x
+- **F-05: nominal money is not one unit across the window boundary.** Budgets are 5.0x
   higher post-2000, revenue only 2.3x, so pre-2000 ROI looks twice as good. And an old
   film's revenue is *lifetime* revenue — re-releases earning later, larger dollars
   against a frozen budget. This is the specific, articulable version of Yaw's
   complaint, and the answer is to compare within a window and never across one
   (DR-12).
-- **F11: all eight extreme-ROI films are pre-2000.** So winsorising would delete 20%
+- **F-06: all eight extreme-ROI films are pre-2000.** So winsorising would delete 20%
   of the pre-2000 group and 0% of the modern one. An outlier treatment that only fires
   on one era is not hygiene (DR-15).
-- **F12: no film on the list lost money.** Lowest ROI is 1.13x. The list is
+- **F-01: no film on the list lost money.** Lowest ROI is 1.13x. The list is
   pre-selected successes, so **CL1's "higher floor" claim cannot be tested at all** —
   there is no downside in the data to compare (DR-14).
 
@@ -1066,7 +1066,7 @@ is the moment, and the temptation is to pick the value that makes the groups sep
 ```
 
 At 2.5, **92% of the list is a hit**. The metric barely discriminates — and that is a
-symptom of F12, not a reason to move the threshold. Keep 2.5, which has an answer to
+symptom of F-01, not a reason to move the threshold. Keep 2.5, which has an answer to
 "why that number?" (roughly theatrical break-even after the exhibitor split and P&A),
 report `above_median` and `top_quartile` beside it, and show where they disagree.
 Choosing a cutoff *after* seeing which one separates the groups is fitting the measure
@@ -1111,7 +1111,7 @@ can average a ratio that was never valid.
 🧠 **The trap that leaves no trace.** `above_median` and `top_quartile` are defined
 against a pool. Compute them once over all 112 films, reuse them for the 71 modern
 ones, and you are comparing modern films against a median partly set by 1970s films —
-whose ROI is inflated by inflation and re-release revenue (F10). No error, no warning,
+whose ROI is inflated by inflation and re-release revenue (F-05). No error, no warning,
 nothing in the output to see. `add_hit_flags` takes a frame and computes within it;
 stage 7 calls it again per window; a test pins a four-film case where the two methods
 disagree (DR-17).
@@ -1136,7 +1136,7 @@ gives a point estimate when the sensitivity table gives a 3.4x range is the most
 misleading thing it could do.
 
 🧠 **Report a dormant rule as dormant.** `treat_zero_money_as_missing` changes
-nothing here, because there are no zeros (F8). Saying so is better than leaving it
+nothing here, because there are no zeros (S-01). Saying so is better than leaving it
 looking like it did cleaning work — and better than deleting it, since next quarter's
 list may need it.
 
@@ -1195,7 +1195,7 @@ Named aggregation throughout, no row loops. The real column names are
 **On the mean, standalones win. On the median, franchises win.** The statistic reverses
 the recommendation.
 
-Why: the eight extreme-ROI films (F11) are concentrated in the smaller group — 3 of 25
+Why: the eight extreme-ROI films (F-06) are concentrated in the smaller group — 3 of 25
 standalone films against 5 of 87 franchise films. *Jaws* at 67x, *The Good, the Bad
 and the Ugly* at 32x and *Pulp Fiction* at 27x drag the standalone mean above the
 franchise mean while the *typical* standalone film sits below the typical franchise
@@ -1225,7 +1225,7 @@ in the table rather than knowledge in someone's head.
 
 And when it flips, print it loudly — then **report the margin beside it**. This flip is
 0.17 ROI points on 12 films, so the honest statement is "the franchise spread advantage
-disappears after 2000", not "standalones are now safer" (F15, DR-19).
+disappears after 2000", not "standalones are now safer" (F-07, DR-19).
 
 ## Step 8.4 🧠 Test the claim about middle entries inside one era
 
@@ -1249,7 +1249,7 @@ middle entries (5.05) come out *above* last entries (4.55).
 
 🧠 So the team is right that later entries return less and **wrong about which
 entries are weak**. Report the within-era figures as the finding and the pooled ones as
-the illustration of why era control matters (F16, DR-21). Note too that revenue
+the illustration of why era control matters (F-08, DR-21). Note too that revenue
 *rises* with position: anyone reading revenue alone concludes the opposite.
 
 ## Step 8.5 ✅ The rest of the KPI set
@@ -1367,9 +1367,9 @@ Three fixes, all of which belong in any timing code:
    over-estimates, which is the safe direction for a budget.
 
 🧠 This is the **third** time in this project a check returned a confident wrong
-answer — after `grep "^[0-9]*$"` on blank lines (F4) and the `Bearer` grep on cached
+answer — after `grep "^[0-9]*$"` on blank lines (F-04) and the `Bearer` grep on cached
 films. Every time, the headline number looked plausible and something one level down
-gave it away. Check the intermediate quantity, not the conclusion (F17).
+gave it away. Check the intermediate quantity, not the conclusion (S-04).
 
 ✅ **ARTEFACT** — `time_budget.csv`, `scaling_measurements.csv`, `projection.csv`,
 `projection_acquisition.csv`.
@@ -1397,8 +1397,8 @@ So stratify, and let the findings pick the slices:
 | Slice | Why | Films |
 |---|---|---|
 | `shortlisted` | an error here is an error in the answer | 3 |
-| `flagged_extreme` | the eight films from F11 — **all of them** | 6\* |
-| `pre_2000` | Yaw's window, where money is least comparable (F10) | 3 |
+| `flagged_extreme` | the eight films from F-06 — **all of them** | 6\* |
+| `pre_2000` | Yaw's window, where money is least comparable (F-05) | 3 |
 | `random_control` | without it the check only looks where problems are expected | 3 |
 
 \* All eight are in the sample; two (*Star Wars*, *The Empire Strikes Back*) arrive via
@@ -1499,8 +1499,8 @@ decides what to say about them (DR-27).
 🧠 **Test the caveats, not just the figures.** The worst failure in a client document
 is not a wrong number — it is a right number stated with more confidence than the data
 supports, because nobody downstream can tell. So the test suite asserts that the memo
-contains the mean-reversal disclosure (F14), the thin standalone group (F7), the era
-problem (F10), the absence of any failure on the list (F12) and the missing licensing
+contains the mean-reversal disclosure (F-03), the thin standalone group (F-04), the era
+problem (F-05), the absence of any failure on the list (F-01) and the missing licensing
 prices — and that **no dollar price is ever named**. An edit that quietly drops a
 caveat fails the suite.
 
@@ -1597,8 +1597,8 @@ no PyYAML. That check was correct and answered the wrong question: resolved **al
 which does not. **A dependency is only installable in context.**
 
 That is the fourth time in this project a check returned a confident wrong answer —
-after `grep "^[0-9]*$"` on blank lines (F4), the `Bearer` grep on cached films, and a
-negative scaling exponent (F17). The pattern never varied: the check ran, reported
+after `grep "^[0-9]*$"` on blank lines (F-04), the `Bearer` grep on cached films, and a
+negative scaling exponent (S-04). The pattern never varied: the check ran, reported
 success, and was answering a question slightly different from the one that mattered.
 If there is one habit to carry out of this project, it is to ask what else could
 produce the answer you just got.

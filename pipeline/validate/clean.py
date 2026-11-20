@@ -7,7 +7,7 @@ with no usable budget is excluded from the return figures and still counts in
 the film count, the rating analysis and the franchise split. A single global
 "clean" table would force one answer to "is this film in?", when the honest
 answer is "in for some things, out for others" — and would quietly shrink the
-denominators the memo quotes (ADR-017).
+denominators the memo quotes (ADR-009).
 
 **2. Every rule reads its threshold from settings.** Not for configurability's
 own sake, but so the rejected alternative is *runnable*:
@@ -20,7 +20,7 @@ it once over all 112 films and then reporting it for the post-2000 subset would
 silently compare modern films against a median set partly by 1970s films.
 `add_hit_flags` therefore takes a frame and computes within it, and the KPI
 stage calls it again per window. A test pins this, because the bug it prevents
-is invisible in the output (ADR-018).
+is invisible in the output (M10).
 """
 from __future__ import annotations
 
@@ -176,7 +176,7 @@ def add_hit_flags(frame: pd.DataFrame, settings: Any) -> pd.DataFrame:
 def add_franchise_groupings(frame: pd.DataFrame) -> pd.DataFrame:
     """Two columns for the two defensible ways to treat lone collection members.
 
-    ADR-010 kept three categories. The comparison the brief asks for has two
+    M1 kept three categories. The comparison the brief asks for has two
     sides, so somebody has to decide where the 9 lone members go, and both
     answers are arguable: they are franchise films, but not ones Kwame can buy
     as a bundle. Having both columns means stage 7 can report the headline one

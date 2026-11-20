@@ -7,7 +7,7 @@ rather than remembered.
 The file is read as text and nothing else. Letting pandas infer dtypes on a
 column of ids is how `550` becomes `550.0` — one blank row anywhere forces the
 column to float64, because NaN cannot live in an int column — and the failure
-then surfaces three stages later as a 404 from the API. See ADR-009.
+then surfaces three stages later as a 404 from the API. See ADR-008.
 """
 from __future__ import annotations
 

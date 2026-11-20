@@ -11,13 +11,13 @@ spurious star.
 **A co-directed film counts for both directors.** The long directors table, not
 the film-level label, is what every per-person statistic is computed from —
 otherwise a 3-film partnership splits into two filmographies of 2 and 1 and
-neither clears the threshold (ADR-012).
+neither clears the threshold (M3).
 
 The lead-only view is reported beside a top-3-billed view, because a performer
 billed second is still a draw: widening the net takes the reliable names from 19
 to 44, and 25 of those are invisible to a lead-only view. That is a finding, and
 it was unreachable until the setting that controls it was actually wired up
-(ADR-030).
+(ADR-016).
 """
 from __future__ import annotations
 

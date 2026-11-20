@@ -777,7 +777,7 @@ def test_ledger_still_accounts_for_every_source_row(small_ledger):
 
 
 # --------------------------------------------------------------------------
-# F3: the IMDb id in row 95
+# F-09: the IMDb id in row 95
 # --------------------------------------------------------------------------
 
 def test_find_resolves_an_imdb_id_and_caches_it(tmp_path, no_wait):
@@ -996,7 +996,7 @@ def test_a_field_tmdb_stops_sending_becomes_an_empty_column():
     del payload["runtime"]
     films = build_films([payload])
 
-    # release_year is derived here rather than fetched (ADR-013), so it is
+    # release_year is derived here rather than fetched (M4), so it is
     # one column beyond the fields read straight from the payload.
     assert list(films.columns) == FILM_COLUMNS + ["release_year"]
     assert pd.isna(films["runtime"].item())
@@ -1004,7 +1004,7 @@ def test_a_field_tmdb_stops_sending_becomes_an_empty_column():
 
 def test_no_payloads_gives_an_empty_table_not_an_empty_frame():
     films = build_films([])
-    # release_year is derived here rather than fetched (ADR-013), so it is
+    # release_year is derived here rather than fetched (M4), so it is
     # one column beyond the fields read straight from the payload.
     assert list(films.columns) == FILM_COLUMNS + ["release_year"]
     assert len(films) == 0
@@ -1264,7 +1264,7 @@ def test_a_clean_cache_reads_with_no_notes(tmp_path):
 # --------------------------------------------------------------------------
 # The window boundary is a year, and the year is a property of the film rather
 # than of any merge. Deriving it here is what lets the validate stage run on
-# this table before a single credit is joined onto it (ADR-032).
+# this table before a single credit is joined onto it (ADR-017).
 
 def test_release_year_is_an_integer_not_a_string():
     films = build_films([film(550, release_date="1999-10-15")])
@@ -1278,7 +1278,7 @@ def test_a_missing_release_date_gives_a_missing_year_not_a_crash():
 
     A film with no parseable date must fall out of a *bounded* window and stay
     in the unbounded one. A year of 0 would be a real lower bound and would put
-    it in both, silently (ADR-013).
+    it in both, silently (M4).
     """
     films = build_films([film(550, release_date="")])
 

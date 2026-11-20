@@ -10,13 +10,13 @@ the weak middle entries are what StreamVault overpays for. Read inside one era,
 because position is confounded with age and era inflates returns: pooled, the
 decline from opener to final entry is 43%; within one era it is 14%, and middle
 entries sit *above* last entries, so the team's specific belief is not
-supported even though the general direction is (ADR-022).
+supported even though the general direction is (M7).
 
 **The shortlist** ranks by a rule simple enough to say out loud, having first
 required that the thing is actually buyable, and carries the runners-up — "why
 it made the cut" means nothing without what did not — and each pick's franchise
 status, because calling *Jaws* a standalone without qualification is a sentence
-a board member could reasonably object to (ADR-021).
+a board member could reasonably object to (M12).
 """
 from __future__ import annotations
 

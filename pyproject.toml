@@ -7,7 +7,7 @@ name = "streamvault"
 version = "0.2.0"
 description = "Back-catalog licensing analysis for StreamVault: franchise bundles vs standalone hits."
 # The pins in requirements.txt need 3.12: numpy 2.5.5 requires >=3.12 and
-# pandas 3.1.1 requires >=3.11. Stating 3.10 here was finding F23.
+# pandas 3.1.1 requires >=3.11. Stating 3.10 here was finding S-09.
 requires-python = ">=3.12"
 
 # Dependencies live in requirements.txt, pinned, because that is what the
@@ -15,7 +15,7 @@ requires-python = ">=3.12"
 # as well would create two sources of truth.
 
 [tool.setuptools.packages.find]
-# Flat layout: one package, `pipeline`, at the repository root (ADR-032).
+# Flat layout: one package, `pipeline`, at the repository root (ADR-017).
 where = ["."]
 include = ["pipeline*"]
 

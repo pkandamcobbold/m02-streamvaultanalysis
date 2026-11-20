@@ -14,8 +14,8 @@ counts a film once per actor.
 Nothing is dropped, filtered or cleaned here. A film with a budget of zero or a
 runtime of nothing survives intact and is dealt with by the validate stage,
 where the decision is recorded. The only job here is shape — plus the two
-derived columns named as derived: the franchise label (ADR-010) and the release
-year (ADR-013).
+derived columns named as derived: the franchise label (M1) and the release
+year (M4).
 """
 from __future__ import annotations
 
@@ -180,7 +180,7 @@ def build_films(payloads: Iterable[dict[str, Any]]) -> pd.DataFrame:
     # not of the join. Derived here so the validate stage can run on this
     # table before any credit is merged onto it. An unparseable date becomes
     # NA rather than 0: a real lower bound would silently exclude it from
-    # every bounded window (ADR-013).
+    # every bounded window (M4).
     films["release_year"] = (
         films["release_date"].astype("str").str.slice(0, 4)
         .replace({"": None, "nan": None, "<NA>": None})

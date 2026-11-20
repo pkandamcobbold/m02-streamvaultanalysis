@@ -7,7 +7,7 @@ can tell.
 
 So these tests check that the caveats cannot be dropped, that the jargon stays
 out, and that a flip reaches the first line rather than a footnote. A future
-edit that quietly removes a limitation fails the suite (ADR-028).
+edit that quietly removes a limitation fails the suite (ADR-014).
 """
 from __future__ import annotations
 
@@ -66,10 +66,10 @@ def test_every_limitation_the_analysis_found_is_listed(memo_settings):
     memo = flat(build_memo(make_facts(memo_settings), memo_settings))
     for limitation in (
         "how these films behave on a streaming service",   # box office is a proxy
-        "Nothing on this list ever lost money",            # F12, selection bias
-        "The one-off group is thin",                       # F7, group size
-        "Old and new money are not the same money",        # F10, era effects
-        "already filtered toward series films",            # F7, list composition
+        "Nothing on this list ever lost money",            # F-01, selection bias
+        "The one-off group is thin",                       # F-04, group size
+        "Old and new money are not the same money",        # F-05, era effects
+        "already filtered toward series films",            # F-04, list composition
         "We have no licensing prices",
     ):
         assert limitation in memo, f"missing limitation: {limitation!r}"

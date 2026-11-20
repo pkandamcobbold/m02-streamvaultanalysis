@@ -12,7 +12,7 @@ of them, because sampling the risky rows is not a check), **pre_2000**, and a
 The re-fetch writes to `data/raw_spotcheck/`, not `data/raw/`. Forcing it into
 the analysis cache would overwrite the `fetched_at` stamps the as-of date rests
 on and would make any discrepancy disappear the moment it was found — the next
-run would read the new values and agree with itself. See ADR-025 and ADR-026.
+run would read the new values and agree with itself. See ADR-012 and M13.
 """
 from __future__ import annotations
 
@@ -402,7 +402,7 @@ def assert_spotcheck(
             notes.append(
                 f"{drift['tmdb_id'].nunique()} film(s) show expected drift in "
                 f"{sorted(set(drift['field']))} — these fields move on their own and "
-                "none of them enters a performance metric (ADR-014)."
+                "none of them enters a performance metric (M8)."
             )
     return notes
 
@@ -510,7 +510,7 @@ def write_report(
             "### Expected drift",
             "",
             "These fields move on their own, so a change in them is not a",
-            "discrepancy. None of them enters a performance metric (ADR-014).",
+            "discrepancy. None of them enters a performance metric (M8).",
             "",
             "| Film | Field | Analysis | Live |",
             "|---|---|---|---|",

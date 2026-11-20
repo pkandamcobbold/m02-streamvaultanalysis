@@ -1,8 +1,19 @@
 # Decision log
 
-> **Superseded.** Every record here is now one file in [`../docs/adr/`](../docs/adr/README.md),
-> rewritten to the ADR template (context, decision, alternatives, consequences, revisit when).
-> DR-00 maps to ADR-001 and so on in order; the unnumbered loop record is ADR-031.
+> **Superseded.** Every record here has moved, rewritten to the five headings of the ADR
+> template (context, decision, alternatives, consequences, revisit when), and split by what
+> kind of decision it is:
+>
+> - the 18 about **how the system is built** are one file each in
+>   [`../decisions/`](../decisions/README.md), numbered 001 to 018;
+> - the 13 about **what the numbers mean** are M1 to M13 in [`../docs/method.md`](../docs/method.md);
+> - the float-id rule became a clause in [`../docs/data_contract.md`](../docs/data_contract.md),
+>   and the row-loop record became the closing note of `method.md`.
+>
+> **Do not map the DR numbers here onto the ADR numbers there** — the correspondence was
+> one-to-one only briefly, and the ADRs were renumbered on 2026-11-19 once the analytical
+> records moved out. Find a record by its title, not by its old number.
+>
 > This file is kept only until the migration is reviewed, and may be deleted.
 
 

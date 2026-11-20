@@ -8,7 +8,7 @@
 #
 # Values marked TO SET AFTER PROFILING are placeholders. They get set once the
 # stage-5 profile shows what the data actually looks like, and each one gets a
-# sensitivity row in docs/adr/ showing what the recommendation
+# sensitivity row in decisions/ showing what the recommendation
 # looks like if it were set differently. Do not treat them as principled until
 # that has been done.
 
@@ -50,7 +50,7 @@ treat_zero_money_as_missing = true  # zero budget/revenue as a disguised null.
                                     # Set false to compute every money metric
                                     # the other way (zeros as real flops).
 # SET AFTER PROFILING (stage 5, 2026-11-19). Both values below are now
-# justified against the actual distribution rather than assumed — see ADR-015.
+# justified against the actual distribution rather than assumed — see M9.
 min_budget_for_roi = 1000000        # a guard, inactive this quarter: the
                                     # smallest budget on the list is 1,200,000,
                                     # so no film is excluded. Kept because next
@@ -61,7 +61,7 @@ hit_roi_threshold = 2.5             # kept at the break-even rule of thumb, an
                                     # this data. But note what it does here:
                                     # 92% of the list clears it, so hit rate
                                     # barely discriminates — a direct symptom
-                                    # of the selection bias in F11. Stage 7
+                                    # of the selection bias in F-06. Stage 7
                                     # therefore reports all three definitions
                                     # below, not just this one.
 hit_definition = "roi"              # roi | above_median | top_quartile
@@ -91,7 +91,7 @@ flop_roi = 1.0                     # revenue below budget: real, and the thing
 # heavily recency-biased (Endgame 85.7, a 1966 classic 0.5). It is kept in the
 # tables as fetched, and excluded from every performance metric: using it would
 # measure how much a film is being looked at this week, and would make the
-# analysis unreproducible from the same cache a month later. See ADR-014.
+# analysis unreproducible from the same cache a month later. See M8.
 use_popularity_as_performance = false
 
 [talent]

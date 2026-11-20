@@ -3,7 +3,7 @@
 One stage, three jobs, one module each, because they have nothing in common but
 their order: parsing a text file, speaking HTTP to a shared service, and
 reshaping nested JSON have different dependencies, different failure modes and
-different reasons to change (ADR-033).
+different reasons to change (ADR-018).
 
     ids.py      read the candidate list; one ledger row per source row, forever
     fetch.py    details and credits: cached, retried, rate-limited, resumable
@@ -116,7 +116,7 @@ def extract(
 
     The three parts are timed separately and returned under `timings`, because
     the time budget's boundary runs straight through this stage: shaping the
-    cached payloads is inside it, and the acquisition is not (ADR-023).
+    cached payloads is inside it, and the acquisition is not (ADR-010).
     """
     timings: dict[str, float] = {}
 

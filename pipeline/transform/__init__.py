@@ -1,6 +1,6 @@
 """Stage 3 — transform: prove the join, then answer each of Kwame's questions.
 
-One stage, four jobs, one module each (ADR-033):
+One stage, four jobs, one module each (ADR-018):
 
     join.py      collapse the credit tables to film grain and merge, with every
                  merge validated, counted and written to a join report

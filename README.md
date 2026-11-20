@@ -52,7 +52,7 @@ pip install -r requirements.txt
 That is everything the analysis needs: ten packages, about a minute. If you also want to open
 [`explore/analysis.ipynb`](explore/analysis.ipynb) — a guided tour of the whole analysis, which
 computes nothing of its own — there is one more command. It is separate on purpose, because a
-notebook viewer's dependencies should not be able to stop the analysis installing (ADR-027):
+notebook viewer's dependencies should not be able to stop the analysis installing (ADR-013):
 
 ```bash
 pip install -r requirements-notebook.txt
@@ -95,7 +95,7 @@ and it does not hammer a service other people are sharing.
 
 If a run is interrupted, just start it again. It picks up where it stopped — including when it was
 interrupted *while writing* a file, which used to leave a half-written response that broke every
-later run (ADR-008).
+later run (ADR-007).
 
 Other ways to run it:
 
@@ -116,7 +116,7 @@ that must reach the network. The tests cover everything that does not need live 
 
 **Exit codes.** `0` succeeded. `1` could not start — usually no token, and the message says what to
 do. `2` means the **release gate blocked publication**: the analysis ran and its results should not
-go in front of a board without someone looking first. That is not a crash; see ADR-029.
+go in front of a board without someone looking first. That is not a crash; see ADR-015.
 
 ---
 
@@ -124,15 +124,18 @@ go in front of a board without someone looking first. That is not a crash; see A
 
 | Path | What it holds | Why it is separate |
 | --- | --- | --- |
-| `pipeline/` | Production code: one package per stage, plus `config.py` and `load.py`. Each package holds one module per job, and its `__init__.py` holds the stage's entry point (ADR-033) | This is what runs every quarter. Nothing else lives here |
+| `pipeline/` | Production code: one package per stage, plus `config.py` and `load.py`. Each package holds one module per job, and its `__init__.py` holds the stage's entry point (ADR-018) | This is what runs every quarter. Nothing else lives here |
 | `run_pipeline.py` | The orchestrator | The one command, and the only thing that times and records a run |
 | `tests/` | Tests on tiny hand-made data, one file per stage module | Prove the code is right before it touches a 127-title list |
-| `docs/adr/` | Architecture Decision Records, one file per decision | The why behind the code, versioned with it |
-| `docs/findings.md` | What we found in the data, traced to code, tests and decisions | Evidence behind every rule |
+| `decisions/` | Architecture Decision Records, one file per decision, in the house format | How the system is built, and why. Versioned with the code |
+| `docs/templates.md` | The house templates the deliverables are written to | Copied in so the repo is self-contained and the format can be audited |
+| `docs/method.md` | Every judgement call about what the numbers mean, M1 to M13 | Separate from the ADRs because these interlock: four of them are views of one era problem |
+| `docs/self_audit.md` | What we checked without finding anything, and what we got wrong ourselves, S-01 to S-09 | Out of the diagnosis so that eleven ranked findings are not diluted by nine that are not about the data |
 | `docs/questions.md` | Questions for the client, and what we did when nobody answered | Business decisions belong to the business |
 | `docs/data_contract.md` | What we agree to receive, and what happens if it is broken | Both sides know the rules |
 | `explore/` | The investigation notebook: the narrative, importing the pipeline | Understanding the data is separate from production code |
-| `reports/` | What reaches the client: the memo, the improvement, the spot-check | Generated, so they cannot drift from the numbers |
+| `reports/` | What reaches the client: the memo, the data diagnosis, the improvement, the spot-check | Three of the four are generated, so they cannot drift from the numbers |
+| `reports/data_diagnosis.md` | The eleven problems that move the recommendation, numbered in risk order, plus the account of all 127 titles | The deliverable the brief asks for, beside the memo it supports |
 | `config/settings.toml` | Every threshold, window and limit | Adjoa changes a value here, never in the code |
 | `data/input/` | The candidate list, as given | Committed, never edited |
 | `data/raw/`, `data/interim/` | Cached API responses and the shaped tables | Rebuilt from code, so never committed (ADR-002) |
@@ -155,8 +158,10 @@ The five stages, and what each one is responsible for:
 | Location | What's in it |
 |----------|--------------|
 | [`reports/memo.md`](reports/memo.md) | **Start here.** One page: the recommendation, the shortlist, what we couldn't verify. Written for the room, not for engineers. |
-| [`docs/findings.md`](docs/findings.md) | Every problem found in the data, ranked by how much it moves the answer, each traced to the code and test that handles it. |
-| [`docs/adr/`](docs/adr/README.md) | Every judgement call: what we chose, what we gave up, and what would make us change our mind. |
+| [`reports/data_diagnosis.md`](reports/data_diagnosis.md) | The eleven problems that move the recommendation, **numbered in risk order**, each traced to the code and test that handles it, plus the full account of where all 127 titles went. |
+| [`decisions/`](decisions/README.md) | How the system is built: 18 decisions, one file each, with what we gave up and what would change our mind. |
+| [`docs/method.md`](docs/method.md) | The analysis judgements: what counts as a franchise, why medians not means, how the era problem is handled. **Read M1, M4, M5, M6** if you read four. |
+| [`docs/self_audit.md`](docs/self_audit.md) | What we checked and did not find (S-01–S-03), and the six defects in this project rather than the data (S-04–S-09), three still open. |
 | [`reports/improvement.md`](reports/improvement.md) | The one addition beyond the brief — a release gate — and why that one. |
 | [`reports/spotcheck.md`](reports/spotcheck.md) | A live re-check of a stratified sample against the source, to catch our own errors. |
 | [`data/processed/id_ledger.csv`](data/processed/id_ledger.csv) | Every title on the candidate list and what happened to it. Nothing disappears silently. |
@@ -172,13 +177,13 @@ The five stages, and what each one is responsible for:
 
 Every threshold, window and limit is in [`config/settings.toml`](config/settings.toml), with a
 comment explaining what it does. Change values there — not in the code. A key that cannot change
-behaviour refuses to load rather than sitting there looking live (ADR-030).
+behaviour refuses to load rather than sitting there looking live (ADR-016).
 
 | Setting | Why you'd change it |
 |---------|---------------------|
 | `input.expected_id_count` | The candidate list grows. Next year it's expected to be ~500. |
 | `windows.modern.min_year` | The "recent films only" cutoff, currently 2000. |
-| `performance.hit_roi_threshold` | What counts as a hit. 92% of this list clears it, which is itself a finding — see ADR-015. |
+| `performance.hit_roi_threshold` | What counts as a hit. 92% of this list clears it, which is itself a finding — see M9. |
 | `talent.min_films_for_reliable` | How many films someone needs before we'll call them a reliable signal. |
 | `shortlist.n_franchises` / `n_standalones` | How many names you want to negotiate from. |
 | `gate.*` | What the release gate refuses to publish past. |
@@ -196,12 +201,12 @@ older as-of date, which is why that date is printed on it.
 
 **"RECONCILIATION NOTE: the brief says 127 titles, the file has N"** — not a failure. The candidate
 list has changed size. Update `input.expected_id_count` and read the findings log to see what the
-difference was (ADR-005).
+difference was (ADR-004).
 
 **"The memo was not written, because these checks failed"** — not a crash. The analysis ran, and its
 results should not go in front of a board without someone looking first: the title count did not
 reconcile, or too few films survived, or too much of the money data is missing, or the live re-check
-changed the answer. The message names which. Read [`docs/findings.md`](docs/findings.md), then either
+changed the answer. The message names which. Read [`reports/data_diagnosis.md`](reports/data_diagnosis.md), then either
 fix the input or — if you have decided the run is sound anyway — set `gate.enabled = false` in
 `config/settings.toml`, run again, and say in the meeting that you did.
 
@@ -215,17 +220,21 @@ compares a sample of our figures against the live source and classifies any diff
 
 For anyone picking this up to change it:
 
-- [`docs/adr/README.md`](docs/adr/README.md) — the decisions, in order, one file each. **Read this
-  before changing any rule**; each one says what it would take to change its mind.
-- [`docs/findings.md`](docs/findings.md) — what is actually wrong with the data, and where each
-  finding is handled.
+- [`decisions/README.md`](decisions/README.md) — how the system is built, in order, one file each.
+  **Read this before changing any rule**; each one says what it would take to change its mind.
+- [`docs/method.md`](docs/method.md) — what the numbers mean, M1 to M13. **Read this before
+  changing any statistic**: M6 is the one where the conventional choice reverses the answer.
+- [`reports/data_diagnosis.md`](reports/data_diagnosis.md) — what is actually wrong with the data, and
+  where each finding is handled. Eleven findings, numbered in risk order.
+- [`docs/self_audit.md`](docs/self_audit.md) — what we checked without finding anything, and what we
+  got wrong ourselves. **Read S-07 to S-09 before a review**: those three are still open.
 - [`docs/data_contract.md`](docs/data_contract.md) — what the pipeline relies on from the candidate
   list and from TMDb, and what it does when a rule is broken.
 - [`docs/01_brief_and_guide.md`](docs/01_brief_and_guide.md) — the original brief, verbatim, so the
   work can be audited against what was asked.
 - [`docs/00_project_plan.md`](docs/00_project_plan.md) and
   [`docs/02_build_runbook.md`](docs/02_build_runbook.md) — the planning and the build order. Written
-  against the earlier ten-stage layout; ADR-032 maps those stages onto the five modules.
+  against the earlier ten-stage layout; ADR-017 maps those stages onto the five modules.
 
 ```bash
 python -m pytest
@@ -238,5 +247,5 @@ the KPI definitions, the gate, and the memo's caveats.
 They do **not** prove that a fresh clone works. Pytest is configured to find the code whether or not
 `pip install -r requirements.txt` succeeded, so a green suite says nothing about whether
 `python run_pipeline.py` runs for someone who has just cloned the repo. Only actually cloning it into
-a new folder and running it proves that — which is how finding F19 was caught, and why that check is
+a new folder and running it proves that — which is how finding S-05 was caught, and why that check is
 a step of its own rather than something the tests can be trusted to cover.

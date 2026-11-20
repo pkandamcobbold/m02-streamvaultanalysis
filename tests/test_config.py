@@ -1,7 +1,7 @@
 """Tests for pipeline/config.py: the settings loader and the plain-language helpers.
 
 Two things are pinned here. **A settings key must change behaviour or refuse to
-load** (ADR-030): five keys were once declared and read by nobody, and two of
+load** (ADR-016): five keys were once declared and read by nobody, and two of
 them were cited in decision records as the mechanism that made a judgement
 reversible. And the figures a human reads are rendered in one place, because
 the gate's failure messages and the memo must not disagree about what "20%"
@@ -58,7 +58,7 @@ def test_the_refusal_explains_why_and_points_at_the_decision(tmp_path):
     except ValueError as error:
         message = str(error)
     assert "recomputed daily" in message
-    assert "ADR-014" in message
+    assert "M8" in message
     assert "Set it back to false" in message
 
 

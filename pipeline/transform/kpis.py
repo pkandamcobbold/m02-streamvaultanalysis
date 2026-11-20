@@ -16,12 +16,13 @@ that franchises are the *safer* buy. Safety is a claim about the **floor** and
 the **spread**, not the average, so the lower quartile and the interquartile
 range carry more weight here than the mean — and the mean is reported beside
 them only so the disagreement is visible, because it reverses the answer
-(ADR-019).
+(M6).
 
 The flip check tests every measure rather than just the median, because the
 recommendation can hold on the median and flip on the spread, and that is a
-different conversation (ADR-020). Nothing here loops over rows to produce a
-number: every figure comes from a named aggregation over a group (ADR-031).
+different conversation (M11). Nothing here loops over rows to produce a
+number: every figure comes from a named aggregation over a group. See the note
+on row loops at the end of docs/method.md.
 """
 from __future__ import annotations
 
@@ -48,7 +49,7 @@ GROUP_LOOSE = "franchise_group_loose"
 # `report_all_hit_definitions` decides whether the other two travel with it.
 #
 # Both settings were inert until an audit found them: the code reported all
-# three unconditionally while ADR-015 credited a setting with that behaviour.
+# three unconditionally while M9 credited a setting with that behaviour.
 # A switch nothing reads is worse than no switch, because the decision record
 # claims it can be flipped.
 HIT_RATE_COLUMNS = {
@@ -93,7 +94,7 @@ def compare_groups(
 
     `floor_roi` is the lower quartile rather than the minimum: a single worst
     film is an anecdote, and on this list the minimum is 1.13x for everyone
-    (F12). The quartile is what "higher floor" can actually be measured as.
+    (F-01). The quartile is what "higher floor" can actually be measured as.
     """
     scope = films if min_year is None else films.loc[
         films["release_year"].notna() & (films["release_year"] >= min_year)
@@ -126,7 +127,7 @@ def compare_groups(
         median_votes=pd.NamedAgg("vote_count", "median"),
     )
     # Spread as the interquartile range, not the standard deviation: a few real
-    # 70x returns (F11) inflate an SD without telling you anything about the
+    # 70x returns (F-06) inflate an SD without telling you anything about the
     # typical gap between a good and a bad film in the group.
     table["iqr_roi"] = table["upper_roi"] - table["floor_roi"]
 
@@ -136,7 +137,7 @@ def compare_groups(
         table.attrs["hit_definition"] = settings["performance"]["hit_definition"]
         if not bool(settings["performance"]["report_all_hit_definitions"]):
             # Drop the alternatives the reader asked not to see. Kept as a
-            # setting rather than hard-coded because F12 is the reason all
+            # setting rather than hard-coded because F-01 is the reason all
             # three are normally shown: on a list with no failures in it, no
             # single definition is defensible alone.
             table = table.drop(columns=[
@@ -151,7 +152,7 @@ def by_window(
     """One comparison per configured window, each computed in its own pool.
 
     The relative hit flags are recomputed inside each window before the
-    comparison, which is the whole of ADR-018: inherited flags would measure
+    comparison, which is the whole of M10: inherited flags would measure
     modern films against a median partly set by 1970s films.
     """
     tables: dict[str, pd.DataFrame] = {}
@@ -222,7 +223,7 @@ def announce_flip(flips: pd.DataFrame) -> list[str]:
         notes.append(
             "No measure flips between windows: the same group leads on median, "
             "floor, hit rate and spread in both. Yaw's objection changes the "
-            "size of the answer (F10), not its direction."
+            "size of the answer (F-05), not its direction."
         )
     return notes
 

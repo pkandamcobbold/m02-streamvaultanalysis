@@ -1,4 +1,4 @@
-"""The release gate: the one improvement beyond the brief (ADR-029).
+"""The release gate: the one improvement beyond the brief (ADR-015).
 
 Four blunt checks run before the memo is written: every source row accounted
 for, enough films to compare groups, money data complete enough to decide on,
@@ -31,7 +31,7 @@ class GateFailed(RuntimeError):
 
 
 # ===========================================================================
-# The release gate — the one improvement beyond the brief (ADR-029)
+# The release gate — the one improvement beyond the brief (ADR-015)
 # (was src/streamvault/memo.py)
 # ===========================================================================
 
@@ -105,7 +105,7 @@ def enforce(gate_results: pd.DataFrame, settings: Any) -> None:
         "",
         "Nothing is wrong with your computer. The analysis produced results that",
         "should not be put in front of a board without someone looking first.",
-        "Read docs/findings.md, then either fix the input or, if you have",
+        "Read reports/data_diagnosis.md, then either fix the input or, if you have",
         "decided the run is sound anyway, set gate.enabled = false in",
         "config/settings.toml and run again — and say in the meeting that you did.",
     ]

@@ -19,7 +19,7 @@ Two things this file owns that the stages do not:
   and the 500-title projection from. Appended to, never overwritten: a figure
   quoted in a report and held nowhere else is a memory, not a measurement.
 * **The failure contract.** A blocked gate exits 2, not 1, and says so. The
-  analysis ran; its output should not be published. See ADR-029.
+  analysis ran; its output should not be published. See ADR-015.
 """
 from __future__ import annotations
 
@@ -312,8 +312,8 @@ def main(argv: list[str] | None = None) -> int:
     print("  improvement.md   — the one addition beyond the brief, and why this one")
     print("  spotcheck.md     — the live re-check, generated so it cannot drift")
     print()
-    print("The reasoning behind every decision is in docs/adr/, one file per decision.")
-    print("What was found in the data, and where each finding is handled: docs/findings.md")
+    print("The reasoning behind every decision is in decisions/, one file per decision.")
+    print("What was found in the data, and where each finding is handled: reports/data_diagnosis.md")
     return 0
 
 

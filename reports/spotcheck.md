@@ -72,7 +72,7 @@ usually miss every film that does. So the sample is stratified:
 ### Expected drift
 
 These fields move on their own, so a change in them is not a
-discrepancy. None of them enters a performance metric (ADR-014).
+discrepancy. None of them enters a performance metric (M8).
 
 | Film | Field | Analysis | Live |
 |---|---|---|---|
@@ -80,7 +80,7 @@ discrepancy. None of them enters a performance metric (ADR-014).
 | The Empire Strikes Back | `vote_count` | 19145 | 19146.0 |
 | Star Wars: Episode III - Revenge of the Sith | `vote_count` | 15527 | 15529.0 |
 | Raiders of the Lost Ark | `vote_count` | 14239 | 14241.0 |
-| Back to the Future | `vote_count` | 22791 | 22792.0 |
+| Back to the Future | `vote_count` | 22791 | 22795.0 |
 | The Godfather | `vote_count` | 24014 | 24015.0 |
 | The Godfather | `vote_average` | 8.7 | 8.689 |
 | The Good, the Bad and the Ugly | `vote_count` | 10163 | 10165.0 |

@@ -19,7 +19,7 @@ GRAINS produced:
 The film-level table carries a *label* for its directors and genres. Any
 analysis of people or genres uses the long tables, never the label — a count of
 films per director must see both co-directors, and a string is not a group.
-See ADR-011 and ADR-012.
+See M2 and M3.
 """
 from __future__ import annotations
 

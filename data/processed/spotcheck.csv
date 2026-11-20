@@ -42,7 +42,7 @@ tmdb_id,title,slice,field,analysed_value,live_value,verdict,note
 105,Back to the Future,flagged_extreme,collection_id,264,264.0,identical,
 105,Back to the Future,flagged_extreme,title,Back to the Future,Back to the Future,identical,
 105,Back to the Future,flagged_extreme,popularity,25.1565,25.1565,identical,
-105,Back to the Future,flagged_extreme,vote_count,22791,22792.0,expected_drift,expected: rises continuously as people vote
+105,Back to the Future,flagged_extreme,vote_count,22791,22795.0,expected_drift,expected: rises continuously as people vote
 105,Back to the Future,flagged_extreme,vote_average,8.332,8.332,identical,
 238,The Godfather,flagged_extreme,budget,6000000,6000000.0,identical,
 238,The Godfather,flagged_extreme,revenue,245066411,245066411.0,identical,

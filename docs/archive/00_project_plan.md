@@ -1,3 +1,17 @@
+> ## SUPERSEDED — kept for the record, not for guidance
+>
+> This document was written against an earlier **ten-stage** layout, with the code in
+> `src/streamvault/` and one module per stage. The project was later restructured into
+> **five stages** — extract, validate, transform, checks, load — each a package under
+> `pipeline/`. Stage numbers, module paths and file names below no longer match the
+> repository.
+>
+> It is archived rather than deleted because it records *why* decisions were taken at
+> the time, and several of those reasons are still the operative ones. For the current
+> shape, read [`README.md`](../../README.md); for the decisions, read
+> [`decisions/`](../../decisions/README.md) and
+> [`reports/decision_notes.md`](../../reports/decision_notes.md).
+
 # StreamVault Back-Catalog Analysis — Project Plan & Study Guide
 
 > Status: planning only. No code yet.

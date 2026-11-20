@@ -19,7 +19,13 @@ anyone having to remember how.
 
 ## Setup
 
-You need Python 3.12 or newer and a free account on themoviedb.org.
+You need **Python 3.15** and a free account on themoviedb.org.
+
+3.15 is the version this was built and verified on, and the one the pins in
+`requirements.txt` target. `pyproject.toml` declares `>=3.12` because nothing in the code needs
+3.13+ syntax, but 3.12 and 3.13 have never been run — treat them as expected to work rather than
+known to. If you are on an older Python and something fails at install, that is the likely cause
+before anything in this repository is.
 
 **1. Get the code**
 
@@ -39,10 +45,16 @@ Activate it. PowerShell:
 .venv\Scripts\Activate.ps1
 ```
 
-Git Bash or macOS/Linux:
+Git Bash on Windows:
 
 ```bash
 source .venv/Scripts/activate
+```
+
+macOS or Linux:
+
+```bash
+source .venv/bin/activate
 ```
 
 ```bash
@@ -87,8 +99,8 @@ file is ignored by git and never leaves your machine (ADR-001).
 python run_pipeline.py
 ```
 
-**The first run fetches the data** — about half a minute for the current list of 117 ids, and it
-needs an internet connection. Every response is saved to `data/raw/`, so **every run after that
+**The first run fetches the data** — about half a minute for the 117 unique ids the 127-title list
+resolves to, and it needs an internet connection. Every response is saved to `data/raw/`, so **every run after that
 reads from disk**: the second run takes about two seconds and makes no API calls at all. That is
 deliberate — a re-run during a meeting does not depend on the network, it does not need the token,
 and it does not hammer a service other people are sharing.
@@ -130,7 +142,7 @@ go in front of a board without someone looking first. That is not a crash; see A
 | `decisions/` | Architecture Decision Records, one file per decision, in the house format | How the system is built, and why. Versioned with the code |
 | `docs/templates.md` | The house templates the deliverables are written to | Copied in so the repo is self-contained and the format can be audited |
 | `reports/decision_notes.md` | The brief's Decision notes deliverable: every judgement call where the brief left something open, ranked by risk | Separate from the ADRs because these are the calls that move the recommendation |
-| `docs/self_audit.md` | What we checked without finding anything, and what we got wrong ourselves, S-01 to S-09 | Out of the diagnosis so that eleven ranked findings are not diluted by nine that are not about the data |
+| `docs/self_audit.md` | What we checked without finding anything (S-01 to S-03), and the seven defects in this project rather than the data (S-04 to S-10) | Out of the diagnosis so that eleven ranked findings are not diluted by ten that are not about the data |
 | `docs/questions.md` | Questions for the client, and what we did when nobody answered | Business decisions belong to the business |
 | `docs/data_contract.md` | What we agree to receive, and what happens if it is broken | Both sides know the rules |
 | `explore/` | The investigation notebook: the narrative, importing the pipeline | Understanding the data is separate from production code |
@@ -274,9 +286,11 @@ For anyone picking this up to change it:
   list and from TMDb, and what it does when a rule is broken.
 - [`docs/01_brief_and_guide.md`](docs/01_brief_and_guide.md) — the original brief, verbatim, so the
   work can be audited against what was asked.
-- [`docs/00_project_plan.md`](docs/00_project_plan.md) and
-  [`docs/02_build_runbook.md`](docs/02_build_runbook.md) — the planning and the build order. Written
-  against an earlier ten-stage layout; the five stages below are the current shape.
+- [`docs/archive/`](docs/archive) — the original planning document and build runbook, **superseded**.
+  Both were written against an earlier ten-stage layout with the code in `src/streamvault/`, so
+  their stage numbers and file paths no longer match the repository. Archived rather than deleted
+  because they record why decisions were taken at the time; each carries a banner saying so. The
+  current shape is the five stages below.
 
 ```bash
 python -m pytest

@@ -519,7 +519,7 @@ only 112 films exist, and it would have been the memo's headline sentence.
 
 ## The claim register: what has been tested so far
 
-The claims in `docs/00_project_plan.md` Part 4 are what the team believes. Findings
+The claims in `docs/archive/00_project_plan.md` Part 4 are what the team believes. Findings
 are only worth anything once they are attached to one, so this is the running score.
 Every row says which stage settles it, so nothing sits in "pending" by accident.
 

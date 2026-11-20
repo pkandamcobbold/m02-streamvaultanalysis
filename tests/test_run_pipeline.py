@@ -8,10 +8,10 @@ the same fault the id ledger is guarded against (ADR-008, ADR-011).
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
 from pipeline.checks import latest_timing_run, load_timings
 from run_pipeline import record_timing
-
 
 
 def test_the_first_record_creates_the_file_with_a_header(tmp_path):
@@ -84,11 +84,8 @@ def test_seconds_are_rounded_but_not_truncated(tmp_path):
 
 def test_a_missing_file_is_not_silently_an_empty_timing_table(tmp_path):
     """Quoting a budget from a file that does not exist should fail loudly."""
-    try:
+    with pytest.raises(FileNotFoundError):
         load_timings(tmp_path / "absent.csv")
-    except FileNotFoundError:
-        return
-    raise AssertionError("load() invented a timings table")
 
 
 def test_pandas_can_group_the_history_by_run(tmp_path):

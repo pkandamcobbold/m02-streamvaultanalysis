@@ -1,10 +1,11 @@
 # Pinned exactly, not >=. Adjoa reruns this in a year; an unpinned pandas
 # major release is how a pipeline that worked in October fails in March.
 #
-# These pins target Python 3.15, which is what this project is developed on.
-# See docs/02_build_runbook.md, Step 1.5, for why pandas 3.x rather than 2.x:
-# on Python 3.15 there is no 2.x option, and 3.x changed the default string
-# dtype, so the code is written against 3.x deliberately rather than by accident.
+# These pins target Python 3.15, which is what this project is built and
+# verified on. See docs/archive/02_build_runbook.md, Step 1.5 (superseded, kept
+# for the reasoning) for why pandas 3.x rather than 2.x: on Python 3.15 there is
+# no 2.x option, and 3.x changed the default string dtype, so the code is
+# written against 3.x deliberately rather than by accident.
 
 pandas==3.1.1
 numpy==2.5.5

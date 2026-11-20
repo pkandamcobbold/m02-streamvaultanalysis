@@ -36,8 +36,6 @@ def test_an_unimplemented_switch_fails_loudly_rather_than_being_ignored(tmp_path
     """A settings key implies a switch. One nothing reads is worse than none,
     because a decision record credits it with making a judgement reversible.
     """
-    from pipeline.config import Settings, validate_settings
-
     ok = Settings(raw={"profile": {"use_popularity_as_performance": False}},
                   root=tmp_path)
     validate_settings(ok)                      # must not raise

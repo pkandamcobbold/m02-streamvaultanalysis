@@ -7,7 +7,7 @@ One stage, four jobs, one module each (ADR-018):
     kpis.py      the central comparison: franchise against standalone, in both
                  windows, with counts beside every statistic and a flip check
     bundles.py   what Kwame actually buys: the bundle as a unit, position
-                 within a series, and the shortlist drawn from both
+                 within a franchise, and the shortlist drawn from both
     talent.py    which directors and leads reliably signal a title worth buying
 
 The split follows the brief's questions rather than the code's convenience: the

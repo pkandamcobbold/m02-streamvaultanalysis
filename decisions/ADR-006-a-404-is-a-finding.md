@@ -50,7 +50,7 @@ five dead ids that all sit above seven million is evidence.
   losing them **less** damaging to the comparison than losing five random titles.
 - **What this costs:** Five fewer candidates, and an inference I cannot prove.
 - **What it costs the client if I am wrong:** If those five were real back-catalogue titles, the
-  loss might fall unevenly on older films or on series, and I would have no way to know. Because
+  loss might fall unevenly on older films or on franchises, and I would have no way to know. Because
   nothing is left to identify them, that cannot be tested in either direction. "Probably never
   back-catalogue films" is an inference from the id range, not a check, and the memo says so.
 - **What would make me revisit this:** Dead ids appearing *inside* the live range. That would mean

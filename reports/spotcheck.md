@@ -60,14 +60,14 @@ usually miss every film that does. So the sample is stratified:
 
 | Slice | Verdict | Fields | Films |
 |---|---|---|---|
-| `flagged_extreme` | `expected_drift` | 9 | 6 |
-| `flagged_extreme` | `identical` | 45 | 6 |
-| `pre_2000` | `expected_drift` | 3 | 3 |
-| `pre_2000` | `identical` | 24 | 3 |
-| `random_control` | `expected_drift` | 3 | 3 |
-| `random_control` | `identical` | 24 | 3 |
-| `shortlisted` | `expected_drift` | 3 | 3 |
-| `shortlisted` | `identical` | 24 | 3 |
+| `flagged_extreme` | `expected_drift` | 15 | 6 |
+| `flagged_extreme` | `identical` | 39 | 6 |
+| `pre_2000` | `expected_drift` | 7 | 3 |
+| `pre_2000` | `identical` | 20 | 3 |
+| `random_control` | `expected_drift` | 7 | 3 |
+| `random_control` | `identical` | 20 | 3 |
+| `shortlisted` | `expected_drift` | 8 | 3 |
+| `shortlisted` | `identical` | 19 | 3 |
 
 ### Expected drift
 
@@ -76,24 +76,43 @@ discrepancy. None of them enters a performance metric (M8).
 
 | Film | Field | Analysis | Live |
 |---|---|---|---|
-| Star Wars | `vote_count` | 23191 | 23193.0 |
-| The Empire Strikes Back | `vote_count` | 19145 | 19146.0 |
-| Star Wars: Episode III - Revenge of the Sith | `vote_count` | 15527 | 15529.0 |
-| Raiders of the Lost Ark | `vote_count` | 14239 | 14241.0 |
-| Back to the Future | `vote_count` | 22791 | 22795.0 |
-| The Godfather | `vote_count` | 24014 | 24015.0 |
+| Star Wars | `popularity` | 29.2803 | 28.633 |
+| Star Wars | `vote_count` | 23191 | 23196.0 |
+| Star Wars | `vote_average` | 8.206 | 8.207 |
+| The Empire Strikes Back | `popularity` | 14.0519 | 13.7749 |
+| The Empire Strikes Back | `vote_count` | 19145 | 19150.0 |
+| The Empire Strikes Back | `vote_average` | 8.392 | 8.393 |
+| Star Wars: Episode III - Revenge of the Sith | `popularity` | 10.4367 | 10.0976 |
+| Star Wars: Episode III - Revenge of the Sith | `vote_count` | 15527 | 15531.0 |
+| Raiders of the Lost Ark | `popularity` | 14.8787 | 15.3148 |
+| Raiders of the Lost Ark | `vote_count` | 14239 | 14243.0 |
+| Back to the Future | `popularity` | 25.1565 | 25.0107 |
+| Back to the Future | `vote_count` | 22791 | 22798.0 |
+| The Godfather | `popularity` | 42.4226 | 43.5585 |
+| The Godfather | `vote_count` | 24014 | 24020.0 |
 | The Godfather | `vote_average` | 8.7 | 8.689 |
-| The Good, the Bad and the Ugly | `vote_count` | 10163 | 10165.0 |
+| The Good, the Bad and the Ugly | `popularity` | 18.5304 | 18.9488 |
+| The Good, the Bad and the Ugly | `vote_count` | 10163 | 10166.0 |
 | The Good, the Bad and the Ugly | `vote_average` | 8.5 | 8.468 |
-| Jaws | `vote_count` | 12044 | 12046.0 |
+| Jaws | `popularity` | 12.3494 | 13.0921 |
+| Jaws | `vote_count` | 12044 | 12047.0 |
 | Jaws | `vote_average` | 7.7 | 7.687 |
-| Pulp Fiction | `vote_count` | 31365 | 31368.0 |
-| Forrest Gump | `vote_count` | 30921 | 30924.0 |
+| Pulp Fiction | `popularity` | 29.9996 | 31.2382 |
+| Pulp Fiction | `vote_count` | 31365 | 31373.0 |
+| Forrest Gump | `popularity` | 29.2116 | 30.5765 |
+| Forrest Gump | `vote_count` | 30921 | 30929.0 |
+| Alien Resurrection | `popularity` | 7.7111 | 7.7675 |
 | Alien Resurrection | `vote_count` | 5882 | 5883.0 |
-| Return of the Jedi | `vote_count` | 17573 | 17574.0 |
-| The Dark Knight Rises | `vote_count` | 25344 | 25345.0 |
-| The Bourne Identity | `vote_count` | 10582 | 10583.0 |
-| Schindler's List | `vote_count` | 18205 | 18206.0 |
+| Return of the Jedi | `popularity` | 9.8817 | 10.138 |
+| Return of the Jedi | `vote_count` | 17573 | 17577.0 |
+| Return of the Jedi | `vote_average` | 7.9 | 7.912 |
+| The Dark Knight Rises | `popularity` | 20.6789 | 21.5637 |
+| The Dark Knight Rises | `vote_count` | 25344 | 25353.0 |
+| The Bourne Identity | `popularity` | 10.8776 | 11.609 |
+| The Bourne Identity | `vote_count` | 10582 | 10584.0 |
+| Schindler's List | `popularity` | 22.8137 | 24.1634 |
+| Schindler's List | `vote_count` | 18205 | 18210.0 |
+| Schindler's List | `vote_average` | 8.57 | 8.6 |
 
 ## How a difference is classified
 

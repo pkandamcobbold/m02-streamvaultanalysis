@@ -5,7 +5,7 @@ rejected, consequences including what it costs the client if I am wrong, and wha
 survives. The template is in [`../docs/templates.md`](../docs/templates.md).
 
 **These records are about how the system is built.** The judgements about what the numbers *mean* —
-what counts as a series, why typical figures rather than averages, how the era problem is handled —
+what counts as a franchise, why typical figures rather than averages, how the era problem is handled —
 are in [`../docs/method.md`](../docs/method.md) as M1 to M13. They were in this directory and moved
 out: thirty-three "architecture decisions" is not a set anyone reads, and the analytical ones
 interlock, so they read better as one document than as thirteen files.
@@ -34,6 +34,7 @@ to make. Where a decision should have been the client's, the record says so and
 | [016](ADR-016-a-settings-key-must-be-live-or-refuse-to-load.md) | A setting must change behaviour, or refuse to load | Whole pipeline |
 | [017](ADR-017-five-stage-modules-in-a-flat-pipeline-package.md) | Regroup the pipeline into five stages in a flat package *(partly superseded by 018)* | Whole pipeline |
 | [018](ADR-018-a-stage-with-more-than-one-job-is-a-package.md) | A stage that does more than one job becomes a package | Whole pipeline |
+| [019](ADR-019-the-memo-follows-the-house-template.md) | Put the memo in the house template, with the recommendation in the subject line | Load |
 
 **If you read four of these**, read [015](ADR-015-the-one-improvement-is-a-release-gate.md) — the
 one addition beyond the brief, and the only check whose failure mode is "the board was misled";
@@ -55,5 +56,5 @@ reused, never renumbered, gaps left where a record is withdrawn. A number in a c
 review note has to keep pointing at the same decision.
 
 New decision? Copy the ADR section of [`../docs/templates.md`](../docs/templates.md) and take the
-next number — 019. Never edit an accepted record to change its decision: write a new one that
+next number — 020. Never edit an accepted record to change its decision: write a new one that
 supersedes it, as 018 does to 017.

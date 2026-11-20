@@ -9,7 +9,7 @@
 Some films fail some checks. The question is what "cleaning" then means.
 
 A film with no usable budget cannot go into a return figure. But it is still a real film, with a
-real audience rating, a real director and a real place in a series. Dropping it from the analysis
+real audience rating, a real director and a real place in a franchise. Dropping it from the analysis
 because one field is unusable throws away four things to fix one.
 
 This decision governs every number in the project, which is why it is written down even though its

@@ -324,7 +324,7 @@ rather than by anything failing.
 ### S-07 — The within-era position figures are hand-computed · risk: **medium** (open)
 
 **Detected:** by auditing the published artefact against the memo. M7 decided that the
-position-in-series effect must be read inside one era, and that the pooled figures overstate it
+position-in-franchise effect must be read inside one era, and that the pooled figures overstate it
 roughly threefold. The memo quotes the within-era result ("roughly a seventh less than an opener",
 middles above lasts). The pipeline's `kpi_position_in_franchise.csv` holds only the **pooled**
 figures — 7.76 / 5.41 / 4.44 — which is the version M7 says not to quote.
@@ -488,7 +488,7 @@ it destroyed this table twice before the column was changed to integers.
 | 12 | **F-01** | diagnosis — no film on the list ever lost money |
 | 24 | **F-02** | diagnosis — the headline gap is not distinguishable from noise |
 | 14 | **F-03** | diagnosis — the mean and the median disagree about who wins |
-| 7 | **F-04** | diagnosis — the one-off group is 16 films |
+| 7 | **F-04** | diagnosis — the standalone group is 16 films |
 | 10 | **F-05** | diagnosis — pre- and post-2000 money are not the same unit |
 | 11 | **F-06** | diagnosis — every exceptional return is an old film |
 | 15 | **F-07** | diagnosis — the consistency advantage does not survive post-2000 |

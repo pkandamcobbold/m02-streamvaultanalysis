@@ -66,7 +66,7 @@ it belong together.
   filename, so the mapping has to live in this table and in the diagnosis. Tests also regrouped to
   one file per stage, with the builders two stages share moved into a shared fixtures file.
 - **What it costs the client if I am wrong:** Nothing in the numbers — 298 tests pass and the full
-  run reproduces the previous results exactly: 87 series films against 25 one-offs, typical return
+  run reproduces the previous results exactly: 87 franchise films against 25 standalones, typical return
   5.526 against 5.000, the same single flip on consistency. The cost is navigational, and ADR-018
   pays part of it back.
 - **What would make me revisit this:** A sixth concern that fits none of the five stages. Adding one

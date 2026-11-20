@@ -42,8 +42,8 @@ This row took the middle path.
 - **Why it is attractive:** This is the obvious fix, and it is what "recover what you can" would
   suggest. It also looks like diligence: a row nobody else would have salvaged.
 - **Why rejected:** It would have put **three copies of one film** into every figure. Worse, *The
-  Dark Knight* is a series entry, so all three copies would land on the series side of the central
-  comparison — inflating the series typical return, the series hit rate, and any talent figure
+  Dark Knight* is a franchise entry, so all three copies would land on the franchise side of the central
+  comparison — inflating the franchise median return, the franchise hit rate, and any talent figure
   touching Nolan or Bale.
 
 ## Consequences

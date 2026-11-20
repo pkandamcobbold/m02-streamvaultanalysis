@@ -23,7 +23,7 @@ it names a question we could not settle ourselves (Q-numbers), it is in
 | **M4** | Money is compared within a window, never across one | **high** |
 | **M5** | Extremes are flagged and classified, never clipped | **high** |
 | **M6** | Medians and quartiles, with the mean shown beside them | **high** — it reverses the answer |
-| **M7** | Position within a series is read inside one era | medium |
+| **M7** | Position within a franchise is read inside one era | medium |
 | **M8** | TMDb popularity is never a performance measure | medium |
 | **M9** | The hit threshold stays at break-even; all three definitions reported | medium |
 | **M10** | A relative measure is recomputed inside every window | medium |
@@ -269,10 +269,10 @@ groups — at which point the mean stops being the misleading one.
 
 ---
 
-### M7 — Position within a series is read inside one era
+### M7 — Position within a franchise is read inside one era
 
 ### Context
-Pooled across all years, return falls monotonically with position in a series: first 7.76, middle
+Pooled across all years, return falls monotonically with position in a franchise: first 7.76, middle
 5.41, last 4.44. But first entries have a median release year of 2000 and are 50% pre-2000, while
 last entries median 2008.5 and are 14% pre-2000. Position is confounded with era, and era inflates
 returns (M4). Half the team believes the *middle* entries are the weak ones.

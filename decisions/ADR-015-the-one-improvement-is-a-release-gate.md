@@ -46,7 +46,7 @@ groups; money data complete enough to rank on; and the live re-check has not cha
 
 ### Alternative C: A bundle dead-weight score
 
-- **How it would work:** For each series, the share of its films below the one-off median — a
+- **How it would work:** For each franchise, the share of its films below the standalone median — a
   negotiating number.
 - **Why it is attractive:** It is immediately usable at the table: "you are asking us to pay for
   three weak films."
@@ -71,7 +71,7 @@ groups; money data complete enough to rank on; and the live re-check has not cha
 ## What this survives
 
 Three of the four checks are proportions or reconciliations, so they need no re-tuning as the list
-grows. The minimum film count is an absolute floor and should be raised if the one-off group stays
+grows. The minimum film count is an absolute floor and should be raised if the standalone group stays
 as thin as it is now (F-04).
 
 The design constraint that survives is the count: four. A gate with twenty conditions is one that

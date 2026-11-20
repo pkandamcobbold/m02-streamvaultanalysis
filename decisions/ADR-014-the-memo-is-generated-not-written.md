@@ -18,7 +18,7 @@ The whole document is generated, with the judgement encoded as rules over the me
 just the figures — the conclusions too.
 
 Series films lead on typical return, the weaker end and the hit rate in both windows, therefore
-recommend series first. The consistency advantage does not survive after 2000, therefore say so
+recommend franchise-first. The consistency advantage does not survive after 2000, therefore say so
 rather than footnote it. If a headline measure ever flips between the windows, the flip replaces the
 recommendation as the first line. Change the data and the rules produce a different memo.
 
@@ -44,7 +44,7 @@ recommendation as the first line. Change the data and the rules produce a differ
 
 - **What this buys:** Re-running the pipeline republishes the memo, so it cannot quote a figure the
   data no longer supports. The caveats are not optional either: tests assert that the
-  mean-reversal disclosure (F-03), the thin one-off group (F-04), the era problem (F-05), the absence
+  mean-reversal disclosure (F-03), the thin standalone group (F-04), the era problem (F-05), the absence
   of any failure on the list (F-01) and the missing licensing prices all appear, and that no dollar
   figure is ever named. An edit that quietly drops a caveat fails the test suite.
 - **What this costs:** Generated prose is stiffer than written prose, and a rule-based
@@ -61,6 +61,10 @@ computed: "three exceptional films from the 1960s, 70s and 90s", "roughly a seve
 opener" (see M7) and "nearly four in five candidates". Each is true this quarter and could be false
 next quarter while the pipeline reports success — which is precisely the drift this record claims to
 prevent. Tracked as S-08.
+
+The memo's *format* is a separate decision: ADR-019 puts it in the house template and moves the
+recommendation to the subject line, which is how the template's fixed section order and the
+rule above can both hold.
 
 ## What this survives
 

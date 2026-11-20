@@ -26,33 +26,45 @@ def test_the_memo_contains_no_tool_names_or_jargon(memo_settings):
         assert banned not in lowered, f"jargon leaked into the memo: {banned!r}"
 
 
-def test_the_recommendation_is_the_first_line(memo_settings):
+def subject_line(memo: str) -> str:
+    """The memo's Subject line, which is where the recommendation lives.
+
+    The house template fixes the section order — found, built, recommend, could
+    not stand behind — so the recommendation cannot be the body's first line and
+    still obey it. It goes in the subject instead, which is the first thing read
+    and what a memo's subject is for (ADR-019).
+    """
+    for line in memo.splitlines():
+        if line.startswith("**Subject:**"):
+            return flat(line)
+    raise AssertionError("the memo has no Subject line")
+
+
+def test_the_recommendation_is_in_the_subject_line(memo_settings):
     memo = build_memo(make_facts(memo_settings), memo_settings)
-    body = flat([line for line in memo.splitlines() if line.strip()][1])
-    assert "Buy franchise bundles first" in body
+    assert "Buy franchise bundles first" in subject_line(memo)
 
 
 def test_a_headline_flip_replaces_the_recommendation_rather_than_footnoting_it(memo_settings):
     """The brief says loudly. A flip is the most useful thing to tell him."""
     facts = make_facts(memo_settings, flips=flip_table(headline_flipped=True))
     memo = build_memo(facts, memo_settings)
-    first = flat([line for line in memo.splitlines() if line.strip()][1])
 
-    assert "changes depending on how far back you look" in first
+    assert "changes depending on how far back you look" in subject_line(memo)
     assert "Buy franchise bundles first" not in memo
 
 
 def test_the_spread_flip_is_reported_with_its_group_size(memo_settings):
     memo = flat(build_memo(make_facts(memo_settings), memo_settings))
     assert "that advantage disappears" in memo
-    assert "rests on only 12 one-off films" in memo
-    assert "would not say one-offs have become *safer*" in memo
+    assert "rests on only 12 standalone films" in memo
+    assert "would not say standalones have become *safer*" in memo
 
 
 def test_the_mean_reversal_is_disclosed_unprompted(memo_settings):
     """It reverses the recommendation; hiding it would be the worst omission."""
     memo = flat(build_memo(make_facts(memo_settings), memo_settings))
-    assert "if you compare *averages* instead of typical films, one-offs come out ahead" in memo
+    assert "if you compare *averages* instead of typical films, standalones come out ahead" in memo
     assert "three exceptional films" in memo
 
 
@@ -67,9 +79,9 @@ def test_every_limitation_the_analysis_found_is_listed(memo_settings):
     for limitation in (
         "how these films behave on a streaming service",   # box office is a proxy
         "Nothing on this list ever lost money",            # F-01, selection bias
-        "The one-off group is thin",                       # F-04, group size
+        "The standalone group is thin",                    # F-04, group size
         "Old and new money are not the same money",        # F-05, era effects
-        "already filtered toward series films",            # F-04, list composition
+        "already filtered toward franchise films",         # F-04, list composition
         "We have no licensing prices",
     ):
         assert limitation in memo, f"missing limitation: {limitation!r}"
@@ -96,7 +108,7 @@ def test_the_title_count_reconciles_in_the_memo_itself(memo_settings):
 
 
 def test_a_lone_collection_member_is_labelled_in_the_shortlist(memo_settings):
-    """Presenting Jaws as a one-off without qualification invites an objection."""
+    """Presenting Jaws as a standalone without qualification invites an objection."""
     memo = flat(build_memo(make_facts(memo_settings), memo_settings))
     assert "Jaws" in memo
     assert "only this one" in memo
@@ -111,7 +123,7 @@ def test_the_runners_up_are_named(memo_settings):
 def test_the_deal_note_is_relative_and_names_the_driving_number(memo_settings):
     memo = flat(build_memo(make_facts(memo_settings), memo_settings))
     assert "24%" in memo or "23%" in memo      # concentration of the top bundle
-    assert "concentration of any series we looked at" in memo
+    assert "concentration of any franchise we looked at" in memo
     assert "higher price per film" in memo
 
 

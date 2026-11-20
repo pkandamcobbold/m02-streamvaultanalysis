@@ -46,7 +46,7 @@ crashed".
   for the quarterly rerun, and it needs two quarters of history to be worth
   anything. Next quarter, not this one.
 - **A bundle dead-weight score** — the share of a set's films below the
-  one-off median. A good negotiating number, and it is a refinement of the
+  standalone median. A good negotiating number, and it is a refinement of the
   answer rather than a protection against the answer being wrong.
 
 ## What it costs

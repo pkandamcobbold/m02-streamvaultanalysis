@@ -1,11 +1,11 @@
-"""What Kwame actually buys: bundles, position in a series, and the shortlist.
+"""What Kwame actually buys: bundles, position in a franchise, and the shortlist.
 
 A per-film median answers a question nobody is asking. A **bundle** is the unit
 of purchase, so it gets its own table: its value is its total, its risk is its
 weakest entry, and both sit beside the count of how many of its films are even
 on offer.
 
-**Position within a series** tests the other half of the team's argument — that
+**Position within a franchise** tests the other half of the team's argument — that
 the weak middle entries are what StreamVault overpays for. Read inside one era,
 because position is confounded with age and era inflates returns: pooled, the
 decline from opener to final entry is 43%; within one era it is 14%, and middle

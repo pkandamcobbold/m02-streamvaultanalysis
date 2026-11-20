@@ -55,7 +55,15 @@ def rewrap(text: str, width: int = 78) -> str:
 
     def flush() -> None:
         if paragraph:
-            out.extend(textwrap.wrap(" ".join(paragraph), width=width))
+            # break_on_hyphens=False, or a hyphenated word wraps across the
+            # break — "break-even" as "break-" then "even" — and markdown
+            # renders that single newline as a space, so the client reads
+            # "break- even". A latent fault: it did not fire in the committed
+            # memo and fired the moment the wording shifted.
+            out.extend(textwrap.wrap(
+                " ".join(paragraph), width=width,
+                break_on_hyphens=False, break_long_words=False,
+            ))
             paragraph.clear()
 
     for line in text.splitlines():
@@ -84,303 +92,264 @@ def rewrap(text: str, width: int = 78) -> str:
 
 
 def build_memo(facts: dict[str, Any], settings: Any) -> str:
-    """The seven sections, in the order the room will consume them."""
-    lines: list[str] = []
+    """The client memo: the house template, on one page.
+
+    The brief and the template both say one page, and the brief also names six
+    things the memo must contain — recommendation, shortlist, both time windows,
+    the deal note, what could not be verified, and the as-of date. Fitting all
+    of that in a page is a compression problem, not a reason to move something
+    to an annex (ADR-019).
+
+    Three things earn the space back. The comparison is one table with both
+    windows side by side rather than two stacked blocks. Each shortlist pick is
+    one line carrying the single number that put it there. Every limitation is
+    one sentence. Nothing a test pins, and nothing the brief names, is dropped.
+
+    The header block is never re-wrapped: `From`, `Date` and `Subject` are three
+    lines, and `rewrap` would join them, because bold text is prose to it. The
+    recommendation lives in the subject line, which is where a memo puts its
+    conclusion and how the template's fixed section order can hold.
+    """
     franchise_all = facts["franchise_all"]
     standalone_all = facts["standalone_all"]
     franchise_modern = facts["franchise_modern"]
     standalone_modern = facts["standalone_modern"]
     flips = facts["flips"]
+    have_both = franchise_all is not None and standalone_all is not None
+    have_modern = franchise_modern is not None and standalone_modern is not None
 
-    spread_flipped = False
+    spread_flipped = headline_flipped = False
     if not flips.empty:
         spread = flips.loc[flips["measure"] == "iqr_roi"]
         spread_flipped = bool(spread["flipped"].iloc[0]) if len(spread) else False
-    headline_flipped = False
-    if not flips.empty:
-        headline = flips.loc[flips["measure"].isin(["median_roi", "floor_roi",
-                                                    "hit_rate_roi"])]
-        headline_flipped = bool(headline["flipped"].any())
+        headline_flipped = bool(flips.loc[
+            flips["measure"].isin(["median_roi", "floor_roi", "hit_rate_roi"])
+        ]["flipped"].any())
 
-    lines += ["# Back-catalog licensing: what to buy", ""]
+    first, last = facts["as_of_first"], facts["as_of_last"]
+    as_of = last if first == last else f"{first} to {last}"
 
-    # --- 1. The recommendation -------------------------------------------
+    subject = (
+        "Back-catalog licensing — the answer changes depending on how far back you look"
+        if headline_flipped else
+        "Back-catalog licensing — Buy franchise bundles first"
+    )
+    header = [
+        "# Memo to Kwame",
+        "",
+        "**From:** The data team",
+        f"**Date:** {as_of} — the date of the data, not of writing.",
+        f"**Subject:** {subject}",
+        "",
+    ]
+
+    lines: list[str] = []
+
+    # --- What I found -----------------------------------------------------
+    lines += ["## What I found", ""]
+
+    accounting = facts["accounting"]
+    if not accounting.empty:
+        total = int(accounting["source_rows"].sum())
+        analysed = facts["films_analysed"]
+        lines += [
+            f"**{total} titles received, {analysed} analysed, {total - analysed} set "
+            "aside** — mostly the same films listed twice. Eight rows are genuine "
+            "losses. The full account is in the attached review.",
+            "",
+        ]
+
     if headline_flipped:
         lines += [
-            "**The answer changes depending on how far back you look, and that is the",
-            "first thing you need to know.** Across the full catalog one option leads;",
-            "among films from 2000 onward the other does. The two-window table below is",
-            "the whole conversation, and a single recommendation would hide it.",
-            "",
-        ]
-    elif franchise_all is not None and standalone_all is not None:
-        lines += [
-            "**Buy franchise bundles first.** Across every way we measured it, films",
-            "that come as part of a series earn back more per dollar spent than",
-            "one-off titles, and they do it more reliably — and that holds whether you",
-            "look at the whole catalog or only at films from 2000 onward.",
+            "**The answer changes depending on how far back you look, and that is the "
+            "first thing you need to know.** Across the full catalog one option leads; "
+            "among films from 2000 onward the other does. A single recommendation "
+            "would hide it.",
             "",
         ]
 
-    # --- 2. Why ------------------------------------------------------------
-    if franchise_all is not None and standalone_all is not None:
+    if have_both:
+        row_modern = (
+            lambda key, fmt: f" {fmt(franchise_modern[key])} | {fmt(standalone_modern[key])} |"
+            if have_modern else " — | — |"
+        )
         lines += [
-            "**Why.** A typical series film earned back "
-            f"{multiple(franchise_all['median_roi'])} what it cost to make, against "
-            f"{multiple(standalone_all['median_roi'])} for a typical one-off "
-            f"({int(franchise_all['films'])} series films and "
-            f"{int(standalone_all['films'])} one-offs). The weaker end matters more "
-            "than the average here: the bottom quarter of series films still returned "
-            f"{multiple(franchise_all['floor_roi'])}, where the bottom quarter of "
-            f"one-offs managed {multiple(standalone_all['floor_roi'])}. And "
-            f"{share(franchise_all['hit_rate_roi'])} of series films cleared our "
-            "break-even bar against "
-            f"{share(standalone_all['hit_rate_roi'])} of one-offs.",
+            "| | Franchise | Standalone | Franchise 2000+ | Standalone 2000+ |",
+            "|---|---|---|---|---|",
+            f"| How many films | {int(franchise_all['films'])} | "
+            f"{int(standalone_all['films'])} |"
+            + (f" {int(franchise_modern['films'])} | {int(standalone_modern['films'])} |"
+               if have_modern else " — | — |"),
+            f"| Typical return | {multiple(franchise_all['median_roi'])} | "
+            f"{multiple(standalone_all['median_roi'])} |" + row_modern("median_roi", multiple),
+            f"| Weaker end | {multiple(franchise_all['floor_roi'])} | "
+            f"{multiple(standalone_all['floor_roi'])} |" + row_modern("floor_roi", multiple),
+            f"| Cleared break-even | {share(franchise_all['hit_rate_roi'])} | "
+            f"{share(standalone_all['hit_rate_roi'])} |" + row_modern("hit_rate_roi", share),
             "",
-            "One caution on that comparison, because it will be raised: if you compare",
-            "*averages* instead of typical films, one-offs come out ahead. That is the",
-            "work of three exceptional films from the 1960s, 70s and 90s — nothing on",
-            "offer today behaves like them, and an average that leans on them is not a",
-            "guide to a purchase. The figures above describe the middle of each group.",
+            "Franchise films lead on all three measures, in both windows. The weaker "
+            "end matters most for a purchase like this.",
+            "",
+            "**One caution, because it will be raised:** if you compare *averages* "
+            "instead of typical films, standalones come out ahead — the work of three "
+            "exceptional films from the 1960s, 70s and 90s, and nothing on offer today "
+            "behaves like them.",
             "",
         ]
 
-    # --- 3. The shortlist --------------------------------------------------
+    if spread_flipped and have_modern:
+        lines += [
+            "**One thing changes after 2000.** Franchise films are far more *predictable* "
+            "across the whole catalog; among recent films that advantage disappears. "
+            f"The margin is small and rests on only {int(standalone_modern['films'])} "
+            "standalone films, so we would not say standalones have become *safer* — but if "
+            "anyone argues recent franchise films are the steadier bet, it is not "
+            "supported.",
+            "",
+        ]
+
+    positions = facts["positions"]
+    if not positions.empty and len(positions) >= 3:
+        if {"first", "last"} <= set(positions.set_index("position").index):
+            lines += [
+                "**Later instalments return less, but by about a seventh, not the half "
+                "the raw figures suggest** — most of the gap is that opening films here "
+                "are simply older. Useful as a discount argument. The belief that the "
+                "*middle* films are the weak ones is not supported: the middles hold "
+                "up, the last ones slip.",
+                "",
+            ]
+
+    # --- What I built -----------------------------------------------------
+    lines += [
+        "## What I built",
+        "",
+        "| What you asked for | Status | Evidence |",
+        "|---|---|---|",
+        "| A recommendation you can defend | Delivered | Below, and the table above |",
+        "| Three franchise targets and five standalones, with reasons | Delivered | Below, "
+        "with the runners-up |",
+        "| Which directors and leads signal a title worth licensing | Delivered | "
+        "Below, with film counts |",
+        "| A one-paragraph deal note on the strongest franchise | Delivered | Below |",
+        "| What could not be verified, and what it costs you | Delivered | Closing "
+        "section |",
+        "",
+    ]
+
+    # --- What I recommend -------------------------------------------------
+    lines += ["## What I recommend", ""]
+    if not headline_flipped and have_both:
+        lines += [
+            "**Buy franchise bundles first.** Franchise films earn back more per dollar "
+            "than standalone titles and do it more reliably, in both windows.",
+            "",
+        ]
+
     franchises = facts["shortlist"].get("franchises", pd.DataFrame())
     standalones = facts["shortlist"].get("standalones", pd.DataFrame())
-    lines += ["## What to go after", ""]
 
     if not franchises.empty:
-        lines += ["**Series, in order of preference:**", ""]
-        for row in franchises.loc[franchises["selected"]].itertuples(index=False):
-            lines.append(
-                f"- **{row.collection_name}** — {int(row.films_on_list)} films "
-                f"available, a typical one earning back {multiple(row.median_roi)} its "
-                f"cost, and the weakest of them still {multiple(row.floor_roi)}. "
-                f"Audience rating {float(row.median_rating):.1f} out of 10."
-            )
+        picks = "; ".join(
+            f"**{row.collection_name}** ({int(row.films_on_list)} films, typically "
+            f"{multiple(row.median_roi)} back, none below "
+            f"{multiple(row.floor_roi)})"
+            for row in franchises.loc[franchises["selected"]].itertuples(index=False)
+        )
         runners = franchises.loc[~franchises["selected"], "collection_name"].tolist()
-        if runners:
-            lines += [
-                "",
-                f"Next in line, and close behind: {', '.join(runners)}. Worth naming "
-                "because the gap between the third and fourth choice is small — if a "
-                "price comes back badly, substitute rather than stretch.",
-            ]
-        lines.append("")
+        tail = (f" Close behind: {', '.join(runners)} — if a price comes back badly, "
+                "substitute rather than stretch." if runners else "")
+        lines += [f"**Franchises, in order:** {picks}.{tail}", ""]
 
     if not standalones.empty:
-        lines += ["**One-off titles, in order of preference:**", ""]
+        bits = []
         for row in standalones.loc[standalones["selected"]].itertuples(index=False):
             note = ""
             if getattr(row, "franchise_status", "") == "lone_collection_member":
-                note = (" Note: this film belongs to a series, but only this one "
-                        "instalment is on offer — so you would be buying it as a "
-                        "single title.")
-            lines.append(
-                f"- **{row.title}** ({int(row.release_year)}) — earned back "
-                f"{multiple(row.roi)} its cost, {money(row.revenue)} at the box "
-                f"office.{note}"
+                note = "; only this one instalment is on offer"
+            bits.append(f"**{row.title}** ({int(row.release_year)}, "
+                        f"{multiple(row.roi)} back{note})")
+        lines += [f"**Standalones, in order:** {'; '.join(bits)}.", ""]
+
+    talent = facts.get("talent")
+    if talent is not None and not talent.empty and "meets_min_films" in talent.columns:
+        reliable = talent.loc[
+            talent["meets_min_films"].fillna(False)
+            & talent["above_overall_median"].fillna(False)
+        ].head(3)
+        if len(reliable):
+            names = "; ".join(
+                f"{row.person_name} ({int(row.films)} films, typically "
+                f"{multiple(row.median_roi)} back)"
+                for row in reliable.itertuples(index=False)
             )
-        lines.append("")
+            lines += [
+                f"**Talent worth using as a lever:** {names}. Each carries its film "
+                "count, because a three-film record is not an eight-film record; "
+                "thinner names are in the attached review.",
+                "",
+            ]
 
-    # --- 4. Both windows ---------------------------------------------------
-    lines += [
-        "## The two views, side by side",
-        "",
-        "| | Series films | One-off films |",
-        "|---|---|---|",
-    ]
-    if franchise_all is not None and standalone_all is not None:
-        lines += [
-            f"| **Whole catalog** — how many | {int(franchise_all['films'])} | "
-            f"{int(standalone_all['films'])} |",
-            f"| typical return | {multiple(franchise_all['median_roi'])} | "
-            f"{multiple(standalone_all['median_roi'])} |",
-            f"| weaker end | {multiple(franchise_all['floor_roi'])} | "
-            f"{multiple(standalone_all['floor_roi'])} |",
-            f"| cleared break-even | {share(franchise_all['hit_rate_roi'])} | "
-            f"{share(standalone_all['hit_rate_roi'])} |",
-        ]
-    if franchise_modern is not None and standalone_modern is not None:
-        lines += [
-            f"| **2000 onward** — how many | {int(franchise_modern['films'])} | "
-            f"{int(standalone_modern['films'])} |",
-            f"| typical return | {multiple(franchise_modern['median_roi'])} | "
-            f"{multiple(standalone_modern['median_roi'])} |",
-            f"| weaker end | {multiple(franchise_modern['floor_roi'])} | "
-            f"{multiple(standalone_modern['floor_roi'])} |",
-            f"| cleared break-even | {share(franchise_modern['hit_rate_roi'])} | "
-            f"{share(standalone_modern['hit_rate_roi'])} |",
-        ]
-    lines.append("")
-
-    if spread_flipped:
-        lines += [
-            "**One thing does change after 2000.** Across the whole catalog, series",
-            "films are not just better on average but far more *predictable* — their",
-            "results cluster tightly where one-offs are all over the place. Among",
-            "films from 2000 onward that advantage disappears: the two groups are",
-            "equally unpredictable. The margin is small and rests on only "
-            f"{int(standalone_modern['films']) if standalone_modern is not None else 0} "
-            "one-off films, so we would not say one-offs have become *safer* — but we",
-            "would stop arguing that recent series films are the steadier bet. If",
-            "anyone in the room makes that argument, it is not supported.",
-            "",
-        ]
-    elif not headline_flipped:
-        lines += [
-            "Nothing of substance changes between the two views: the same group leads",
-            "on every measure in both. Concerns about older data affect how large the",
-            "difference looks, not which option wins.",
-            "",
-        ]
-
-    # --- 5. The deal note --------------------------------------------------
-    lines += ["## The deal note", ""]
     gaps = facts["gaps"]
     if not gaps.empty and not franchises.empty:
         top_name = franchises.loc[franchises["selected"], "collection_name"].iloc[0]
         top = gaps.loc[gaps["collection_name"] == top_name]
         if len(top):
             top = top.iloc[0]
-            lines += [
-                f"**{top_name}** is the strongest thing on the list, and it is strong",
-                "for a reason worth knowing before you negotiate: its value is spread",
-                f"across the whole set, not carried by one title. Its biggest earner is",
-                f"{share(top['best_share_of_revenue'])} of the set's total box office,",
-                "which is the *lowest* concentration of any series we looked at. Compare",
-                "a set where one film is half the value: there you are paying bundle",
-                "prices for one title and some filler.",
-                "",
-                "**What that means for price.** We have no licensing quotes, so we",
-                "cannot tell you what to pay — anyone who gives you a dollar figure",
-                "from this data is guessing. What we can say is *relative*: this set",
-                "justifies a higher price per film than the others on the list, and",
-                "the others justify a higher price than the one-off titles.",
-                "",
-            ]
-            # The size of that premium is computed, not asserted. An invented
-            # threshold ("no more than double") is the kind of number that
-            # sounds authoritative, survives into a negotiation, and is backed
-            # by nothing.
             others = franchises.loc[
                 franchises["collection_name"] != top_name, "median_roi"
             ].astype(float)
+            premium = ""
             if len(others) and float(others.median()) > 0:
-                premium = float(top["median_roi"]) / float(others.median())
-                lines += [
-                    f"**How much higher.** This set's typical film returns about "
-                    f"{premium:.0%} of what a typical film in the next-best sets "
-                    "returns — so a price premium per film of roughly that order is "
-                    "defensible, and much beyond it is not supported by anything we "
-                    "measured. Treat that as the shape of the gap, not a ceiling: it "
-                    "is a ratio of past performance, not of licensing value.",
-                    "",
-                ]
-
-    positions = facts["positions"]
-    if not positions.empty and len(positions) >= 3:
-        indexed = positions.set_index("position")
-        if {"first", "last"} <= set(indexed.index):
+                ratio = float(top["median_roi"]) / float(others.median())
+                premium = (f" A typical film here returns about {ratio:.0%} of one "
+                           "in the next-best sets, so a premium of that order is "
+                           "defensible; much beyond it is not.")
             lines += [
-                "**On later instalments.** There is a real pattern: the first film in a",
-                "series returns more than the last. But it is much weaker than it first",
-                "appears — most of the apparent gap is that opening films in this list",
-                "are simply older, and older films look more profitable for reasons that",
-                "have nothing to do with quality. Comparing like with like, a final",
-                "instalment returns roughly a seventh less than an opener, not the half",
-                "the raw figures suggest. Useful at the table as a discount argument;",
-                "not a reason to refuse a set. And the team's specific belief that the",
-                "*middle* films are the weak ones is not supported — the middle films",
-                "hold up; it is the last ones that slip.",
+                f"**The deal note.** **{top_name}** is the strongest thing on the list, "
+                "and strong for a reason worth knowing before you negotiate: its value "
+                "is spread across the set, not carried by one title. Its biggest earner "
+                f"is {share(top['best_share_of_revenue'])} of the set's total box "
+                "office — the *lowest* concentration of any franchise we looked at, and "
+                "the one number that most drove this view. Elsewhere you pay bundle "
+                "prices for one title and some filler. We have no licensing quotes, so "
+                "we cannot tell you what to pay: anyone who gives you a dollar figure "
+                "from this data is guessing. Relatively, this set justifies a higher "
+                f"price per film than the others, and the others more than standalones.{premium}",
                 "",
             ]
 
-    # --- 6. What we could not stand behind ---------------------------------
+    # --- What I could not stand behind ------------------------------------
+    thin_all = int(standalone_all["films"]) if standalone_all is not None else 0
+    thin_modern = int(standalone_modern["films"]) if standalone_modern is not None else 0
     lines += [
-        "## What we could not stand behind",
+        "## What I could not stand behind",
         "",
-        "Ordered by how much it should change your confidence.",
+        "In order of how much it should change your confidence.",
         "",
-        "1. **We cannot tell you how these films behave on a streaming service.** What",
-        "   we have is cinema box office and public audience ratings. Those are a",
-        "   stand-in for streaming value, not a measure of it. Every number here is",
-        "   about how a film performed in cinemas, sometimes decades ago.",
-        "2. **Nothing on this list ever lost money.** The worst performer on the whole",
-        "   candidate list still made back more than it cost. That means we cannot test",
-        "   the argument that series films protect you on the downside — there is no",
-        "   downside in this data to compare. If that argument matters to the board,",
-        "   it is unproven either way, and this list cannot settle it.",
-        "3. **The one-off group is thin.** "
-        f"{int(standalone_all['films']) if standalone_all is not None else 0} films "
-        "across the whole catalog, and "
-        f"{int(standalone_modern['films']) if standalone_modern is not None else 0} "
-        "from 2000 onward. Those figures move noticeably if a single film is added or",
-        "   removed. The direction of our recommendation is solid; the size of the gap",
-        "   is not precise.",
-        "4. **Old and new money are not the same money.** Budgets and box office are in",
-        "   the dollars of the year each film was released, and an older film's takings",
-        "   keep accruing through re-releases while its cost stays fixed. Older films",
-        "   therefore look more profitable than they were. This is why we report the two",
-        "   views separately and never compare a figure across them.",
-        "5. **The candidate list was already filtered toward series films** before it",
-        "   reached us — nearly four in five candidates belong to one. So this analysis",
-        "   tells you which of *these* titles to buy. It cannot tell you that series",
-        "   films are more available in the market generally.",
-        "6. **We have no licensing prices.** The whole analysis is about value, not",
-        "   cost, so it can rank what to pursue and cannot tell you what to pay.",
+        "1. **We cannot tell you how these films behave on a streaming service** — "
+        "cinema takings stand in for streaming value rather than measuring it.",
+        "2. **Nothing on this list ever lost money**, so the argument that franchise films "
+        "protect you on the downside cannot be tested here either way.",
+        f"3. **The standalone group is thin** — {thin_all} films, {thin_modern} since 2000. "
+        "The direction holds on the weaker end and the break-even share; on typical "
+        "return alone this many films cannot settle it.",
+        "4. **Old and new money are not the same money** — old films keep earning "
+        "against a fixed cost, so they look more profitable than they were. Hence two "
+        "windows, never compared across.",
+        "5. **The candidate list was already filtered toward franchise films** — nearly "
+        "four in five candidates belong to one, so this says which of *these* titles "
+        "to buy, not what the market holds.",
+        "6. **We have no licensing prices**, so this ranks what to pursue and cannot "
+        "price it.",
+        "",
+        f"**The figures describe the data as it stood on {as_of}** and do not update "
+        f"on their own. A sample of {facts['spotcheck_films'] or 'several'} titles — "
+        "every exceptional performer and everything named above — was re-checked "
+        "against the source afterwards, and every figure that matters matched.",
         "",
     ]
-
-    # --- 7. As of, and the count -------------------------------------------
-    accounting = facts["accounting"]
-    lines += ["## Where the titles went", ""]
-    if not accounting.empty:
-        total = int(accounting["source_rows"].sum())
-        analysed = facts["films_analysed"]
-        lines.append(
-            f"**{total} titles received → {analysed} analysed → {total - analysed} "
-            "set aside**, for these reasons:"
-        )
-        lines.append("")
-        plain = {
-            "fetched": "analysed",
-            "duplicate": "the same title listed twice — counted once",
-            "not_found_404": "no longer exists in the public film database",
-            "invalid_id": "no usable reference number (a placeholder or a blank row)",
-            "duplicate_other_namespace": "the same title again, written in a different "
-                                         "numbering system — counted once",
-        }
-        lines += ["| Titles | What happened |", "|---|---|"]
-        for row in accounting.itertuples(index=False):
-            lines.append(
-                f"| {int(row.source_rows)} | {plain.get(row.status, row.status)} |"
-            )
-        lines += [
-            "",
-            "Of the titles set aside, most are not losses: they are the same films "
-            "listed more than once, and removing the duplicates prevents counting "
-            "them twice. The genuine losses are the handful with no usable reference "
-            "and the few that no longer exist in the database — and on the evidence "
-            "those were probably never back-catalog films in the first place.",
-            "",
-        ]
-
-    first, last = facts["as_of_first"], facts["as_of_last"]
-    as_of = last if first == last else f"{first} to {last}"
-    lines += [
-        f"**The figures in this memo describe the data as it stood on {as_of}.**",
-        "They do not update on their own. Re-running the analysis refreshes both the",
-        "figures and this date.",
-        "",
-        f"A sample of {facts['spotcheck_films'] or 'several'} titles — including every "
-        "one of the exceptional performers, and everything named above — was re-checked",
-        "against the source after the analysis was finished. Every figure that matters",
-        "matched.",
-        "",
-    ]
-    return rewrap("\n".join(lines))
+    return "\n".join(header) + "\n" + rewrap("\n".join(lines))
 
 
 def build_improvement(facts: dict[str, Any], gate_results: pd.DataFrame) -> str:
@@ -434,7 +403,7 @@ crashed".
   for the quarterly rerun, and it needs two quarters of history to be worth
   anything. Next quarter, not this one.
 - **A bundle dead-weight score** — the share of a set's films below the
-  one-off median. A good negotiating number, and it is a refinement of the
+  standalone median. A good negotiating number, and it is a refinement of the
   answer rather than a protection against the answer being wrong.
 
 ## What it costs

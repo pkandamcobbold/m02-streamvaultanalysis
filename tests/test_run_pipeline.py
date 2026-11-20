@@ -105,3 +105,45 @@ def test_pandas_can_group_the_history_by_run(tmp_path):
     )
     assert len(by_run) == 2
     assert by_run["analysis_seconds"].tolist() == [0.1, 0.1]
+
+
+def test_concurrent_appends_do_not_interleave(tmp_path):
+    """The durability claim in README.md is that the run log is appended to,
+    never rewritten. That is only worth anything if two writers cannot corrupt
+    a row between them — otherwise a figure quoted from it is not a
+    measurement. Until this test there was only read-side coverage.
+    """
+    import threading
+
+    path = tmp_path / "run_timings.csv"
+    writers, per_writer = 4, 25
+    errors: list[BaseException] = []
+
+    def append(label: str) -> None:
+        try:
+            for index in range(per_writer):
+                record_timing(path, f"{label}_{index}", 0.01, rows=index,
+                              note=f"written by {label}")
+        except BaseException as error:        # noqa: BLE001 - reported, not hidden
+            errors.append(error)
+
+    threads = [threading.Thread(target=append, args=(f"w{n}",)) for n in range(writers)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert not errors, f"a writer raised: {errors}"
+
+    # Every row must be present, and every row must still parse: a torn write
+    # would show up as a short row, a duplicated header, or a parse failure.
+    frame = load_timings(path)
+    assert len(frame) == writers * per_writer
+    assert frame["stage"].nunique() == writers * per_writer
+    assert frame["note"].str.startswith("written by w").all()
+    assert frame["seconds"].notna().all()
+
+    # Exactly one header line, at the top.
+    lines = path.read_text(encoding="utf-8").splitlines()
+    assert lines[0].startswith("run_at,")
+    assert sum(1 for line in lines if line.startswith("run_at,")) == 1

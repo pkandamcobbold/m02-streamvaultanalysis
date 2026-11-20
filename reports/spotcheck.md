@@ -62,8 +62,8 @@ usually miss every film that does. So the sample is stratified:
 |---|---|---|---|
 | `flagged_extreme` | `expected_drift` | 14 | 6 |
 | `flagged_extreme` | `identical` | 40 | 6 |
-| `pre_2000` | `expected_drift` | 7 | 3 |
-| `pre_2000` | `identical` | 20 | 3 |
+| `pre_2000` | `expected_drift` | 8 | 3 |
+| `pre_2000` | `identical` | 19 | 3 |
 | `random_control` | `expected_drift` | 6 | 3 |
 | `random_control` | `identical` | 21 | 3 |
 | `shortlisted` | `expected_drift` | 8 | 3 |
@@ -77,7 +77,7 @@ discrepancy. None of them enters a performance metric (M8).
 | Film | Field | Analysis | Live |
 |---|---|---|---|
 | Star Wars | `popularity` | 29.2803 | 28.633 |
-| Star Wars | `vote_count` | 23191 | 23196.0 |
+| Star Wars | `vote_count` | 23191 | 23197.0 |
 | Star Wars | `vote_average` | 8.206 | 8.207 |
 | The Empire Strikes Back | `popularity` | 14.0519 | 13.7749 |
 | The Empire Strikes Back | `vote_count` | 19145 | 19150.0 |
@@ -85,30 +85,31 @@ discrepancy. None of them enters a performance metric (M8).
 | Star Wars: Episode III - Revenge of the Sith | `popularity` | 10.4367 | 10.0976 |
 | Star Wars: Episode III - Revenge of the Sith | `vote_count` | 15527 | 15531.0 |
 | Raiders of the Lost Ark | `popularity` | 14.8787 | 15.3148 |
-| Raiders of the Lost Ark | `vote_count` | 14239 | 14243.0 |
+| Raiders of the Lost Ark | `vote_count` | 14239 | 14244.0 |
 | Back to the Future | `popularity` | 25.1565 | 25.0107 |
 | Back to the Future | `vote_count` | 22791 | 22798.0 |
 | The Godfather | `popularity` | 42.4226 | 43.5585 |
-| The Godfather | `vote_count` | 24014 | 24020.0 |
+| The Godfather | `vote_count` | 24014 | 24022.0 |
 | The Godfather | `vote_average` | 8.7 | 8.689 |
 | The Good, the Bad and the Ugly | `popularity` | 18.5304 | 18.9488 |
-| The Good, the Bad and the Ugly | `vote_count` | 10163 | 10166.0 |
-| The Good, the Bad and the Ugly | `vote_average` | 8.5 | 8.468 |
+| The Good, the Bad and the Ugly | `vote_count` | 10163 | 10169.0 |
+| The Good, the Bad and the Ugly | `vote_average` | 8.5 | 8.467 |
 | Jaws | `popularity` | 12.3494 | 13.0921 |
 | Jaws | `vote_count` | 12044 | 12048.0 |
 | Pulp Fiction | `popularity` | 29.9996 | 31.2382 |
-| Pulp Fiction | `vote_count` | 31365 | 31373.0 |
+| Pulp Fiction | `vote_count` | 31365 | 31374.0 |
 | Forrest Gump | `popularity` | 29.2116 | 30.5765 |
 | Forrest Gump | `vote_count` | 30921 | 30929.0 |
 | Alien Resurrection | `popularity` | 7.7111 | 7.7675 |
-| Alien Resurrection | `vote_count` | 5882 | 5883.0 |
+| Alien Resurrection | `vote_count` | 5882 | 5885.0 |
+| Alien Resurrection | `vote_average` | 6.172 | 6.171 |
 | Return of the Jedi | `popularity` | 9.8817 | 10.138 |
 | Return of the Jedi | `vote_count` | 17573 | 17579.0 |
 | Return of the Jedi | `vote_average` | 7.9 | 7.912 |
 | The Dark Knight Rises | `popularity` | 20.6789 | 21.5637 |
 | The Dark Knight Rises | `vote_count` | 25344 | 25353.0 |
 | The Bourne Identity | `popularity` | 10.8776 | 11.609 |
-| The Bourne Identity | `vote_count` | 10582 | 10584.0 |
+| The Bourne Identity | `vote_count` | 10582 | 10585.0 |
 | Schindler's List | `popularity` | 22.8137 | 24.1634 |
 | Schindler's List | `vote_count` | 18205 | 18211.0 |
 

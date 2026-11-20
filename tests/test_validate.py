@@ -42,7 +42,7 @@ from pipeline.validate import (
 )
 
 # ==========================================================================
-# What was tests/test_profile.py — the profile half of this stage
+# Profiling: real extremes are not errors
 # ==========================================================================
 
 @pytest.fixture
@@ -347,7 +347,7 @@ def test_an_empty_flag_table_summarises_without_raising():
     assert summarise_flags(pd.DataFrame()).empty
 
 # ==========================================================================
-# What was tests/test_clean.py — the clean half of this stage
+# Cleaning: flags, not deletions
 # ==========================================================================
 
 def make_settings(tmp_path, **overrides):

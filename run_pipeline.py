@@ -25,9 +25,12 @@ from __future__ import annotations
 
 import argparse
 import csv
+import io
 import json
 import logging
+import os
 import sys
+import threading
 import time
 import uuid
 from datetime import datetime, timezone
@@ -42,6 +45,77 @@ log = logging.getLogger("pipeline")
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+# Serialises appends to the run log within this process. See
+# _append_atomically for why a kernel-level guarantee is not enough on Windows.
+_APPEND_LOCK = threading.Lock()
+
+
+def _csv_line(row: dict[str, Any]) -> str:
+    """One CSV line, quoted by the csv module, newline-terminated."""
+    buffer = io.StringIO()
+    csv.DictWriter(
+        buffer, fieldnames=TIMING_COLUMNS, lineterminator="\n"
+    ).writerow(row)
+    return buffer.getvalue()
+
+
+def _append_atomically(path: Path, text: str) -> None:
+    """Append in one unbuffered write to a descriptor opened O_APPEND.
+
+    A concurrency test caught why this is not `path.open("a")`. Buffered text
+    append resolves the write position when the buffer flushes, so two writers
+    can flush to overlapping offsets and **a row is silently lost** — 99 rows
+    where 100 were written, about one run in four. Nothing raises; the file
+    just quietly holds less than it was told.
+
+    On POSIX, `O_APPEND` moves the position-and-write into a single kernel
+    operation, so a small write cannot interleave. **On Windows it does not**:
+    the CRT emulates O_APPEND as seek-to-end-then-write, which is two steps and
+    races exactly as the buffered version did — measured here at 25 failures in
+    25 runs. So the append is also serialised by a lock.
+
+    The lock protects writers inside one process, which is the only concurrency
+    this pipeline has: `run_pipeline.py` records every stage from a single
+    process. Two *processes* appending at once is not protected on Windows, and
+    is not something the pipeline does.
+    """
+    with _APPEND_LOCK:
+        _write_once(path, text)
+
+
+def _write_once(path: Path, text: str) -> None:
+    """One unbuffered write to an O_APPEND descriptor."""
+    flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND | getattr(os, "O_BINARY", 0)
+    descriptor = os.open(path, flags, 0o644)
+    try:
+        os.write(descriptor, text.encode("utf-8"))
+    finally:
+        os.close(descriptor)
+
+
+def _create_with_header(path: Path) -> None:
+    """Write the header exactly once, whoever gets there first.
+
+    `O_EXCL` makes creation atomic. The obvious version — test `path.exists()`
+    then append a header if absent — is racy, and the same test caught it:
+    two writers both see the file missing, both write a header, and the second
+    lands in the middle of the data. pandas then fails with "could not convert
+    string to float: 'seconds'" and the file that exists to prove a
+    measurement cannot be read at all.
+    """
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
+    try:
+        with _APPEND_LOCK:
+            descriptor = os.open(path, flags, 0o644)
+    except FileExistsError:
+        return                      # another writer created it first
+    try:
+        header = ",".join(TIMING_COLUMNS) + "\n"
+        os.write(descriptor, header.encode("utf-8"))
+    finally:
+        os.close(descriptor)
 
 
 def record_timing(
@@ -61,20 +135,16 @@ def record_timing(
     process died halfway, and the history is the only reason this file exists.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
-    is_new = not path.exists()
-    with path.open("a", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=TIMING_COLUMNS)
-        if is_new:
-            writer.writeheader()
-        writer.writerow({
-            "run_at": run_at or _utc_now(),
-            "stage": stage,
-            "seconds": round(float(seconds), 3),
-            "api_calls": int(api_calls),
-            "cache_hits": int(cache_hits),
-            "rows": int(rows),
-            "note": note,
-        })
+    _create_with_header(path)
+    _append_atomically(path, _csv_line({
+        "run_at": run_at or _utc_now(),
+        "stage": stage,
+        "seconds": round(float(seconds), 3),
+        "api_calls": int(api_calls),
+        "cache_hits": int(cache_hits),
+        "rows": int(rows),
+        "note": note,
+    }))
 
 
 def record_run(path: Path, entry: dict[str, Any]) -> None:
@@ -254,7 +324,13 @@ def run_once(settings: Any, run_at: str, force: bool, spotcheck: bool) -> dict[s
         "cache_hits": int(fetch_log["from_cache"].sum()),
         "spotcheck_films": int(len(checked["sample"])) if checked else 0,
         "spotcheck_moved": bool(checked["movement"]["moved"]) if checked else None,
-        "gate_passed": bool(gated["gate"]["passed"].all()),
+        # Three fields, not one. `gate_passed` used to be
+        # `bool(gate["passed"].all())`, which reported true when a check had
+        # been skipped rather than performed — the run log then carried an
+        # unearned pass. The counts make a skip visible in the record itself.
+        "gate_blocked": int((gated["gate"]["status"] == "fail").sum()),
+        "gate_not_checked": int((gated["gate"]["status"] == "not_checked").sum()),
+        "gate_passed": bool((gated["gate"]["status"] == "pass").all()),
         "analysis_seconds": gated["budget"]["budget"].attrs["analysis_seconds"],
         "projected_seconds_at_500": gated["budget"]["projection"].attrs["projected_total"],
         "as_of": gated["facts"]["as_of_last"],

@@ -138,7 +138,7 @@ go in front of a board without someone looking first. That is not a crash; see A
 | --- | --- | --- |
 | `pipeline/` | Production code: one package per stage, plus `config.py` and `load.py`. Each package holds one module per job, and its `__init__.py` holds the stage's entry point | This is what runs every quarter. Nothing else lives here |
 | `run_pipeline.py` | The orchestrator | The one command, and the only thing that times and records a run |
-| `tests/` | Tests on tiny hand-made data, one file per stage module | Prove the code is right before it touches a 127-title list |
+| `tests/` | Tests on tiny hand-made data, one file per stage, sectioned by job | Prove the code is right before it touches a 127-title list |
 | `decisions/` | Architecture Decision Records, one file per decision, in the house format | How the system is built, and why. Versioned with the code |
 | `docs/templates.md` | The house templates the deliverables are written to | Copied in so the repo is self-contained and the format can be audited |
 | `reports/decision_notes.md` | The brief's Decision notes deliverable: every judgement call where the brief left something open, ranked by risk | Separate from the ADRs because these are the calls that move the recommendation |
@@ -303,5 +303,20 @@ the KPI definitions, the gate, and the memo's caveats.
 They do **not** prove that a fresh clone works. Pytest is configured to find the code whether or not
 `pip install -r requirements.txt` succeeded, so a green suite says nothing about whether
 `python run_pipeline.py` runs for someone who has just cloned the repo. Only actually cloning it into
-a new folder and running it proves that — which is how finding S-05 was caught, and why that check is
-a step of its own rather than something the tests can be trusted to cover.
+a new folder and running it proves that — which is how finding S-05 was caught.
+
+So that check is scripted rather than remembered:
+
+```bash
+.\scripts\clean_clone_test.ps1 -EnvFile .env
+```
+
+It clones into a temporary directory, asserts the clone carries no `.env` and no cached responses,
+installs from `requirements.txt` alone, imports the package with no `PYTHONPATH`, runs the suite,
+checks that a missing token produces an instruction rather than a traceback, then runs the pipeline
+end to end and verifies both time windows and all five deliverables were written. It deletes the
+clone afterwards, because with `-EnvFile` the clone holds a copy of your token. Without `-EnvFile` it
+runs everything that does not need a credential and says plainly that the live run was not attempted.
+
+It is a script and not a test because it clones, builds a virtual environment and reaches the
+network — none of which belongs inside `python -m pytest`.

@@ -6,7 +6,7 @@ tmdb_id,title,slice,field,analysed_value,live_value,verdict,note
 11,Star Wars,shortlisted,collection_id,10,10.0,identical,
 11,Star Wars,shortlisted,title,Star Wars,Star Wars,identical,
 11,Star Wars,shortlisted,popularity,29.2803,28.633,expected_drift,expected: recomputed daily by TMDb from recent activity
-11,Star Wars,shortlisted,vote_count,23191,23196.0,expected_drift,expected: rises continuously as people vote
+11,Star Wars,shortlisted,vote_count,23191,23197.0,expected_drift,expected: rises continuously as people vote
 11,Star Wars,shortlisted,vote_average,8.206,8.207,expected_drift,expected: moves slightly as vote_count rises
 1891,The Empire Strikes Back,shortlisted,budget,18000000,18000000.0,identical,
 1891,The Empire Strikes Back,shortlisted,revenue,538400000,538400000.0,identical,
@@ -33,7 +33,7 @@ tmdb_id,title,slice,field,analysed_value,live_value,verdict,note
 85,Raiders of the Lost Ark,flagged_extreme,collection_id,84,84.0,identical,
 85,Raiders of the Lost Ark,flagged_extreme,title,Raiders of the Lost Ark,Raiders of the Lost Ark,identical,
 85,Raiders of the Lost Ark,flagged_extreme,popularity,14.8787,15.3148,expected_drift,expected: recomputed daily by TMDb from recent activity
-85,Raiders of the Lost Ark,flagged_extreme,vote_count,14239,14243.0,expected_drift,expected: rises continuously as people vote
+85,Raiders of the Lost Ark,flagged_extreme,vote_count,14239,14244.0,expected_drift,expected: rises continuously as people vote
 85,Raiders of the Lost Ark,flagged_extreme,vote_average,7.928,7.928,identical,
 105,Back to the Future,flagged_extreme,budget,19000000,19000000.0,identical,
 105,Back to the Future,flagged_extreme,revenue,391546852,391546852.0,identical,
@@ -51,7 +51,7 @@ tmdb_id,title,slice,field,analysed_value,live_value,verdict,note
 238,The Godfather,flagged_extreme,collection_id,230,230.0,identical,
 238,The Godfather,flagged_extreme,title,The Godfather,The Godfather,identical,
 238,The Godfather,flagged_extreme,popularity,42.4226,43.5585,expected_drift,expected: recomputed daily by TMDb from recent activity
-238,The Godfather,flagged_extreme,vote_count,24014,24020.0,expected_drift,expected: rises continuously as people vote
+238,The Godfather,flagged_extreme,vote_count,24014,24022.0,expected_drift,expected: rises continuously as people vote
 238,The Godfather,flagged_extreme,vote_average,8.7,8.689,expected_drift,expected: moves slightly as vote_count rises
 429,"The Good, the Bad and the Ugly",flagged_extreme,budget,1200000,1200000.0,identical,
 429,"The Good, the Bad and the Ugly",flagged_extreme,revenue,38900000,38900000.0,identical,
@@ -60,8 +60,8 @@ tmdb_id,title,slice,field,analysed_value,live_value,verdict,note
 429,"The Good, the Bad and the Ugly",flagged_extreme,collection_id,,,identical,
 429,"The Good, the Bad and the Ugly",flagged_extreme,title,"The Good, the Bad and the Ugly","The Good, the Bad and the Ugly",identical,
 429,"The Good, the Bad and the Ugly",flagged_extreme,popularity,18.5304,18.9488,expected_drift,expected: recomputed daily by TMDb from recent activity
-429,"The Good, the Bad and the Ugly",flagged_extreme,vote_count,10163,10166.0,expected_drift,expected: rises continuously as people vote
-429,"The Good, the Bad and the Ugly",flagged_extreme,vote_average,8.5,8.468,expected_drift,expected: moves slightly as vote_count rises
+429,"The Good, the Bad and the Ugly",flagged_extreme,vote_count,10163,10169.0,expected_drift,expected: rises continuously as people vote
+429,"The Good, the Bad and the Ugly",flagged_extreme,vote_average,8.5,8.467,expected_drift,expected: moves slightly as vote_count rises
 578,Jaws,flagged_extreme,budget,7000000,7000000.0,identical,
 578,Jaws,flagged_extreme,revenue,470653000,470653000.0,identical,
 578,Jaws,flagged_extreme,runtime,124,124.0,identical,
@@ -78,7 +78,7 @@ tmdb_id,title,slice,field,analysed_value,live_value,verdict,note
 680,Pulp Fiction,flagged_extreme,collection_id,,,identical,
 680,Pulp Fiction,flagged_extreme,title,Pulp Fiction,Pulp Fiction,identical,
 680,Pulp Fiction,flagged_extreme,popularity,29.9996,31.2382,expected_drift,expected: recomputed daily by TMDb from recent activity
-680,Pulp Fiction,flagged_extreme,vote_count,31365,31373.0,expected_drift,expected: rises continuously as people vote
+680,Pulp Fiction,flagged_extreme,vote_count,31365,31374.0,expected_drift,expected: rises continuously as people vote
 680,Pulp Fiction,flagged_extreme,vote_average,8.48,8.48,identical,
 13,Forrest Gump,pre_2000,budget,55000000,55000000.0,identical,
 13,Forrest Gump,pre_2000,revenue,677387716,677387716.0,identical,
@@ -96,8 +96,8 @@ tmdb_id,title,slice,field,analysed_value,live_value,verdict,note
 8078,Alien Resurrection,pre_2000,collection_id,8091,8091.0,identical,
 8078,Alien Resurrection,pre_2000,title,Alien Resurrection,Alien Resurrection,identical,
 8078,Alien Resurrection,pre_2000,popularity,7.7111,7.7675,expected_drift,expected: recomputed daily by TMDb from recent activity
-8078,Alien Resurrection,pre_2000,vote_count,5882,5883.0,expected_drift,expected: rises continuously as people vote
-8078,Alien Resurrection,pre_2000,vote_average,6.172,6.172,identical,
+8078,Alien Resurrection,pre_2000,vote_count,5882,5885.0,expected_drift,expected: rises continuously as people vote
+8078,Alien Resurrection,pre_2000,vote_average,6.172,6.171,expected_drift,expected: moves slightly as vote_count rises
 1892,Return of the Jedi,pre_2000,budget,32350000,32350000.0,identical,
 1892,Return of the Jedi,pre_2000,revenue,572700000,572700000.0,identical,
 1892,Return of the Jedi,pre_2000,runtime,132,132.0,identical,
@@ -123,7 +123,7 @@ tmdb_id,title,slice,field,analysed_value,live_value,verdict,note
 2501,The Bourne Identity,random_control,collection_id,31562,31562.0,identical,
 2501,The Bourne Identity,random_control,title,The Bourne Identity,The Bourne Identity,identical,
 2501,The Bourne Identity,random_control,popularity,10.8776,11.609,expected_drift,expected: recomputed daily by TMDb from recent activity
-2501,The Bourne Identity,random_control,vote_count,10582,10584.0,expected_drift,expected: rises continuously as people vote
+2501,The Bourne Identity,random_control,vote_count,10582,10585.0,expected_drift,expected: rises continuously as people vote
 2501,The Bourne Identity,random_control,vote_average,7.491,7.491,identical,
 424,Schindler's List,random_control,budget,22000000,22000000.0,identical,
 424,Schindler's List,random_control,revenue,321365567,321365567.0,identical,

@@ -23,7 +23,16 @@ import pandas as pd
 from pipeline.config import share
 from pipeline.transform import GROUP_STRICT
 
-GATE_COLUMNS = ["check", "passed", "detail"]
+# `status` is the source of truth and `passed` is a convenience derived from
+# it, because a check can be neither passed nor failed: it can have been
+# skipped. Only a `fail` blocks publication — a `not_checked` is reported and
+# carried into the memo, so an unverified claim is never presented as a
+# verified one.
+STATUS_PASS = "pass"
+STATUS_FAIL = "fail"
+STATUS_NOT_CHECKED = "not_checked"
+
+GATE_COLUMNS = ["check", "status", "passed", "detail"]
 
 
 class GateFailed(RuntimeError):
@@ -51,6 +60,7 @@ def gate(settings: Any, facts: dict[str, Any]) -> pd.DataFrame:
     limit = int(config["max_unaccounted_rows"])
     rows.append({
         "check": "every source row accounted for",
+        "status": STATUS_PASS if unaccounted <= limit else STATUS_FAIL,
         "passed": unaccounted <= limit,
         "detail": f"{unaccounted} row(s) unaccounted for, limit {limit}. The memo "
                   "quotes a count of what was analysed and what was dropped; if "
@@ -61,6 +71,7 @@ def gate(settings: Any, facts: dict[str, Any]) -> pd.DataFrame:
     minimum = int(config["min_films_for_a_recommendation"])
     rows.append({
         "check": "enough films to compare groups",
+        "status": STATUS_PASS if films >= minimum else STATUS_FAIL,
         "passed": films >= minimum,
         "detail": f"{films} films analysed, minimum {minimum}. Below this the two "
                   "groups are too thin to rank; the honest output is a description, "
@@ -71,6 +82,7 @@ def gate(settings: Any, facts: dict[str, Any]) -> pd.DataFrame:
     max_missing = float(config["max_missing_money_share"])
     rows.append({
         "check": "money data complete enough to decide on",
+        "status": STATUS_PASS if missing <= max_missing else STATUS_FAIL,
         "passed": missing <= max_missing,
         "detail": f"{share(missing)} of films have no usable budget or box office, "
                   f"limit {share(max_missing)}. Above that, a ranking by return is "
@@ -78,13 +90,29 @@ def gate(settings: Any, facts: dict[str, Any]) -> pd.DataFrame:
     })
 
     if bool(config["block_if_spotcheck_moves"]):
-        moved = bool(facts.get("spotcheck_moved", False))
+        # Three states, not two. `--no-spotcheck` leaves `spotcheck_moved` as
+        # None, and the old `bool(facts.get(..., False))` turned that into
+        # False, so the gate reported this check as *passed* when it had never
+        # run. It did not crash, which was worse: the run log recorded
+        # gate_passed=true on the strength of a check nobody performed.
+        moved = facts.get("spotcheck_moved")
+        if moved is None:
+            status = STATUS_NOT_CHECKED
+            detail = ("the live re-check did not run (--no-spotcheck), so whether a "
+                      "difference would move the recommendation is unverified. Not a "
+                      "failure, and not a pass either")
+        elif moved:
+            status = STATUS_FAIL
+            detail = ("the live re-check moved the recommendation; a human must look "
+                      "before this is published")
+        else:
+            status = STATUS_PASS
+            detail = "the live re-check leaves the recommendation unchanged"
         rows.append({
             "check": "live re-check does not change the answer",
-            "passed": not moved,
-            "detail": "the live re-check moved the recommendation; a human must look "
-                      "before this is published" if moved else
-                      "the live re-check leaves the recommendation unchanged",
+            "status": status,
+            "passed": status == STATUS_PASS,
+            "detail": detail,
         })
 
     return pd.DataFrame(rows, columns=GATE_COLUMNS)
@@ -94,7 +122,10 @@ def enforce(gate_results: pd.DataFrame, settings: Any) -> None:
     """Raise if any check failed and the gate is enabled."""
     if not bool(settings["gate"]["enabled"]):
         return
-    failed = gate_results.loc[~gate_results["passed"]]
+    # Blocks on `fail` only. Filtering on `~passed` would also block a
+    # `not_checked`, which would turn "we could not verify this" into "this
+    # failed" and make --no-spotcheck unusable.
+    failed = gate_results.loc[gate_results["status"] == STATUS_FAIL]
     if failed.empty:
         return
     lines = ["The memo was not written, because these checks failed:", ""]

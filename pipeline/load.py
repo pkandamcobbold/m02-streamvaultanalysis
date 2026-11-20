@@ -538,9 +538,22 @@ def build_memo(facts: dict[str, Any], settings: Any) -> str:
         "is the best available on what exists today.",
         "",
         f"**The figures describe the data as it stood on {as_of}** and do not update "
-        f"on their own. A sample of {facts['spotcheck_films'] or 'several'} titles — "
-        "every exceptional performer and everything named above — was re-checked "
-        "against the source afterwards, and every figure that matters matched.",
+        "on their own.",
+        "",
+        # Said only when it happened. The old wording fell back to "a sample of
+        # several titles ... every figure that matters matched" even when the
+        # re-check had been skipped, which claimed a verification that had not
+        # taken place — in the one document a client reads.
+        (
+            f"A sample of {facts['spotcheck_films']} titles — every exceptional "
+            "performer and everything named above — was re-checked against the "
+            "source afterwards, and every figure that matters matched."
+            if facts.get("spotcheck_films")
+            else "**The figures in this memo were not re-checked against the live "
+                 "source.** That step was skipped on this run, so nothing here has "
+                 "been verified against anything but our own cache. Re-run without "
+                 "`--no-spotcheck` before relying on it."
+        ),
         "",
     ]
     return "\n".join(header) + "\n" + rewrap("\n".join(lines))

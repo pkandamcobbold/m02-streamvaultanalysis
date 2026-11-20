@@ -43,7 +43,7 @@ from pipeline.checks import (
 from pipeline.config import Settings
 
 # ==========================================================================
-# What was tests/test_budget.py — the budget half of this stage
+# The time budget and the 500-title projection
 # ==========================================================================
 
 @pytest.fixture
@@ -371,7 +371,7 @@ def test_every_out_of_budget_stage_says_why(settings_budget):
     assert budget.attrs["analysis_seconds"] == 1.3      # the shaping, validate and transform stages only
 
 # ==========================================================================
-# What was tests/test_spotcheck.py — the spotcheck half of this stage
+# The live spot-check against the source
 # ==========================================================================
 
 @pytest.fixture
@@ -769,7 +769,7 @@ def test_the_summary_groups_by_slice_and_verdict(settings_spotcheck):
     assert VERDICT_MATERIAL in set(summary["verdict"])
 
 # ==========================================================================
-# What was tests/test_memo.py — the release gate (ADR-015)
+# The release gate (ADR-015)
 # ==========================================================================
 
 def test_the_gate_passes_a_sound_run(memo_settings):
@@ -829,3 +829,54 @@ def test_the_gate_can_be_turned_off_deliberately(memo_settings):
     facts["films_analysed"] = 5
     memo_settings.raw["gate"]["enabled"] = False
     enforce(gate(memo_settings, facts), memo_settings)        # must not raise
+
+
+def test_a_skipped_spotcheck_is_not_a_pass_and_not_a_failure(memo_settings):
+    """The defect this replaced: --no-spotcheck left `spotcheck_moved` as None,
+    `bool(None)` was False, and the gate reported the live re-check as *passed*
+    when it had never run. It did not crash, which was worse — the run log
+    recorded an unearned pass.
+    """
+    facts = make_facts(memo_settings)
+    facts["spotcheck_moved"] = None
+    results = gate(memo_settings, facts)
+    row = results.loc[results["check"].str.contains("re-check")].iloc[0]
+
+    assert row["status"] == "not_checked"
+    assert bool(row["passed"]) is False, "a check that never ran must not read as passed"
+    assert "did not run" in row["detail"]
+
+    # ...and it must not block publication either.
+    enforce(results, memo_settings)
+
+
+def test_a_spotcheck_that_moved_the_answer_still_blocks(memo_settings):
+    facts = make_facts(memo_settings)
+    facts["spotcheck_moved"] = True
+    results = gate(memo_settings, facts)
+    row = results.loc[results["check"].str.contains("re-check")].iloc[0]
+
+    assert row["status"] == "fail"
+    with pytest.raises(GateFailed, match="re-check"):
+        enforce(results, memo_settings)
+
+
+def test_only_a_failure_blocks_never_a_skip(memo_settings):
+    """`~passed` would have blocked on a skip, making --no-spotcheck unusable."""
+    facts = make_facts(memo_settings)
+    facts["spotcheck_moved"] = None
+    results = gate(memo_settings, facts)
+
+    assert (~results["passed"]).any(), "the skipped row is not marked passed"
+    assert (results["status"] == "fail").sum() == 0
+    enforce(results, memo_settings)        # must not raise
+
+
+def test_every_gate_row_carries_one_of_the_three_statuses(memo_settings):
+    for moved in (False, True, None):
+        facts = make_facts(memo_settings)
+        facts["spotcheck_moved"] = moved
+        results = gate(memo_settings, facts)
+        assert set(results["status"]) <= {"pass", "fail", "not_checked"}
+        # `passed` is derived from `status`, never set independently.
+        assert (results["passed"] == (results["status"] == "pass")).all()

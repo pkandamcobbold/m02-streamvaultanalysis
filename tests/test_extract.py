@@ -56,7 +56,7 @@ from pipeline.extract import (
 )
 
 # ==========================================================================
-# What was tests/test_ingest.py — the ingest half of this stage
+# Reading the id list: one row per source row, forever
 # ==========================================================================
 
 def test_plain_id():
@@ -249,7 +249,7 @@ def test_round_trip_keeps_reasons_as_text_not_missing(messy_file, tmp_path):
     assert (back.loc[back["status"] == "parsed", "reason"] == "").any()
 
 # ==========================================================================
-# What was tests/test_fetch.py — the fetch half of this stage
+# Fetching: caching, retries, rate limiting and the 404 contract
 # ==========================================================================
 
 FAKE_TOKEN = "eyJ-this-is-not-a-real-token-only-its-shape"
@@ -893,7 +893,7 @@ def test_find_on_a_404_returns_no_ids(tmp_path, no_wait):
     assert movie_ids_from_find(envelope) == []
 
 # ==========================================================================
-# What was tests/test_flatten.py — the flatten half of this stage
+# Shaping: nested JSON into one table per grain
 # ==========================================================================
 
 def film(

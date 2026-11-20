@@ -115,6 +115,8 @@ decision about price. None of those is a reason to wait: the ranking is the
 best available on what exists today.
 
 **The figures describe the data as it stood on 2026-11-19** and do not update
-on their own. A sample of 15 titles — every exceptional performer and
-everything named above — was re-checked against the source afterwards, and
-every figure that matters matched.
+on their own.
+
+A sample of 15 titles — every exceptional performer and everything named above
+— was re-checked against the source afterwards, and every figure that matters
+matched.

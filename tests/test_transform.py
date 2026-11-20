@@ -38,7 +38,7 @@ from pipeline.transform import (
 from pipeline.validate import clean
 
 # ==========================================================================
-# What was tests/test_join.py — the join half of this stage
+# The proven join: validate= and an indicator on every merge
 # ==========================================================================
 
 def films_frame_join(*ids: int) -> pd.DataFrame:
@@ -374,7 +374,7 @@ def test_co_directed_films_are_reported_as_a_note():
     assert any("more than one credited director" in note for note in notes)
 
 # ==========================================================================
-# What was tests/test_kpis.py — the kpis half of this stage
+# The KPI tables: both windows, counts beside every statistic
 # ==========================================================================
 
 @pytest.fixture

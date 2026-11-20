@@ -55,9 +55,14 @@ def test_a_headline_flip_replaces_the_recommendation_rather_than_footnoting_it(m
 
 
 def test_the_spread_flip_is_reported_with_its_group_size(memo_settings):
-    memo = flat(build_memo(make_facts(memo_settings), memo_settings))
+    facts = make_facts(memo_settings)
+    # Derived from the fixture, not hard-coded: the group size is 12 today and
+    # will be something else at 500 titles, and a literal here would make this
+    # test fail for the data changing rather than for the memo being wrong.
+    expected = int(facts["standalone_modern"]["films"])
+    memo = flat(build_memo(facts, memo_settings))
     assert "that advantage disappears" in memo
-    assert "rests on only 12 standalone films" in memo
+    assert f"rests on only {expected} standalone films" in memo
     assert "would not say standalones have become *safer*" in memo
 
 
@@ -122,7 +127,10 @@ def test_the_runners_up_are_named(memo_settings):
 
 def test_the_deal_note_is_relative_and_names_the_driving_number(memo_settings):
     memo = flat(build_memo(make_facts(memo_settings), memo_settings))
-    assert "24%" in memo or "23%" in memo      # concentration of the top bundle
+    # Pinned, not an either/or: the fixture sets best_share_of_revenue to 0.236
+    # (tests/conftest.py), which formats to 24%. An `or` across both roundings
+    # would accept a wrong concentration figure and could never fail.
+    assert "24%" in memo
     assert "concentration of any franchise we looked at" in memo
     assert "higher price per film" in memo
 
@@ -239,3 +247,29 @@ def test_the_measure_count_is_spelled_not_printed_as_a_digit(memo_settings):
     memo = flat(build_memo(facts, memo_settings))
     assert "all four measures" in memo
     assert "all 4 measures" not in memo
+
+
+def test_a_skipped_spotcheck_is_disclosed_in_the_memo(memo_settings):
+    """The memo must not claim a verification that did not happen.
+
+    The old wording fell back to "a sample of several titles ... every figure
+    that matters matched" when `spotcheck_films` was 0, so skipping the
+    re-check produced a memo asserting it had been done — in the one document
+    a client reads.
+    """
+    facts = make_facts(memo_settings)
+    facts["spotcheck_films"] = 0
+    memo = flat(build_memo(facts, memo_settings))
+
+    assert "were not re-checked against the live source" in memo
+    assert "Re-run without" in memo
+    assert "every figure that matters matched" not in memo
+
+
+def test_a_completed_spotcheck_is_reported_with_its_sample_size(memo_settings):
+    facts = make_facts(memo_settings)
+    memo = flat(build_memo(facts, memo_settings))
+
+    assert f"A sample of {facts['spotcheck_films']} titles" in memo
+    assert "every figure that matters matched" in memo
+    assert "were not re-checked" not in memo

@@ -624,3 +624,19 @@ run_at,stage,seconds,api_calls,cache_hits,rows,note
 2026-11-20T14:42:17+00:00,checks.spotcheck,2.346,15,0,15,"4 slices, moved=False"
 2026-11-20T14:42:17+00:00,checks,5.606,0,0,4,gate passed; measures the analysis stages by re-running them
 2026-11-20T14:42:17+00:00,load,0.015,0,0,122,memo and improvement written
+2026-11-20T14:55:59+00:00,extract.read_ids,0.021,0,0,128,
+2026-11-20T14:55:59+00:00,extract.acquire,2.164,0,117,128,append_credits=True
+2026-11-20T14:55:59+00:00,extract.shape,0.618,0,0,112,
+2026-11-20T14:55:59+00:00,validate,0.172,0,0,112,"8 flags, 0 exclusions, 6 sensitivity runs"
+2026-11-20T14:55:59+00:00,transform,1.012,0,0,112,"3 validated merges, 32 bundles"
+2026-11-20T14:55:59+00:00,checks.spotcheck,1.964,15,0,15,"4 slices, moved=False"
+2026-11-20T14:55:59+00:00,checks,5.944,0,0,4,gate passed; measures the analysis stages by re-running them
+2026-11-20T14:55:59+00:00,load,0.017,0,0,122,memo and improvement written
+2026-11-20T14:56:45+00:00,extract.read_ids,0.01,0,0,128,
+2026-11-20T14:56:45+00:00,extract.acquire,0.202,0,117,128,append_credits=True
+2026-11-20T14:56:45+00:00,extract.shape,0.585,0,0,112,
+2026-11-20T14:56:45+00:00,validate,0.112,0,0,112,"8 flags, 0 exclusions, 6 sensitivity runs"
+2026-11-20T14:56:45+00:00,transform,0.888,0,0,112,"3 validated merges, 32 bundles"
+2026-11-20T14:56:45+00:00,checks.spotcheck,2.24,15,0,15,"4 slices, moved=False"
+2026-11-20T14:56:45+00:00,checks,5.83,0,0,4,gate passed; measures the analysis stages by re-running them
+2026-11-20T14:56:45+00:00,load,0.017,0,0,122,memo and improvement written

@@ -1,4 +1,4 @@
 stage,measured_films,measured_seconds,exponent_k,scaling,fit_quality,projected_films,projected_seconds
-extract.shape,112,0.336,1.03,roughly linear,measured,500,1.56
-validate,112,0.04,0.06,sub-linear (fixed costs dominate at this size),measured,500,0.04
-transform,112,0.056,0.04,sub-linear (fixed costs dominate at this size),measured,500,0.06
+extract.shape,112,0.308,0.99,roughly linear,measured,500,1.35
+validate,112,0.041,1.0,roughly linear,assumed linear (measured exponent was negative),500,0.18
+transform,112,0.055,0.01,sub-linear (fixed costs dominate at this size),measured,500,0.06

@@ -6,7 +6,7 @@ the source data but still has to be on the record:
 
 - **What we checked and did not find** — three results that rule something out. A diagnosis that
   only reports what went wrong leaves a reader unable to tell a clean check from a check nobody ran.
-- **What we got wrong ourselves** — six defects in this project rather than in the data, three of
+- **What we got wrong ourselves** — seven defects in this project rather than in the data, two of
   them still open. Each open one breaks a promise the project makes somewhere else, which is why
   each is also named in the record it contradicts.
 - **The tables and the join, proven** — the counts behind the claim that no merge dropped or
@@ -160,10 +160,10 @@ nothing to substitute, so the recommendation is unchanged by construction.
 
 ## What we got wrong ourselves
 
-Six defects in this project rather than in the data. They are here rather than in the diagnosis
+Seven defects in this project rather than in the data. They are here rather than in the diagnosis
 because they answer a different question — "what did you get wrong?" — and because mixing them into
 the ranking would overstate how much is wrong with the data and understate how much was wrong with
-us. Three are fixed; three are **open**.
+us. Five are fixed; two are **open** (S-08 and S-10).
 
 
 ### S-04 — The first scaling measurement was wrong, and said so clearly · risk: **none** (caught)
@@ -395,7 +395,7 @@ compute the three figures or delete the claims.
 
 ---
 
-### S-09 — The stated Python floor is lower than the pins allow · risk: **medium** (open)
+### S-09 — The stated Python floor is lower than the pins allow · risk: **medium** (closed)
 
 **Detected:** by reading `requirements.txt` against the installed package metadata.
 `numpy==2.5.5` requires Python **3.12 or newer**; `pandas==3.1.1` requires **3.11 or newer**. The
@@ -411,9 +411,11 @@ cannot install — on a different axis, and the constraint it breaks is the one 
 outright: Adjoa runs this herself, on her own laptop. The fix is one line in each of the two
 documents.
 
----
-
----
+**Closed on 2026-11-20.** `pyproject.toml` now declares `requires-python = ">=3.12"` with the
+reason beside it, and the README states **Python 3.15** — the version this was built and verified
+on — while saying plainly that 3.12 and 3.13 are expected to work and have never been run. That
+last part matters: the original fix would have replaced one unverified claim with another, since
+only 3.15 is installed on this machine.
 
 ---
 

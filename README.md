@@ -213,7 +213,7 @@ current shape rather than argued for in decision records, because none of them c
 | [`reports/data_diagnosis.md`](reports/data_diagnosis.md) | The eleven problems that move the recommendation, **numbered in risk order**, each traced to the code and test that handles it, plus the full account of where all 127 titles went. |
 | [`decisions/`](decisions/README.md) | How the system is built: 18 decisions, one file each, with what we gave up and what would change our mind. |
 | [`reports/decision_notes.md`](reports/decision_notes.md) | The analysis judgements: what counts as a franchise, why medians not means, how the era problem is handled. **Read M1, M4, M5, M6** if you read four. |
-| [`docs/self_audit.md`](docs/self_audit.md) | What we checked and did not find (S-01–S-03), and the seven defects in this project rather than the data (S-04–S-10), three still open. |
+| [`docs/self_audit.md`](docs/self_audit.md) | What we checked and did not find (S-01–S-03), and the seven defects in this project rather than the data (S-04–S-10), two still open. |
 | [`reports/improvement.md`](reports/improvement.md) | The one addition beyond the brief — a release gate — and why that one. |
 | [`reports/spotcheck.md`](reports/spotcheck.md) | A live re-check of a stratified sample against the source, to catch our own errors. |
 | [`data/processed/id_ledger.csv`](data/processed/id_ledger.csv) | Every title on the candidate list and what happened to it. Nothing disappears silently. |
@@ -281,7 +281,7 @@ For anyone picking this up to change it:
 - [`reports/data_diagnosis.md`](reports/data_diagnosis.md) — what is actually wrong with the data, and
   where each finding is handled. Eleven findings, numbered in risk order.
 - [`docs/self_audit.md`](docs/self_audit.md) — what we checked without finding anything, and what we
-  got wrong ourselves. **Read S-07 to S-09 before a review**: those three are still open.
+  got wrong ourselves. **Read S-08 and S-10 before a review**: those two are still open.
 - [`docs/data_contract.md`](docs/data_contract.md) — what the pipeline relies on from the candidate
   list and from TMDb, and what it does when a rule is broken.
 - [`docs/01_brief_and_guide.md`](docs/01_brief_and_guide.md) — the original brief, verbatim, so the

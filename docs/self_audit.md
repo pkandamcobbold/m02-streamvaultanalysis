@@ -383,6 +383,32 @@ documents.
 
 ---
 
+### S-10 — The client memo is half a page over the limit · risk: **low** (open)
+
+**Detected:** by counting it. The brief asks for a one-page memo and also names six things it must
+contain — the recommendation, the shortlist, both time windows, the deal note, what could not be
+verified, and the as-of date.
+
+**Scale:** 1,063 words, roughly a page and a half.
+
+**What I did about it.** Three compression passes, which took it from 1,381 words to 965. The
+structural changes did the work: the two time windows became one table with four columns instead of
+two stacked blocks, each shortlist pick became one line carrying the number that put it there, and
+every limitation became one sentence. The last pass gained 3%, which is where prose trimming stops
+paying.
+
+It then grew by 98 words, deliberately. A cross-check against the brief found two of Kwame's asks unanswered in the memo — the lead actors behind the talent lever, and what would change the recommendation. Answering a named requirement beats meeting a length rule, so both went in.
+
+**Effect on the recommendation:** none. Every element the brief names is present and every caveat is
+tested.
+
+**Residual risk.** The floor with all six required elements is about 850 to 900 words: eight named
+titles with a reason each is roughly 100, six limitations 130, the deal note 130, and the "what you
+asked for" table 95. A literal single page needs one of the brief's named elements dropped, which is
+the client's call rather than mine. I have reported the number rather than claiming the rule is met.
+
+---
+
 ## The tables and the join, proven
 
 Kept because the claim that no merge dropped or multiplied a film is only worth something with the

@@ -13,7 +13,7 @@ exception.
 
 See ADR-001 (the token), ADR-002 (the uncommitted cache), ADR-003 (one call per
 film), ADR-005 (foreign ids), ADR-006 (404s), ADR-007 (atomic writes) and
-and the note on row loops at the end of docs/method.md, for why a loop is
+and the note on row loops at the end of reports/decision_notes.md, for why a loop is
 correct here.
 """
 from __future__ import annotations

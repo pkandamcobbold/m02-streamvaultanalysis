@@ -32,7 +32,7 @@ def subject_line(memo: str) -> str:
     The house template fixes the section order — found, built, recommend, could
     not stand behind — so the recommendation cannot be the body's first line and
     still obey it. It goes in the subject instead, which is the first thing read
-    and what a memo's subject is for (ADR-019).
+    and what a memo's subject is for (ADR-014).
     """
     for line in memo.splitlines():
         if line.startswith("**Subject:**"):

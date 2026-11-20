@@ -64,11 +64,13 @@ back); **Pulp Fiction** (1994, 26.7 times back); **The Lion King** (1994, 17.0
 times back; only this one instalment is on offer); **Schindler's List** (1993,
 14.6 times back).
 
-**Talent worth using as a lever:** Steven Spielberg (8 films, typically 13.3
-times back); Robert Zemeckis (4 films, typically 10.3 times back); James
-Cameron (3 films, typically 9.9 times back). Each carries its film count,
-because a three-film record is not an eight-film record; thinner names are in
-the attached review.
+**Talent worth using as a lever.** Directors: Steven Spielberg (8 films,
+typically 13.3 times back); Robert Zemeckis (4 films, typically 10.3 times
+back); James Cameron (3 films, typically 9.9 times back). Leads: Mark Hamill
+(3 films, typically 29.9 times back); Elijah Wood (3 films, typically 11.7
+times back); Harrison Ford (5 films, typically 9.9 times back). Each carries
+its film count, because a three-film record is not an eight-film record;
+thinner names are in the attached review.
 
 **The deal note.** **Star Wars Collection** is the strongest thing on the
 list, and strong for a reason worth knowing before you negotiate: its value is
@@ -93,7 +95,14 @@ In order of how much it should change your confidence.
 5. **The candidate list was already filtered toward franchise films** — nearly four in five candidates belong to one, so this says which of *these* titles to buy, not what the market holds.
 6. **We have no licensing prices**, so this ranks what to pursue and cannot price it.
 
+**What would change this recommendation.** A list containing films that lost
+money would let us test the safety argument properly, and could overturn it. A
+wider standalone group would settle whether the gap in typical return is real,
+which this many films cannot. Licensing quotes would turn a ranking into a
+decision about price. None of those is a reason to wait: the ranking is the
+best available on what exists today.
+
 **The figures describe the data as it stood on 2026-11-19** and do not update
-on their own. A sample of several titles — every exceptional performer and
+on their own. A sample of 15 titles — every exceptional performer and
 everything named above — was re-checked against the source afterwards, and
 every figure that matters matched.

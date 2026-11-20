@@ -104,7 +104,7 @@ discrepancy. None of them enters a performance metric (M8).
 | Alien Resurrection | `popularity` | 7.7111 | 7.7675 |
 | Alien Resurrection | `vote_count` | 5882 | 5883.0 |
 | Return of the Jedi | `popularity` | 9.8817 | 10.138 |
-| Return of the Jedi | `vote_count` | 17573 | 17577.0 |
+| Return of the Jedi | `vote_count` | 17573 | 17579.0 |
 | Return of the Jedi | `vote_average` | 7.9 | 7.912 |
 | The Dark Knight Rises | `popularity` | 20.6789 | 21.5637 |
 | The Dark Knight Rises | `vote_count` | 25344 | 25353.0 |

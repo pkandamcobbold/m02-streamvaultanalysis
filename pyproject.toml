@@ -15,7 +15,7 @@ requires-python = ">=3.12"
 # as well would create two sources of truth.
 
 [tool.setuptools.packages.find]
-# Flat layout: one package, `pipeline`, at the repository root (ADR-017).
+# Flat layout: one package, `pipeline`, at the repository root.
 where = ["."]
 include = ["pipeline*"]
 

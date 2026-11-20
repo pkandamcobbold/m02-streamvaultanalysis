@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-11-19
-- **Decision owner:** Data team
+- **Decision owner:** Paapa Andam-Cobbold
 
 ## Context
 
@@ -62,9 +62,11 @@ opener" (see M7) and "nearly four in five candidates". Each is true this quarter
 next quarter while the pipeline reports success — which is precisely the drift this record claims to
 prevent. Tracked as S-08.
 
-The memo's *format* is a separate decision: ADR-019 puts it in the house template and moves the
-recommendation to the subject line, which is how the template's fixed section order and the
-rule above can both hold.
+**The recommendation lives in the memo's subject line.** The house template fixes the section
+order — found, built, recommend, could not stand behind — so the recommendation cannot be the body's
+first line and still obey it. A subject line is where a memo puts its conclusion anyway, and it is
+the first thing read, so both constraints hold at once. The rule above survives intact: a flip
+between the two windows rewrites the subject rather than being footnoted.
 
 ## What this survives
 

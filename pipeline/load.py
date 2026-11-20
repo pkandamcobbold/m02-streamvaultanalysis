@@ -98,7 +98,7 @@ def build_memo(facts: dict[str, Any], settings: Any) -> str:
     things the memo must contain — recommendation, shortlist, both time windows,
     the deal note, what could not be verified, and the as-of date. Fitting all
     of that in a page is a compression problem, not a reason to move something
-    to an annex (ADR-019).
+    to an annex.
 
     Three things earn the space back. The comparison is one table with both
     windows side by side rather than two stacked blocks. Each shortlist pick is
@@ -271,24 +271,33 @@ def build_memo(facts: dict[str, Any], settings: Any) -> str:
                         f"{multiple(row.roi)} back{note})")
         lines += [f"**Standalones, in order:** {'; '.join(bits)}.", ""]
 
-    talent = facts.get("talent")
-    if talent is not None and not talent.empty and "meets_min_films" in talent.columns:
-        reliable = talent.loc[
-            talent["meets_min_films"].fillna(False)
-            & talent["above_overall_median"].fillna(False)
-        ].head(3)
-        if len(reliable):
-            names = "; ".join(
-                f"{row.person_name} ({int(row.films)} films, typically "
-                f"{multiple(row.median_roi)} back)"
-                for row in reliable.itertuples(index=False)
-            )
-            lines += [
-                f"**Talent worth using as a lever:** {names}. Each carries its film "
-                "count, because a three-film record is not an eight-film record; "
-                "thinner names are in the attached review.",
-                "",
-            ]
+    def reliable_names(table: Any, limit: int = 3) -> str:
+        """The names worth quoting, with the film count that earns each one."""
+        if table is None or table.empty or "meets_min_films" not in table.columns:
+            return ""
+        picks = table.loc[
+            table["meets_min_films"].fillna(False)
+            & table["above_overall_median"].fillna(False)
+        ].head(limit)
+        return "; ".join(
+            f"{row.person_name} ({int(row.films)} films, typically "
+            f"{multiple(row.median_roi)} back)"
+            for row in picks.itertuples(index=False)
+        )
+
+    directors = reliable_names(facts.get("talent"))
+    leads = reliable_names(facts.get("talent_leads"))
+    if directors or leads:
+        lines.append("**Talent worth using as a lever.**")
+        if directors:
+            lines.append(f"Directors: {directors}.")
+        if leads:
+            lines.append(f"Leads: {leads}.")
+        lines += [
+            "Each carries its film count, because a three-film record is not an "
+            "eight-film record; thinner names are in the attached review.",
+            "",
+        ]
 
     gaps = facts["gaps"]
     if not gaps.empty and not franchises.empty:
@@ -342,6 +351,13 @@ def build_memo(facts: dict[str, Any], settings: Any) -> str:
         "to buy, not what the market holds.",
         "6. **We have no licensing prices**, so this ranks what to pursue and cannot "
         "price it.",
+        "",
+        "**What would change this recommendation.** A list containing films that lost "
+        "money would let us test the safety argument properly, and could overturn it. "
+        "A wider standalone group would settle whether the gap in typical return is "
+        "real, which this many films cannot. Licensing quotes would turn a ranking "
+        "into a decision about price. None of those is a reason to wait: the ranking "
+        "is the best available on what exists today.",
         "",
         f"**The figures describe the data as it stood on {as_of}** and do not update "
         f"on their own. A sample of {facts['spotcheck_films'] or 'several'} titles — "

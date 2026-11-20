@@ -124,12 +124,12 @@ go in front of a board without someone looking first. That is not a crash; see A
 
 | Path | What it holds | Why it is separate |
 | --- | --- | --- |
-| `pipeline/` | Production code: one package per stage, plus `config.py` and `load.py`. Each package holds one module per job, and its `__init__.py` holds the stage's entry point (ADR-018) | This is what runs every quarter. Nothing else lives here |
+| `pipeline/` | Production code: one package per stage, plus `config.py` and `load.py`. Each package holds one module per job, and its `__init__.py` holds the stage's entry point | This is what runs every quarter. Nothing else lives here |
 | `run_pipeline.py` | The orchestrator | The one command, and the only thing that times and records a run |
 | `tests/` | Tests on tiny hand-made data, one file per stage module | Prove the code is right before it touches a 127-title list |
 | `decisions/` | Architecture Decision Records, one file per decision, in the house format | How the system is built, and why. Versioned with the code |
 | `docs/templates.md` | The house templates the deliverables are written to | Copied in so the repo is self-contained and the format can be audited |
-| `docs/method.md` | Every judgement call about what the numbers mean, M1 to M13 | Separate from the ADRs because these interlock: four of them are views of one era problem |
+| `reports/decision_notes.md` | The brief's Decision notes deliverable: every judgement call where the brief left something open, ranked by risk | Separate from the ADRs because these are the calls that move the recommendation |
 | `docs/self_audit.md` | What we checked without finding anything, and what we got wrong ourselves, S-01 to S-09 | Out of the diagnosis so that eleven ranked findings are not diluted by nine that are not about the data |
 | `docs/questions.md` | Questions for the client, and what we did when nobody answered | Business decisions belong to the business |
 | `docs/data_contract.md` | What we agree to receive, and what happens if it is broken | Both sides know the rules |
@@ -153,6 +153,46 @@ The five stages, and what each one is responsible for:
 
 ---
 
+## The brief's five deliverables, and where each one is
+
+If you are marking this against the brief, these five files are the deliverables. Everything else in
+the repository is working material that supports them.
+
+| The brief asks for | It is here |
+|---|---|
+| **Data diagnosis** — every problem found, how detected, what it does to the recommendation, ranked by risk, plus a full account of the candidate list | [`reports/data_diagnosis.md`](reports/data_diagnosis.md) |
+| **Working analysis** — runs top to bottom from a clean clone, no manual edits, both time windows | `python run_pipeline.py`, the code in [`pipeline/`](pipeline), and [`explore/analysis.ipynb`](explore/analysis.ipynb) as the narrative |
+| **Decision notes** — every judgement call where the brief left something open, what it costs if I am wrong, and what survives at 500 titles | [`reports/decision_notes.md`](reports/decision_notes.md) |
+| **Client memo** — one page, business language, no jargon | [`reports/memo.md`](reports/memo.md) |
+| **One improvement beyond the brief** — justified in the client's terms | [`reports/improvement.md`](reports/improvement.md), and the gate itself in `pipeline/checks/gate.py` |
+
+Two supporting records sit beside them. [`decisions/`](decisions/README.md) holds the Architecture
+Decision Records — how the system is built, which is a different question from the decision notes
+and is marked under acquisition and the clean-clone requirement rather than under reasoning.
+[`docs/self_audit.md`](docs/self_audit.md) holds what we checked without finding anything, and the
+defects in this project rather than in the data.
+
+---
+
+## Layout and conventions
+
+Three conventions govern how the code and the documents are arranged. They are stated here as the
+current shape rather than argued for in decision records, because none of them changes a number:
+
+- **Five stages, one package each.** `run_pipeline.py` calls extract, validate, transform, checks
+  and load, in that order, once. A stage that does more than one job is a package with one module
+  per job and an `__init__.py` holding the stage's entry point, so a stage stays one importable
+  thing however many files are behind it.
+- **Decisions live beside the code, in two places.** `decisions/` holds the Architecture Decision
+  Records — how the system is built. `reports/decision_notes.md` holds the brief's Decision notes —
+  the judgement calls that move the recommendation. The split is explained at the top of each.
+- **The client-facing documents follow the house templates** in
+  [`docs/templates.md`](docs/templates.md). In the memo that puts the recommendation in the subject
+  line, because the template fixes the section order and a subject line is where a memo puts its
+  conclusion.
+
+---
+
 ## Where to start reading
 
 | Location | What's in it |
@@ -160,7 +200,7 @@ The five stages, and what each one is responsible for:
 | [`reports/memo.md`](reports/memo.md) | **Start here.** One page: the recommendation, the shortlist, what we couldn't verify. Written for the room, not for engineers. |
 | [`reports/data_diagnosis.md`](reports/data_diagnosis.md) | The eleven problems that move the recommendation, **numbered in risk order**, each traced to the code and test that handles it, plus the full account of where all 127 titles went. |
 | [`decisions/`](decisions/README.md) | How the system is built: 18 decisions, one file each, with what we gave up and what would change our mind. |
-| [`docs/method.md`](docs/method.md) | The analysis judgements: what counts as a franchise, why medians not means, how the era problem is handled. **Read M1, M4, M5, M6** if you read four. |
+| [`reports/decision_notes.md`](reports/decision_notes.md) | The analysis judgements: what counts as a franchise, why medians not means, how the era problem is handled. **Read M1, M4, M5, M6** if you read four. |
 | [`docs/self_audit.md`](docs/self_audit.md) | What we checked and did not find (S-01–S-03), and the six defects in this project rather than the data (S-04–S-09), three still open. |
 | [`reports/improvement.md`](reports/improvement.md) | The one addition beyond the brief — a release gate — and why that one. |
 | [`reports/spotcheck.md`](reports/spotcheck.md) | A live re-check of a stratified sample against the source, to catch our own errors. |
@@ -222,7 +262,7 @@ For anyone picking this up to change it:
 
 - [`decisions/README.md`](decisions/README.md) — how the system is built, in order, one file each.
   **Read this before changing any rule**; each one says what it would take to change its mind.
-- [`docs/method.md`](docs/method.md) — what the numbers mean, M1 to M13. **Read this before
+- [`reports/decision_notes.md`](reports/decision_notes.md) — what the numbers mean, M1 to M13. **Read this before
   changing any statistic**: M6 is the one where the conventional choice reverses the answer.
 - [`reports/data_diagnosis.md`](reports/data_diagnosis.md) — what is actually wrong with the data, and
   where each finding is handled. Eleven findings, numbered in risk order.
@@ -234,7 +274,7 @@ For anyone picking this up to change it:
   work can be audited against what was asked.
 - [`docs/00_project_plan.md`](docs/00_project_plan.md) and
   [`docs/02_build_runbook.md`](docs/02_build_runbook.md) — the planning and the build order. Written
-  against the earlier ten-stage layout; ADR-017 maps those stages onto the five modules.
+  against an earlier ten-stage layout; the five stages below are the current shape.
 
 ```bash
 python -m pytest

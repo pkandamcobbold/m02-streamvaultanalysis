@@ -4,11 +4,26 @@ One file per decision, in the house format: context, decision, alternatives with
 rejected, consequences including what it costs the client if I am wrong, and what the decision
 survives. The template is in [`../docs/templates.md`](../docs/templates.md).
 
-**These records are about how the system is built.** The judgements about what the numbers *mean* —
-what counts as a franchise, why typical figures rather than averages, how the era problem is handled —
-are in [`../docs/method.md`](../docs/method.md) as M1 to M13. They were in this directory and moved
-out: thirty-three "architecture decisions" is not a set anyone reads, and the analytical ones
-interlock, so they read better as one document than as thirteen files.
+## These are not the brief's "Decision notes"
+
+**These records are about how the system is built**, and they serve two of the rubric's criteria
+rather than the reasoning one: acquisition that accounts for every id *without abusing a shared
+API* (ADR-003, and the rate limiting and retry policy behind it), and an analysis that *runs top to
+bottom from a clean clone* (ADR-002, ADR-013 — which exists because a clean clone could not
+install).
+
+**The brief's Decision notes deliverable is
+[`../reports/decision_notes.md`](../reports/decision_notes.md).** The test it sets is: *can you say
+what the recommendation looks like under the rejected alternative?* Most records here cannot — the
+recommendation is identical whichever way the credential is sent — so they are not decision notes,
+and filing them as such would bury the thirteen that are.
+
+Four records here do pass that test and are indexed in the deliverable as well as listed below:
+[005](ADR-005-imdb-id-excluded-as-cross-namespace-duplicate.md) (the alternative puts three copies
+of one film on the franchise side of the central comparison),
+[009](ADR-009-cleaning-adds-flags-and-exclusion-is-per-metric.md) (the alternative gives every
+metric a different denominator), [004](ADR-004-the-briefs-title-count-is-a-claim.md) and
+[006](ADR-006-a-404-is-a-finding.md). They are written up here in full rather than duplicated there.
 
 Kwame Boateng was unavailable before the board review, so most of the business judgements were mine
 to make. Where a decision should have been the client's, the record says so and
@@ -32,9 +47,6 @@ to make. Where a decision should have been the client's, the record says so and
 | [014](ADR-014-the-memo-is-generated-not-written.md) | Generate the memo from the measured results rather than writing it | Load |
 | [015](ADR-015-the-one-improvement-is-a-release-gate.md) | Add a release gate that refuses to publish a memo nobody should act on | Checks |
 | [016](ADR-016-a-settings-key-must-be-live-or-refuse-to-load.md) | A setting must change behaviour, or refuse to load | Whole pipeline |
-| [017](ADR-017-five-stage-modules-in-a-flat-pipeline-package.md) | Regroup the pipeline into five stages in a flat package *(partly superseded by 018)* | Whole pipeline |
-| [018](ADR-018-a-stage-with-more-than-one-job-is-a-package.md) | A stage that does more than one job becomes a package | Whole pipeline |
-| [019](ADR-019-the-memo-follows-the-house-template.md) | Put the memo in the house template, with the recommendation in the subject line | Load |
 
 **If you read four of these**, read [015](ADR-015-the-one-improvement-is-a-release-gate.md) — the
 one addition beyond the brief, and the only check whose failure mode is "the board was misled";
@@ -46,15 +58,26 @@ a figure the data no longer supports.
 
 ## About the numbering
 
-These were renumbered once, on 2026-11-19, straight after the analytical records moved out to
-`method.md`. That left thirteen gaps in a run of thirty-three, and a sequence with more holes than
-records is worse than one renumber done early, before anything outside the repository had quoted a
-number.
+These were renumbered once, on 2026-11-19, straight after the analytical records moved out to the
+decision notes. That left thirteen gaps in a run of thirty-three, and a sequence with more holes
+than records is worse than one renumber done early, before anything outside the repository had
+quoted a number. It was a deliberate exception and it is the only one.
 
-It was a deliberate exception and it is the only one. **From here the numbers are stable**: never
-reused, never renumbered, gaps left where a record is withdrawn. A number in a commit message or a
-review note has to keep pointing at the same decision.
+**Three records were then withdrawn**, on 2026-11-20: 017 (regrouping the pipeline into five
+stages), 018 (a stage with more than one job becomes a package) and 019 (putting the memo in the
+house template). They documented reorganising this repository rather than decisions about the
+client's problem, and none of them answered the question an ADR exists to answer — *why is the
+system like this?* — except by recounting what it used to be like.
+
+Nothing was lost. The conventions they described are stated as current fact in the project README
+under "Layout and conventions". The memo's subject-line judgement moved to
+[014](ADR-014-the-memo-is-generated-not-written.md), which already owns the memo. The one-page
+shortfall moved to [`../docs/self_audit.md`](../docs/self_audit.md) as S-10, because it is a defect
+in a deliverable rather than a decision, and that file is where this project's own defects live.
+
+**From here the numbers are stable**: never reused, never renumbered, gaps left where a record is
+withdrawn. A number in a commit message or a review note has to keep pointing at the same decision.
 
 New decision? Copy the ADR section of [`../docs/templates.md`](../docs/templates.md) and take the
 next number — 020. Never edit an accepted record to change its decision: write a new one that
-supersedes it, as 018 does to 017.
+supersedes it.

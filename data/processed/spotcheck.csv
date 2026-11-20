@@ -105,7 +105,7 @@ tmdb_id,title,slice,field,analysed_value,live_value,verdict,note
 1892,Return of the Jedi,pre_2000,collection_id,10,10.0,identical,
 1892,Return of the Jedi,pre_2000,title,Return of the Jedi,Return of the Jedi,identical,
 1892,Return of the Jedi,pre_2000,popularity,9.8817,10.138,expected_drift,expected: recomputed daily by TMDb from recent activity
-1892,Return of the Jedi,pre_2000,vote_count,17573,17577.0,expected_drift,expected: rises continuously as people vote
+1892,Return of the Jedi,pre_2000,vote_count,17573,17579.0,expected_drift,expected: rises continuously as people vote
 1892,Return of the Jedi,pre_2000,vote_average,7.9,7.912,expected_drift,expected: moves slightly as vote_count rises
 49026,The Dark Knight Rises,random_control,budget,250000000,250000000.0,identical,
 49026,The Dark Knight Rises,random_control,revenue,1081041287,1081041287.0,identical,

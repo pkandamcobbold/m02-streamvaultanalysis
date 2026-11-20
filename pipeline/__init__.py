@@ -9,7 +9,7 @@ Five stage modules, in the order run_pipeline.py calls them:
     checks/     gate, spotcheck, budget — what must pass before publishing
     load        the generated memo and the improvement note
 
-Four of the five stages are packages, one module per job (ADR-018). Each is
+Four of the five stages are packages, one module per job. Each is
 imported and called as though it were still a single module: the package
 exposes the stage's entry point and its whole public surface, so no caller has
 to know the difference.

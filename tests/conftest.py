@@ -117,6 +117,7 @@ def make_facts(settings, **overrides):
             "films": [22, 41, 22], "median_roi": [7.76, 5.41, 4.44],
         }),
         "talent": pd.DataFrame(),
+        "talent_leads": pd.DataFrame(),
         "shortlist": {
             "franchises": pd.DataFrame({
                 "collection_name": ["Star Wars Collection", "Runner Up Collection"],

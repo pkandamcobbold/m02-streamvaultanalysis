@@ -292,7 +292,7 @@ def test_a_conservative_all_linear_total_is_reported_beside_the_fit(settings_bud
     conservative = projection.attrs["conservative_linear_total"]
     assert conservative > fitted, "the linear assumption should be the harsher one"
     # Written in terms of the boundary rather than a literal count, so it does
-    # not rot the next time a stage joins or leaves it (ADR-017).
+    # not rot the next time a stage joins or leaves the boundary.
     assert conservative == pytest.approx(
         0.101 * len(ANALYSIS_STAGES) * 5, rel=0.05
     )

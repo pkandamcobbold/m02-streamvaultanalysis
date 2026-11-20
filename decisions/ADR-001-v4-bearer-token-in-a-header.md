@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-11-18
-- **Decision owner:** Data team
+- **Decision owner:** Paapa Andam-Cobbold
 
 ## Context
 

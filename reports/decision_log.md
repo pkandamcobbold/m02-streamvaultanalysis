@@ -6,9 +6,9 @@
 >
 > - the 18 about **how the system is built** are one file each in
 >   [`../decisions/`](../decisions/README.md), numbered 001 to 018;
-> - the 13 about **what the numbers mean** are M1 to M13 in [`../docs/method.md`](../docs/method.md);
+> - the 13 about **what the numbers mean** are M1 to M13 in [`decision_notes.md`](decision_notes.md);
 > - the float-id rule became a clause in [`../docs/data_contract.md`](../docs/data_contract.md),
->   and the row-loop record became the closing note of `method.md`.
+>   and the row-loop record became the closing note of `decision_notes.md`.
 >
 > **Do not map the DR numbers here onto the ADR numbers there** — the correspondence was
 > one-to-one only briefly, and the ADRs were renumbered on 2026-11-19 once the analytical

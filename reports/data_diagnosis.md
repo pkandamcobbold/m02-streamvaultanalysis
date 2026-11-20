@@ -365,5 +365,5 @@ Ordered by how much it should reduce confidence.
 
 Companion documents: [`../docs/self_audit.md`](../docs/self_audit.md) holds what I checked without
 finding anything and the six defects in my own work, three still open.
-[`../docs/method.md`](../docs/method.md) holds the judgement calls behind the numbers above, and
+[`decision_notes.md`](decision_notes.md) holds the judgement calls behind the numbers above, and
 [`../decisions/README.md`](../decisions/README.md) the decisions about how the pipeline is built.

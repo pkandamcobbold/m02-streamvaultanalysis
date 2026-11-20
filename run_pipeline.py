@@ -205,6 +205,7 @@ def run_once(settings: Any, run_at: str, force: bool, spotcheck: bool) -> dict[s
         gaps=transformed["bundle_gaps"],
         positions=transformed["positions"],
         talent=transformed["talent_directors"],
+        talent_leads=transformed["talent_leads"],
         shortlist=transformed["shortlist"],
         fetch_log=fetch_log,
         eras=validated["era_comparability"],

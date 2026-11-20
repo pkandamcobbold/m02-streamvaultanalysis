@@ -22,7 +22,7 @@ The flip check tests every measure rather than just the median, because the
 recommendation can hold on the median and flip on the spread, and that is a
 different conversation (M11). Nothing here loops over rows to produce a
 number: every figure comes from a named aggregation over a group. See the note
-on row loops at the end of docs/method.md.
+on row loops at the end of reports/decision_notes.md.
 """
 from __future__ import annotations
 

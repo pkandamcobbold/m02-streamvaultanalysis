@@ -1264,7 +1264,7 @@ def test_a_clean_cache_reads_with_no_notes(tmp_path):
 # --------------------------------------------------------------------------
 # The window boundary is a year, and the year is a property of the film rather
 # than of any merge. Deriving it here is what lets the validate stage run on
-# this table before a single credit is joined onto it (ADR-017).
+# this table before a single credit is joined onto it.
 
 def test_release_year_is_an_integer_not_a_string():
     films = build_films([film(550, release_date="1999-10-15")])

@@ -1,6 +1,6 @@
 """Stage 2 — validate: profile the films, then classify what looks wrong.
 
-One stage, two jobs, one module each (ADR-018):
+One stage, two jobs, one module each:
 
     profile.py  every column's completeness and shape; every suspect value
                 flagged with a verdict and a reason
@@ -69,7 +69,7 @@ def validate(
 
     Runs on the **films** table, before any credit is joined onto it: every
     rule here reads film-level fields, and validating before the join keeps the
-    pipeline a single pass through the five stages (ADR-017).
+    pipeline a single pass through the five stages.
 
     Returns the cleaned table plus all the evidence: the profile, the flags
     with a verdict on each, the era-comparability note, the exclusions with the

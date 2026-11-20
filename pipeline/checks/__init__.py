@@ -3,7 +3,7 @@
 Three concerns, one module each. They share only their position in the run:
 one refuses to publish, one talks to a live API, and one is a benchmark that
 re-executes the other stages. Keeping a benchmark in the same file as a
-release gate was the clearest thing wrong with the merged version (ADR-018).
+release gate was the clearest thing wrong with keeping them in one file.
 
     gate.py       four blunt checks; the one improvement beyond the brief
     spotcheck.py  re-fetch a stratified sample live and classify the differences
